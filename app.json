@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "Avatar",
+    "slug": "avatar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "avatar",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.avatar.app",
+      "infoPlist": {
+        "NSCalendarsUsageDescription": "Access calendar to manage events with AI",
+        "NSRemindersUsageDescription": "Create reminders through AI assistant",
+        "NSLocationWhenInUseUsageDescription": "Share location with AI for context",
+        "NSMicrophoneUsageDescription": "Voice input for AI chat",
+        "NSContactsUsageDescription": "Access contacts for AI features"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.avatar.app",
+      "permissions": [
+        "READ_CALENDAR",
+        "WRITE_CALENDAR",
+        "ACCESS_FINE_LOCATION",
+        "RECORD_AUDIO",
+        "READ_CONTACTS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-clipboard",
+      "expo-calendar",
+      "expo-location",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Avatar to access your microphone for voice input."
+        }
+      ]
+    ]
+  }
+}

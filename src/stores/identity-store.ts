@@ -1,0 +1,94 @@
+import { create } from "zustand";
+import type { Identity, McpTool } from "../types";
+import { getItem, setItem } from "../storage/mmkv";
+import { STORAGE_KEYS, DEFAULT_IDENTITY_PARAMS } from "../constants";
+import { generateId } from "../utils/id";
+
+interface IdentityState {
+  identities: Identity[];
+  mcpTools: McpTool[];
+  loadIdentities: () => void;
+  addIdentity: (data: Omit<Identity, "id" | "createdAt">) => Identity;
+  updateIdentity: (id: string, updates: Partial<Identity>) => void;
+  removeIdentity: (id: string) => void;
+  getIdentityById: (id: string) => Identity | undefined;
+  addMcpTool: (data: Omit<McpTool, "id">) => McpTool;
+  updateMcpTool: (id: string, updates: Partial<McpTool>) => void;
+  removeMcpTool: (id: string) => void;
+  getMcpToolById: (id: string) => McpTool | undefined;
+  getGlobalTools: () => McpTool[];
+  getToolsForIdentity: (identityId: string) => McpTool[];
+}
+
+export const useIdentityStore = create<IdentityState>((set, get) => ({
+  identities: [],
+  mcpTools: [],
+
+  loadIdentities: () => {
+    const identities = getItem<Identity[]>(STORAGE_KEYS.IDENTITIES) ?? [];
+    const mcpTools = getItem<McpTool[]>(STORAGE_KEYS.MCP_TOOLS) ?? [];
+    set({ identities, mcpTools });
+  },
+
+  addIdentity: (data) => {
+    const identity: Identity = {
+      ...data,
+      id: generateId(),
+      params: { ...DEFAULT_IDENTITY_PARAMS, ...data.params },
+      createdAt: new Date().toISOString(),
+    };
+    const identities = [...get().identities, identity];
+    set({ identities });
+    setItem(STORAGE_KEYS.IDENTITIES, identities);
+    return identity;
+  },
+
+  updateIdentity: (id, updates) => {
+    const identities = get().identities.map((i) =>
+      i.id === id ? { ...i, ...updates } : i,
+    );
+    set({ identities });
+    setItem(STORAGE_KEYS.IDENTITIES, identities);
+  },
+
+  removeIdentity: (id) => {
+    const identities = get().identities.filter((i) => i.id !== id);
+    set({ identities });
+    setItem(STORAGE_KEYS.IDENTITIES, identities);
+  },
+
+  getIdentityById: (id) => get().identities.find((i) => i.id === id),
+
+  addMcpTool: (data) => {
+    const tool: McpTool = { ...data, id: generateId() };
+    const mcpTools = [...get().mcpTools, tool];
+    set({ mcpTools });
+    setItem(STORAGE_KEYS.MCP_TOOLS, mcpTools);
+    return tool;
+  },
+
+  updateMcpTool: (id, updates) => {
+    const mcpTools = get().mcpTools.map((t) =>
+      t.id === id ? { ...t, ...updates } : t,
+    );
+    set({ mcpTools });
+    setItem(STORAGE_KEYS.MCP_TOOLS, mcpTools);
+  },
+
+  removeMcpTool: (id) => {
+    const mcpTools = get().mcpTools.filter((t) => t.id !== id);
+    set({ mcpTools });
+    setItem(STORAGE_KEYS.MCP_TOOLS, mcpTools);
+  },
+
+  getMcpToolById: (id) => get().mcpTools.find((t) => t.id === id),
+
+  getGlobalTools: () =>
+    get().mcpTools.filter((t) => t.scope === "global" && t.enabled),
+
+  getToolsForIdentity: (identityId) => {
+    const identity = get().getIdentityById(identityId);
+    if (!identity) return [];
+    return get().mcpTools.filter((t) => identity.mcpToolIds.includes(t.id) && t.enabled);
+  },
+}));
