@@ -21,7 +21,9 @@ export default function ProviderEditScreen() {
   const fetchModels = useProviderStore((s) => s.fetchModels);
   const toggleModel = useProviderStore((s) => s.toggleModel);
   const setProviderModelsEnabled = useProviderStore((s) => s.setProviderModelsEnabled);
+  const probeModelCapabilities = useProviderStore((s) => s.probeModelCapabilities);
   const allModels = useProviderStore((s) => s.models);
+  const [probingModelId, setProbingModelId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
@@ -262,7 +264,7 @@ export default function ProviderEditScreen() {
                     ios_backgroundColor="#e5e7eb"
                   />
                 </View>
-                <View className="mt-3 flex-row flex-wrap gap-2">
+                <View className="mt-3 flex-row flex-wrap items-center gap-2">
                   <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.vision ? "opacity-40" : ""}`}>
                     <Ionicons name="eye-outline" size={14} color={m.capabilities.vision ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
                     <Text className="text-[12px] font-medium text-slate-700">{t("providerEdit.vision")}</Text>
@@ -275,6 +277,29 @@ export default function ProviderEditScreen() {
                     <Ionicons name="bulb-outline" size={14} color={m.capabilities.reasoning ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
                     <Text className="text-[12px] font-medium text-slate-700">{t("providerEdit.reasoning")}</Text>
                   </View>
+                  <Pressable
+                    onPress={async () => {
+                      setProbingModelId(m.id);
+                      try {
+                        await probeModelCapabilities(m.id);
+                      } catch (err) {
+                        Alert.alert(t("common.error"), err instanceof Error ? err.message : "Probe failed");
+                      } finally {
+                        setProbingModelId(null);
+                      }
+                    }}
+                    disabled={probingModelId === m.id}
+                    className="flex-row items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1"
+                  >
+                    {probingModelId === m.id ? (
+                      <ActivityIndicator size="small" color="#007AFF" />
+                    ) : (
+                      <>
+                        <Ionicons name="pulse-outline" size={14} color="#007AFF" style={{ marginRight: 4 }} />
+                        <Text className="text-[12px] font-medium text-primary">{t("providerEdit.probe")}</Text>
+                      </>
+                    )}
+                  </Pressable>
                 </View>
               </View>
             ))}

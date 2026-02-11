@@ -60,6 +60,9 @@
     "export": "Export",
     "clearHistory": "Clear History",
     "clearHistoryConfirm": "Delete all messages in this conversation?",
+    "deleteMessageConfirm": "Delete this message?",
+    "photoPermissionDenied": "Photo library access is required to attach images.",
+    "imageSelected": "Image Selected",
     "selectModel": "Select Model",
     "messageGroup": "Message Group...",
     "message": "Message...",
@@ -97,6 +100,11 @@
     "hapticFeedback": "Haptic Feedback",
     "quickPrompts": "Quick Prompts",
     "voiceAutoTranscribe": "Voice Auto-transcribe",
+    "dataManagement": "Data Management",
+    "exportBackup": "Export Backup",
+    "importBackup": "Import Backup",
+    "restoreSuccess": "Restore Complete",
+    "restoreDetail": "Restored {{conversations}} conversations and {{messages}} messages.",
     "securityTip": "Security Tip: API Keys are stored only on this device and sent directly to your provider.",
     "appName": "Avatar AI Client",
     "addProvider": "Add Provider",
@@ -134,7 +142,8 @@
     "fetchFailed": "Failed to fetch models",
     "vision": "Vision",
     "tools": "Tools",
-    "reasoning": "Reasoning"
+    "reasoning": "Reasoning",
+    "probe": "Probe"
   },
   "providers": {
     "deleteProvider": "Delete Provider",
@@ -155,7 +164,8 @@
     "connectionFailed": "Connection failed",
     "qrSync": "QR Code Sync",
     "qrDesc": "Scan a QR code from another device to transfer settings and API keys.",
-    "scanQr": "Scan QR Code"
+    "scanQr": "Scan QR Code",
+    "qrComingSoon": "QR code scanning will be available in a future update."
   },
   "identityEdit": {
     "name": "Name",

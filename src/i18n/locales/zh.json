@@ -60,6 +60,9 @@
     "export": "导出",
     "clearHistory": "清空历史",
     "clearHistoryConfirm": "确定删除该会话中的所有消息？",
+    "deleteMessageConfirm": "删除这条消息？",
+    "photoPermissionDenied": "需要相册访问权限才能附加图片。",
+    "imageSelected": "已选择图片",
     "selectModel": "选择模型",
     "messageGroup": "发送群消息...",
     "message": "发送消息...",
@@ -97,6 +100,11 @@
     "hapticFeedback": "触觉反馈",
     "quickPrompts": "快捷提示",
     "voiceAutoTranscribe": "语音自动转写",
+    "dataManagement": "数据管理",
+    "exportBackup": "导出备份",
+    "importBackup": "导入备份",
+    "restoreSuccess": "恢复完成",
+    "restoreDetail": "已恢复 {{conversations}} 个会话和 {{messages}} 条消息。",
     "securityTip": "安全提示：API 密钥仅存储在本设备上，直接发送到您的供应商。",
     "appName": "Avatar AI 客户端",
     "addProvider": "添加供应商",
@@ -134,7 +142,8 @@
     "fetchFailed": "获取模型失败",
     "vision": "视觉",
     "tools": "工具",
-    "reasoning": "推理"
+    "reasoning": "推理",
+    "probe": "探测"
   },
   "providers": {
     "deleteProvider": "删除供应商",
@@ -155,7 +164,8 @@
     "connectionFailed": "连接失败",
     "qrSync": "二维码同步",
     "qrDesc": "扫描其他设备的二维码以传输设置和 API 密钥。",
-    "scanQr": "扫描二维码"
+    "scanQr": "扫描二维码",
+    "qrComingSoon": "二维码扫描功能将在后续版本中提供。"
   },
   "identityEdit": {
     "name": "名称",

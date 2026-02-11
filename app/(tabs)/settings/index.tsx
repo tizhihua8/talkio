@@ -1,9 +1,12 @@
-import { View, Text, Pressable, ScrollView, Switch, Platform, ActionSheetIOS } from "react-native";
+import { View, Text, Pressable, ScrollView, Switch, Platform, ActionSheetIOS, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import * as DocumentPicker from "expo-document-picker";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useSettingsStore } from "../../../src/stores/settings-store";
+import { shareBackup, restoreBackup } from "../../../src/services/backup-service";
+import { useChatStore } from "../../../src/stores/chat-store";
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -119,6 +122,60 @@ export default function SettingsScreen() {
               ios_backgroundColor="#e5e7eb"
             />
           </View>
+        </View>
+      </View>
+
+      <View className="px-5 mb-8">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          {t("settings.dataManagement")}
+        </Text>
+        <View className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+          <Pressable
+            onPress={async () => {
+              try {
+                await shareBackup();
+              } catch (err) {
+                Alert.alert(t("common.error"), err instanceof Error ? err.message : "Export failed");
+              }
+            }}
+            className="flex-row items-center justify-between p-4 border-b border-slate-50"
+          >
+            <View className="flex-row items-center">
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10">
+                <Ionicons name="download-outline" size={16} color="#14b8a6" />
+              </View>
+              <Text className="text-[15px] font-medium text-text-main">{t("settings.exportBackup")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+          </Pressable>
+          <Pressable
+            onPress={async () => {
+              try {
+                const result = await DocumentPicker.getDocumentAsync({ type: "application/json" });
+                if (result.canceled || !result.assets?.[0]) return;
+                const uri = result.assets[0].uri;
+                const response = await fetch(uri);
+                const jsonContent = await response.text();
+                const stats = await restoreBackup(jsonContent);
+                await useChatStore.getState().loadConversations();
+                Alert.alert(
+                  t("settings.restoreSuccess"),
+                  t("settings.restoreDetail", { conversations: stats.conversations, messages: stats.messages }),
+                );
+              } catch (err) {
+                Alert.alert(t("common.error"), err instanceof Error ? err.message : "Import failed");
+              }
+            }}
+            className="flex-row items-center justify-between p-4"
+          >
+            <View className="flex-row items-center">
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
+                <Ionicons name="push-outline" size={16} color="#f59e0b" />
+              </View>
+              <Text className="text-[15px] font-medium text-text-main">{t("settings.importBackup")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+          </Pressable>
         </View>
       </View>
 

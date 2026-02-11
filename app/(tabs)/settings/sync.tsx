@@ -107,7 +107,10 @@ export default function SyncScreen() {
         <Text className="text-xs text-text-muted">
           {t("sync.qrDesc")}
         </Text>
-        <Pressable className="mt-3 flex-row items-center justify-center rounded-xl border border-border-light py-3">
+        <Pressable
+          onPress={() => Alert.alert(t("sync.scanQr"), t("sync.qrComingSoon"))}
+          className="mt-3 flex-row items-center justify-center rounded-xl border border-border-light py-3"
+        >
           <Ionicons name="qr-code-outline" size={20} color="#2b2bee" />
           <Text className="ml-2 text-sm font-medium text-primary">{t("sync.scanQr")}</Text>
         </Pressable>

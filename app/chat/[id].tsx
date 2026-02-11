@@ -137,6 +137,15 @@ export default function ChatDetailScreen() {
     await Clipboard.setStringAsync(content);
   }, []);
 
+  const deleteMessage = useChatStore((s) => s.deleteMessageById);
+
+  const handleDeleteMessage = useCallback((messageId: string) => {
+    Alert.alert(t("common.delete"), t("chat.deleteMessageConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteMessage(messageId) },
+    ]);
+  }, [deleteMessage]);
+
   const handleLongPress = useCallback((message: Message) => {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
@@ -148,16 +157,18 @@ export default function ChatDetailScreen() {
         (index) => {
           if (index === 1) copyMessage(message.content);
           if (index === 2) handleBranch(message.id);
+          if (index === 3) handleDeleteMessage(message.id);
         },
       );
     } else {
       Alert.alert(t("chat.messageOptions"), undefined, [
         { text: t("common.copy"), onPress: () => copyMessage(message.content) },
         { text: t("chat.branch"), onPress: () => handleBranch(message.id) },
+        { text: t("common.delete"), style: "destructive", onPress: () => handleDeleteMessage(message.id) },
         { text: t("common.cancel"), style: "cancel" },
       ]);
     }
-  }, [handleBranch, copyMessage]);
+  }, [handleBranch, copyMessage, handleDeleteMessage]);
 
   const exportChat = useCallback(async () => {
     const lines = messages.map((m) => `[${m.senderName ?? m.role}]: ${m.content}`);

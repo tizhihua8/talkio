@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
-import { View, TextInput, Pressable, Text } from "react-native";
+import { View, TextInput, Pressable, Text, Alert } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { ConversationParticipant } from "../../types";
 import { useProviderStore } from "../../stores/provider-store";
@@ -25,6 +26,23 @@ export function ChatInput({
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const getModelById = useProviderStore((s) => s.getModelById);
+
+  const handleAttach = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(t("common.error"), t("chat.photoPermissionDenied"));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.8,
+      allowsMultipleSelection: false,
+    });
+    if (!result.canceled && result.assets[0]) {
+      // TODO: integrate image attachment into message flow
+      Alert.alert(t("chat.imageSelected"), result.assets[0].uri.split("/").pop() ?? "image");
+    }
+  };
 
   const handleSend = () => {
     const trimmed = text.trim();
@@ -93,7 +111,7 @@ export function ChatInput({
       )}
 
       <View className="flex-row items-center gap-3 px-4 py-2.5">
-        <Pressable className="text-primary p-1">
+        <Pressable onPress={handleAttach} className="text-primary p-1">
           <Ionicons name="add" size={24} color="#007AFF" />
         </Pressable>
 
