@@ -6,21 +6,6 @@ export const DEFAULT_IDENTITY_PARAMS = {
   maxTokens: 4096,
 } as const;
 
-export const CAPABILITY_KEYWORDS = {
-  vision: [
-    "vision",
-    "gpt-4o",
-    "gpt-4-turbo",
-    "claude-3",
-    "gemini",
-    "qwen-vl",
-    "glm-4v",
-    "pixtral",
-  ],
-  reasoning: ["r1", "o1", "o3", "thinking", "reasoner", "deepthink"],
-  toolCall: ["gpt-4", "gpt-3.5", "claude-3", "gemini", "deepseek", "qwen"],
-  longContext: ["128k", "200k", "1m", "long", "pro"],
-} as const;
 
 export const IDENTITY_ICONS = [
   "code",

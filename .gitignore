@@ -36,3 +36,4 @@ ios/Pods/
 .idea/
 .vscode/
 *.iml
+.ace-tool/
