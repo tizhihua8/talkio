@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
-import { View, Text, Pressable, TextInput, Alert } from "react-native";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { View, Text, Pressable, TextInput, Alert, Animated } from "react-native";
 import { useTranslation } from "react-i18next";
+import { Swipeable } from "react-native-gesture-handler";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,7 +9,6 @@ import { useChatStore } from "../../../src/stores/chat-store";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useIdentityStore } from "../../../src/stores/identity-store";
 import { ModelAvatar } from "../../../src/components/common/ModelAvatar";
-import { CapabilityTag } from "../../../src/components/common/CapabilityTag";
 import { EmptyState } from "../../../src/components/common/EmptyState";
 import type { Conversation } from "../../../src/types";
 
@@ -66,6 +66,29 @@ export default function ChatsScreen() {
     [deleteConversation],
   );
 
+  const renderRightActions = useCallback(
+    (id: string) =>
+      (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
+        const scale = dragX.interpolate({
+          inputRange: [-80, 0],
+          outputRange: [1, 0.5],
+          extrapolate: "clamp",
+        });
+        return (
+          <Pressable
+            onPress={() => handleDelete(id)}
+            className="w-20 items-center justify-center bg-red-500"
+          >
+            <Animated.View style={{ transform: [{ scale }] }}>
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
+            </Animated.View>
+          </Pressable>
+        );
+      },
+    [handleDelete, t],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Conversation }) => {
       const firstModel = getModelById(item.participants[0]?.modelId);
@@ -75,37 +98,42 @@ export default function ChatsScreen() {
         : null;
 
       return (
-        <Pressable
-          onPress={() => router.push(`/chat/${item.id}`)}
-          onLongPress={() => handleDelete(item.id)}
-          className="flex-row items-center gap-4 rounded-2xl px-3 py-3"
+        <Swipeable
+          renderRightActions={renderRightActions(item.id)}
+          overshootRight={false}
+          friction={2}
         >
-          <View className="relative">
-            <View className="h-12 w-12 overflow-hidden rounded-full">
-              <ModelAvatar name={modelName} size="md" />
+          <Pressable
+            onPress={() => router.push(`/chat/${item.id}`)}
+            className="flex-row items-center gap-4 bg-white px-3 py-3"
+          >
+            <View className="relative">
+              <View className="h-12 w-12 overflow-hidden rounded-full">
+                <ModelAvatar name={modelName} size="md" />
+              </View>
+              {firstModel && (
+                <View className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-accent-green" />
+              )}
             </View>
-            {firstModel && (
-              <View className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-accent-green" />
-            )}
-          </View>
-          <View className="flex-1 border-b border-divider pb-3">
-            <View className="flex-row items-center justify-between mb-1">
-              <Text className="flex-1 text-[16px] font-semibold text-text-main" numberOfLines={1}>
-                {item.type === "group" ? item.title : modelName}
-              </Text>
-              <Text className="ml-2 text-xs text-text-hint">
-                {formatDate(item.updatedAt)}
+            <View className="flex-1 border-b border-divider pb-3">
+              <View className="flex-row items-center justify-between mb-1">
+                <Text className="flex-1 text-[16px] font-semibold text-text-main" numberOfLines={1}>
+                  {item.type === "group" ? item.title : modelName}
+                </Text>
+                <Text className="ml-2 text-xs text-text-hint">
+                  {formatDate(item.updatedAt)}
+                </Text>
+              </View>
+              <Text className="text-sm text-text-hint" numberOfLines={1}>
+                {identity ? `${identity.name}: ` : ""}
+                {item.lastMessage ?? t("chats.startConversation")}
               </Text>
             </View>
-            <Text className="text-sm text-text-hint" numberOfLines={1}>
-              {identity ? `${identity.name}: ` : ""}
-              {item.lastMessage ?? t("chats.startConversation")}
-            </Text>
-          </View>
-        </Pressable>
+          </Pressable>
+        </Swipeable>
       );
     },
-    [getModelById, getIdentityById, router, handleDelete],
+    [getModelById, getIdentityById, router, renderRightActions, t],
   );
 
   return (
