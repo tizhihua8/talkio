@@ -161,13 +161,10 @@ export async function getMessages(
 ): Promise<Message[]> {
   const conditions = [eq(messages.conversationId, conversationId)];
 
-  if (branchId !== undefined) {
-    conditions.push(
-      or(
-        eq(messages.branchId, branchId ?? ""),
-        isNull(messages.branchId),
-      )!,
-    );
+  if (branchId) {
+    conditions.push(eq(messages.branchId, branchId));
+  } else {
+    conditions.push(isNull(messages.branchId));
   }
 
   const rows = await db

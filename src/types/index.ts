@@ -1,7 +1,7 @@
 export type ProviderType = "official" | "aggregator" | "local";
 export type ProviderStatus = "connected" | "disconnected" | "error" | "pending";
 export type ConversationType = "single" | "group";
-export type MessageRole = "user" | "assistant" | "system";
+export type MessageRole = "user" | "assistant" | "system" | "tool";
 export type McpToolType = "local" | "remote";
 export type McpToolScope = "global" | "identity-bound" | "ad-hoc";
 
@@ -124,11 +124,17 @@ export interface Shortcut {
   createdAt: string;
 }
 
+export interface ChatApiToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+
 export interface ChatApiMessage {
   role: MessageRole;
   content: string | ChatApiContentPart[];
   name?: string;
-  tool_calls?: ToolCall[];
+  tool_calls?: ChatApiToolCall[];
   tool_call_id?: string;
 }
 

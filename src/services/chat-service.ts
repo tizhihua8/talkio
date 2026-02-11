@@ -1,6 +1,7 @@
 import type {
   Conversation,
   Message,
+  MessageRole,
   ChatApiMessage,
   ChatApiToolDef,
   Identity,
@@ -148,29 +149,82 @@ export async function generateResponse(
       }));
     }
 
+    const toolCallsSnapshot = pendingToolCalls.map((tc) => ({
+      id: tc.id,
+      name: tc.name,
+      arguments: tc.arguments,
+    }));
+    let toolResults: Array<{ toolCallId: string; content: string }> = [];
+
     if (pendingToolCalls.length > 0) {
-      const toolResults = await executeToolCalls(pendingToolCalls);
+      toolResults = await executeToolCalls(pendingToolCalls);
       useChatStore.setState((s) => ({
         messages: s.messages.map((m) =>
           m.id === assistantMsg.id ? { ...m, toolResults } : m,
         ),
       }));
+
+      // Build follow-up messages: assistant (with tool_calls) + tool results
+      const assistantApiMsg: ChatApiMessage = {
+        role: "assistant",
+        content: content || "",
+        tool_calls: toolCallsSnapshot.map((tc) => ({
+          id: tc.id,
+          type: "function" as const,
+          function: { name: tc.name, arguments: tc.arguments },
+        })),
+      };
+      const toolApiMsgs: ChatApiMessage[] = toolResults.map((tr) => ({
+        role: "tool" as MessageRole,
+        content: tr.content,
+        tool_call_id: tr.toolCallId,
+      }));
+      const followUpMessages: ChatApiMessage[] = [
+        ...apiMessages,
+        assistantApiMsg,
+        ...toolApiMsgs,
+      ];
+
+      // Second-round: send tool results back for model to continue reasoning
+      const followUpStream = client.streamChat({
+        model: model.modelId,
+        messages: followUpMessages,
+        stream: true,
+        temperature: identity?.params.temperature,
+        top_p: identity?.params.topP,
+        max_tokens: identity?.params.maxTokens,
+      });
+
+      let followUpContent = "";
+      for await (const delta of followUpStream) {
+        if (delta.content) {
+          followUpContent += delta.content;
+        }
+        useChatStore.setState((s) => ({
+          messages: s.messages.map((m) =>
+            m.id === assistantMsg.id
+              ? { ...m, content: followUpContent || content }
+              : m,
+          ),
+        }));
+      }
+
+      if (followUpContent) {
+        content = followUpContent;
+      }
     }
 
     await dbUpdateMessage(assistantMsg.id, {
       content,
       reasoningContent: reasoningContent || null,
-      toolCalls: pendingToolCalls.map((tc) => ({
-        id: tc.id,
-        name: tc.name,
-        arguments: tc.arguments,
-      })),
+      toolCalls: toolCallsSnapshot,
+      toolResults,
       isStreaming: false,
     });
 
     useChatStore.setState((s) => ({
       messages: s.messages.map((m) =>
-        m.id === assistantMsg.id ? { ...m, isStreaming: false } : m,
+        m.id === assistantMsg.id ? { ...m, content, isStreaming: false } : m,
       ),
     }));
 

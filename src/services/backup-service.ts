@@ -61,18 +61,26 @@ export async function restoreBackup(jsonContent: string): Promise<{ conversation
     throw new Error("Invalid backup structure");
   }
 
-  // Clear existing data
-  expoDb.execSync("DELETE FROM messages");
-  expoDb.execSync("DELETE FROM conversations");
+  // Wrap in transaction: if any insert fails, roll back to preserve original data
+  try {
+    expoDb.execSync("BEGIN TRANSACTION");
 
-  // Restore conversations
-  for (const conv of backup.conversations) {
-    await db.insert(conversations).values(conv);
-  }
+    expoDb.execSync("DELETE FROM messages");
+    expoDb.execSync("DELETE FROM conversations");
 
-  // Restore messages
-  for (const msg of backup.messages) {
-    await db.insert(messages).values(msg);
+    for (const conv of backup.conversations) {
+      await db.insert(conversations).values(conv);
+    }
+
+    for (const msg of backup.messages) {
+      await db.insert(messages).values(msg);
+    }
+
+    expoDb.execSync("COMMIT");
+  } catch (err) {
+    expoDb.execSync("ROLLBACK");
+    log.error(`Backup restore failed, rolled back: ${err instanceof Error ? err.message : "Unknown"}`);
+    throw new Error("Restore failed — original data has been preserved.");
   }
 
   log.info(`Backup restored: ${backup.conversations.length} conversations, ${backup.messages.length} messages`);
