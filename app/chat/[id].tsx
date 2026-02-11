@@ -29,7 +29,6 @@ export default function ChatDetailScreen() {
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const updateParticipantIdentity = useChatStore((s) => s.updateParticipantIdentity);
-  const branchFromMessage = useChatStore((s) => s.branchFromMessage);
   const getModelById = useProviderStore((s) => s.getModelById);
   const getIdentityById = useIdentityStore((s) => s.getIdentityById);
 
@@ -120,19 +119,6 @@ export default function ChatDetailScreen() {
     }
   }, [isGroup, conv, selectedParticipantIdx]);
 
-  const handleBranch = useCallback(
-    (messageId: string) => {
-      Alert.alert(t("chat.branchConversation"), t("chat.branchConfirm"), [
-        { text: t("common.cancel"), style: "cancel" },
-        {
-          text: t("chat.branch"),
-          onPress: () => branchFromMessage(messageId),
-        },
-      ]);
-    },
-    [branchFromMessage],
-  );
-
   const copyMessage = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
   }, []);
@@ -150,25 +136,23 @@ export default function ChatDetailScreen() {
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [t("common.cancel"), t("common.copy"), t("chat.branchFromHere"), t("common.delete")],
+          options: [t("common.cancel"), t("common.copy"), t("common.delete")],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 3,
+          destructiveButtonIndex: 2,
         },
         (index) => {
           if (index === 1) copyMessage(message.content);
-          if (index === 2) handleBranch(message.id);
-          if (index === 3) handleDeleteMessage(message.id);
+          if (index === 2) handleDeleteMessage(message.id);
         },
       );
     } else {
       Alert.alert(t("chat.messageOptions"), undefined, [
         { text: t("common.copy"), onPress: () => copyMessage(message.content) },
-        { text: t("chat.branch"), onPress: () => handleBranch(message.id) },
         { text: t("common.delete"), style: "destructive", onPress: () => handleDeleteMessage(message.id) },
         { text: t("common.cancel"), style: "cancel" },
       ]);
     }
-  }, [handleBranch, copyMessage, handleDeleteMessage]);
+  }, [copyMessage, handleDeleteMessage]);
 
   const exportChat = useCallback(async () => {
     const lines = messages.map((m) => `[${m.senderName ?? m.role}]: ${m.content}`);
@@ -225,10 +209,9 @@ export default function ChatDetailScreen() {
         message={item}
         isGroup={isGroup}
         onLongPress={handleLongPress}
-        onBranch={handleBranch}
       />
     ),
-    [isGroup, handleLongPress, handleBranch],
+    [isGroup, handleLongPress],
   );
 
   if (!conv) {
