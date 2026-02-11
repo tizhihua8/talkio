@@ -58,11 +58,6 @@ export default function DiscoverScreen() {
               className={`flex-1 items-center rounded-lg py-1.5 ${
                 activeTab === tab ? "bg-white" : ""
               }`}
-              style={
-                activeTab === tab
-                  ? { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 }
-                  : undefined
-              }
             >
               <Text
                 className={`text-sm font-semibold ${
@@ -123,7 +118,6 @@ export default function DiscoverScreen() {
             )
           }
           className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4"
-          style={{ shadowColor: "#007AFF", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}
         >
           <Ionicons name="add-circle" size={22} color="#fff" />
           <Text className="text-base font-semibold text-white">
@@ -154,7 +148,6 @@ function IdentityCard({
       onPress={onEdit}
       onLongPress={onDelete}
       className="rounded-xl border border-slate-100 bg-white p-4"
-      style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
     >
       <View className="flex-row items-start gap-4">
         <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
@@ -204,7 +197,6 @@ function ToolCard({
       onPress={onEdit}
       onLongPress={onDelete}
       className="rounded-xl border border-slate-100 bg-white p-4"
-      style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
     >
       <View className="flex-row items-start gap-4">
         <View

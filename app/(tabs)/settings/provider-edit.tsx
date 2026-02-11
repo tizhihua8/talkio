@@ -132,7 +132,6 @@ export default function ProviderEditScreen() {
           Provider Details
         </Text>
         <View className="overflow-hidden rounded-xl border border-slate-200 bg-white"
-          style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
         >
           <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
             <Text className="w-24 text-[15px] text-slate-900">Name</Text>
@@ -181,7 +180,6 @@ export default function ProviderEditScreen() {
           className={`flex-row items-center justify-center rounded-xl py-3.5 ${
             connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
           }`}
-          style={{ shadowColor: connected === true ? "#34C759" : "#007AFF", shadowOpacity: 0.15, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 2 }}
         >
           {testing ? (
             <ActivityIndicator color="#fff" />
@@ -226,7 +224,6 @@ export default function ProviderEditScreen() {
               <View
                 key={m.id}
                 className="rounded-xl border border-slate-200 bg-white p-4"
-                style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
               >
                 <View className="flex-row items-start justify-between">
                   <View>
@@ -262,7 +259,6 @@ export default function ProviderEditScreen() {
       <View className="px-4 pb-8 pt-6">
         {connected && (
           <Pressable onPress={handleSave} className="items-center rounded-xl bg-primary py-3.5"
-            style={{ shadowColor: "#007AFF", shadowOpacity: 0.2, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 4 }}
           >
             <Text className="text-[17px] font-semibold text-white">Save</Text>
           </Pressable>

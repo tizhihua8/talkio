@@ -18,7 +18,6 @@ export default function SettingsScreen() {
         </Text>
         <View
           className="overflow-hidden rounded-xl border border-slate-100 bg-white"
-          style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
         >
           <SettingsRow
             icon="git-network-outline"
@@ -53,7 +52,6 @@ export default function SettingsScreen() {
         </Text>
         <View
           className="overflow-hidden rounded-xl border border-slate-100 bg-white"
-          style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
         >
           <View className="flex-row items-center justify-between p-4 border-b border-slate-50">
             <View className="flex-row items-center">
