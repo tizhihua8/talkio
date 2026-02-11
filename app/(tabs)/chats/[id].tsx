@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, Pressable, KeyboardAvoidingView, Platform, Alert, ActionSheetIOS } from "react-native";
+import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
+import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -168,7 +169,7 @@ export default function ChatDetailScreen() {
     <KeyboardAvoidingView
       className="flex-1 bg-bg-chat"
       behavior="padding"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 100}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}
     >
       {!isGroup && (
         <IdentitySlider
