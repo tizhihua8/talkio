@@ -5,9 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { Message } from "../../types";
 const mdStyles = {
-  container: { margin: 0, padding: 0, paddingBottom: 0, marginBottom: -6 },
+  container: { margin: 0, padding: 0, gap: 0 },
   text: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
-  paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginTop: 0, marginBottom: 6 },
+  paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginTop: 0, marginBottom: 0 },
   heading: (level: number) => ({
     fontSize: [22, 19, 17, 15, 14, 13][level - 1] ?? 15,
     fontWeight: (level <= 2 ? "700" : "600") as "700" | "600",
@@ -41,9 +41,9 @@ const mdStyles = {
     marginVertical: 6,
   },
   borderColor: "#d1d5db",
-  list: { marginBottom: 8 },
-  listItem: { marginBottom: 4 },
-  thematicBreak: { backgroundColor: "#e5e7eb", height: 1, marginVertical: 12 },
+  list: { gap: 0, marginBottom: 0 },
+  listItem: { gap: 0, marginBottom: 0 },
+  thematicBreak: { backgroundColor: "#e5e7eb", height: 1, marginVertical: 6 },
 };
 
 interface MessageBubbleProps {
@@ -62,8 +62,10 @@ export function MessageBubble({
   const [showReasoning, setShowReasoning] = useState(false);
   const isUser = message.role === "user";
 
+  const markdownContent = isUser ? message.content : message.content.trimEnd();
+
   return (
-    <View className={`mb-4 flex-row px-4 ${isUser ? "justify-end" : "justify-start"}`}>
+    <View className={`mb-2 flex-row px-4 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
         <View className="mr-2 mt-1">
           <ModelAvatar name={message.senderName ?? "AI"} size="sm" />
@@ -111,17 +113,19 @@ export function MessageBubble({
         >
           {isUser ? (
             <Text className="text-[15px] leading-6 text-white">
-              {message.content}
+              {markdownContent}
             </Text>
           ) : message.isStreaming && !message.content ? (
             <View className="flex-row items-center">
               <Ionicons name="ellipsis-horizontal" size={20} color="#6b7280" />
             </View>
           ) : (
-            <Markdown
-              markdown={message.content}
-              customStyles={mdStyles}
-            />
+            <View style={{ flexShrink: 1, flexGrow: 0 }}>
+              <Markdown
+                markdown={markdownContent}
+                customStyles={mdStyles}
+              />
+            </View>
           )}
         </Pressable>
 
