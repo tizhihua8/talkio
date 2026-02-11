@@ -11,15 +11,12 @@ import type { Model } from "../../../src/types";
 export default function ModelsScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const models = useProviderStore((s) => s.getEnabledModels);
+  const enabledModels = useProviderStore((s) => s.models.filter((m) => m.enabled));
   const getProviderById = useProviderStore((s) => s.getProviderById);
   const createConversation = useChatStore((s) => s.createConversation);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedForGroup, setSelectedForGroup] = useState<string[]>([]);
   const [groupMode, setGroupMode] = useState(false);
-
-
-  const enabledModels = models();
   const filtered = enabledModels.filter((m) =>
     searchQuery
       ? m.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
