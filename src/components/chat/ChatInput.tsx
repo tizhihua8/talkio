@@ -53,7 +53,7 @@ export function ChatInput({
   const insertMention = (modelId: string) => {
     const model = getModelById(modelId);
     if (model) {
-      setText((prev) => prev + model.displayName + " ");
+      setText((prev) => prev + "@" + model.displayName + " ");
     }
     setShowMentionPicker(false);
     inputRef.current?.focus();

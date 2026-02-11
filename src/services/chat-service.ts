@@ -30,7 +30,7 @@ export function resolveTargetModels(
   if (mentionedModelIds && mentionedModelIds.length > 0) {
     return mentionedModelIds;
   }
-  return [];
+  return conv.participants.map((p) => p.modelId);
 }
 
 export async function generateResponse(
