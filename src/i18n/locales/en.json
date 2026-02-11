@@ -1,0 +1,53 @@
+{
+  "common": {
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "save": "Save",
+    "edit": "Edit",
+    "copy": "Copy",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "retry": "Retry",
+    "done": "Done"
+  },
+  "chat": {
+    "newChat": "New Chat",
+    "sendMessage": "Type a message...",
+    "generating": "Generating...",
+    "showThinking": "Show thinking",
+    "hideThinking": "Hide thinking",
+    "branch": "Branch from here",
+    "branchConfirm": "Create a new branch from this message?",
+    "conversationNotFound": "Conversation not found",
+    "searchInChat": "Search in Chat",
+    "export": "Export",
+    "clearHistory": "Clear History",
+    "messageOptions": "Message Options"
+  },
+  "settings": {
+    "title": "Settings",
+    "providers": "Providers",
+    "addProvider": "Add Provider",
+    "editProvider": "Edit Provider",
+    "apiKey": "API Key",
+    "baseUrl": "Base URL",
+    "models": "Models",
+    "theme": "Theme",
+    "language": "Language",
+    "about": "About"
+  },
+  "experts": {
+    "title": "Experts",
+    "createIdentity": "Create Identity",
+    "systemPrompt": "System Prompt",
+    "temperature": "Temperature",
+    "maxTokens": "Max Tokens"
+  },
+  "tabs": {
+    "chats": "Chats",
+    "experts": "Experts",
+    "settings": "Settings"
+  }
+}

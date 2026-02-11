@@ -8,6 +8,7 @@ import { useSettingsStore } from "../src/stores/settings-store";
 import { useChatStore } from "../src/stores/chat-store";
 import { hydrateStorage } from "../src/storage/mmkv";
 import { initDatabase } from "../src/storage/database";
+import "../src/i18n";
 import "../global.css";
 
 export default function RootLayout() {
