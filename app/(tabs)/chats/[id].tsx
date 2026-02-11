@@ -204,7 +204,6 @@ export default function ChatDetailScreen() {
         isGenerating={isGenerating}
         isGroup={isGroup}
         participants={conv.participants}
-        showQuickPrompts={!isGroup}
       />
     </KeyboardAvoidingView>
   );

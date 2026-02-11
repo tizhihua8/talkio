@@ -1,8 +1,7 @@
 import { useState, useRef } from "react";
-import { View, TextInput, Pressable, ScrollView, Text } from "react-native";
+import { View, TextInput, Pressable, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
-import { QUICK_PROMPTS } from "../../constants";
 import type { ConversationParticipant } from "../../types";
 import { useProviderStore } from "../../stores/provider-store";
 
@@ -11,7 +10,6 @@ interface ChatInputProps {
   isGenerating: boolean;
   isGroup?: boolean;
   participants?: ConversationParticipant[];
-  showQuickPrompts?: boolean;
 }
 
 export function ChatInput({
@@ -19,7 +17,6 @@ export function ChatInput({
   isGenerating,
   isGroup = false,
   participants = [],
-  showQuickPrompts = true,
 }: ChatInputProps) {
   const [text, setText] = useState("");
   const [showMentionPicker, setShowMentionPicker] = useState(false);
@@ -62,31 +59,8 @@ export function ChatInput({
     inputRef.current?.focus();
   };
 
-  const handleQuickPrompt = (prompt: string) => {
-    setText((prev) => (prev ? `${prompt}\n${prev}` : prompt + " "));
-    inputRef.current?.focus();
-  };
-
   return (
     <View className="border-t border-slate-100 bg-white">
-      {showQuickPrompts && !isGroup && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="border-b border-slate-100 px-2 py-1.5"
-        >
-          {QUICK_PROMPTS.map((qp) => (
-            <Pressable
-              key={qp.label}
-              onPress={() => handleQuickPrompt(qp.prompt)}
-              className="mr-2 rounded-full border border-slate-200 px-3 py-1"
-            >
-              <Text className="text-xs text-slate-500">{qp.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
-      )}
-
       {showMentionPicker && isGroup && (
         <View className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
           <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
