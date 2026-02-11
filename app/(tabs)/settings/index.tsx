@@ -84,7 +84,9 @@ export default function SettingsScreen() {
             <Switch
               value={settings.hapticFeedback}
               onValueChange={(v) => updateSettings({ hapticFeedback: v })}
-              trackColor={{ true: "#007AFF" }}
+              trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+              thumbColor="#fff"
+              ios_backgroundColor="#e5e7eb"
             />
           </View>
           <View className="flex-row items-center justify-between p-4 border-b border-slate-50">
@@ -97,7 +99,9 @@ export default function SettingsScreen() {
             <Switch
               value={settings.quickPromptEnabled}
               onValueChange={(v) => updateSettings({ quickPromptEnabled: v })}
-              trackColor={{ true: "#007AFF" }}
+              trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+              thumbColor="#fff"
+              ios_backgroundColor="#e5e7eb"
             />
           </View>
           <View className="flex-row items-center justify-between p-4">
@@ -110,7 +114,9 @@ export default function SettingsScreen() {
             <Switch
               value={settings.voiceAutoTranscribe}
               onValueChange={(v) => updateSettings({ voiceAutoTranscribe: v })}
-              trackColor={{ true: "#007AFF" }}
+              trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+              thumbColor="#fff"
+              ios_backgroundColor="#e5e7eb"
             />
           </View>
         </View>
