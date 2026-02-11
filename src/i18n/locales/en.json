@@ -30,7 +30,8 @@
     "providers": "Providers",
     "addProvider": "Add Provider",
     "dataSync": "Data Sync",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "webConfig": "Web Setup"
   },
   "chats": {
     "deleteChat": "Delete Chat",
@@ -105,6 +106,7 @@
     "importBackup": "Import Backup",
     "restoreSuccess": "Restore Complete",
     "restoreDetail": "Restored {{conversations}} conversations and {{messages}} messages.",
+    "webConfig": "Web Setup",
     "securityTip": "Security Tip: API Keys are stored only on this device and sent directly to your provider.",
     "appName": "Avatar AI Client",
     "addProvider": "Add Provider",
@@ -166,6 +168,15 @@
     "qrDesc": "Scan a QR code from another device to transfer settings and API keys.",
     "scanQr": "Scan QR Code",
     "qrComingSoon": "QR code scanning will be available in a future update."
+  },
+  "webConfig": {
+    "scanOrVisit": "Scan QR or visit in browser",
+    "instructions": "Open this URL on your computer to configure providers with a full keyboard.",
+    "providerAdded": "Provider Added",
+    "providerAddedDetail": "\"{{name}}\" has been added and tested.",
+    "received": "{{count}} provider(s) received",
+    "securityNote": "Data is transmitted over your local network only. Nothing leaves your devices.",
+    "starting": "Starting configuration server..."
   },
   "identityEdit": {
     "name": "Name",

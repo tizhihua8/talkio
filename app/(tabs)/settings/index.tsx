@@ -48,6 +48,13 @@ export default function SettingsScreen() {
             onPress={() => router.push("/(tabs)/settings/privacy")}
           />
           <SettingsRow
+            icon="laptop-outline"
+            iconBg="bg-violet-500/10"
+            iconColor="#8b5cf6"
+            label={t("settings.webConfig")}
+            onPress={() => router.push("/(tabs)/settings/web-config")}
+          />
+          <SettingsRow
             icon="language-outline"
             iconBg="bg-indigo-500/10"
             iconColor="#6366f1"
