@@ -4,6 +4,7 @@ import { getItem, setItem } from "../storage/mmkv";
 import { STORAGE_KEYS } from "../constants";
 import { generateId } from "../utils/id";
 import { inferCapabilities, inferMaxContext } from "../utils/capability-detector";
+import { prettifyModelName } from "../utils/model-name";
 import { ApiClient } from "../services/api-client";
 
 interface ProviderState {
@@ -92,7 +93,7 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
         id: existing?.id ?? generateId(),
         providerId,
         modelId: raw.id,
-        displayName: raw.id,
+        displayName: prettifyModelName(raw.id),
         avatar: null,
         capabilities: existing?.capabilitiesVerified
           ? existing.capabilities

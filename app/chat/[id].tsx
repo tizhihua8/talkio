@@ -64,7 +64,7 @@ export default function ChatDetailScreen() {
           <Text className="text-sm font-bold tracking-tight text-text-main">{title}</Text>
           {subtitle && (
             <View className="mt-0.5 flex-row items-center gap-1">
-              <Ionicons name="layers-outline" size={12} color="#007AFF" />
+              <Ionicons name="person-circle-outline" size={12} color="#007AFF" />
               <Text className="text-[10px] font-bold uppercase tracking-widest text-primary">
                 {activeIdentity ? activeIdentity.name : t("chat.mountIdentity")}
               </Text>
