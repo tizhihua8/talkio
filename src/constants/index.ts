@@ -95,9 +95,10 @@ export const STORAGE_KEYS = {
 } as const;
 
 export const TAG_COLORS: Record<string, { bg: string; text: string }> = {
-  reasoning: { bg: "bg-tag-reasoning", text: "text-amber-700" },
-  vision: { bg: "bg-tag-vision", text: "text-blue-700" },
-  tools: { bg: "bg-tag-tools", text: "text-emerald-700" },
-  coding: { bg: "bg-tag-coding", text: "text-violet-700" },
-  streaming: { bg: "bg-gray-100", text: "text-gray-600" },
+  reasoning: { bg: "bg-tag-reasoning", text: "text-tag-reasoning-text" },
+  vision: { bg: "bg-tag-vision", text: "text-tag-vision-text" },
+  tools: { bg: "bg-tag-tools", text: "text-tag-tools-text" },
+  coding: { bg: "bg-tag-coding", text: "text-tag-coding-text" },
+  context: { bg: "bg-tag-context", text: "text-tag-context-text" },
+  streaming: { bg: "bg-slate-100", text: "text-slate-600" },
 };
