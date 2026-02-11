@@ -4,6 +4,10 @@ import type { Message, Conversation } from "../types";
 let memConversations: Conversation[] = [];
 let memMessages: Message[] = [];
 
+export async function initDatabase(): Promise<void> {
+  // No-op on web
+}
+
 export async function getDatabase() {
   return null;
 }

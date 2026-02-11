@@ -7,6 +7,7 @@ import { useIdentityStore } from "../src/stores/identity-store";
 import { useSettingsStore } from "../src/stores/settings-store";
 import { useChatStore } from "../src/stores/chat-store";
 import { hydrateStorage } from "../src/storage/mmkv";
+import { initDatabase } from "../src/storage/database";
 import "../global.css";
 
 export default function RootLayout() {
@@ -17,7 +18,7 @@ export default function RootLayout() {
   const loadConversations = useChatStore((s) => s.loadConversations);
 
   useEffect(() => {
-    hydrateStorage().then(() => {
+    Promise.all([hydrateStorage(), initDatabase()]).then(() => {
       loadProviders();
       loadIdentities();
       loadSettings();

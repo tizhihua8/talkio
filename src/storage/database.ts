@@ -1,12 +1,11 @@
-import * as SQLite from "expo-sqlite";
+import { eq, desc, asc, and, or, isNull, like } from "drizzle-orm";
+import { db, expoDb } from "../../db";
+import { conversations, messages } from "../../db/schema";
 import type { Message, Conversation } from "../types";
 
-let db: SQLite.SQLiteDatabase | null = null;
-
-async function getNativeDb() {
-  if (db) return db;
-  db = await SQLite.openDatabaseAsync("avatar.db");
-  await db.execAsync(`
+// ─── Init: ensure tables exist (Drizzle push or manual) ───
+export async function initDatabase(): Promise<void> {
+  expoDb.execSync(`
     CREATE TABLE IF NOT EXISTS conversations (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL DEFAULT 'single',
@@ -37,138 +36,119 @@ async function getNativeDb() {
     );
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);
     CREATE INDEX IF NOT EXISTS idx_messages_branch ON messages(branchId);
-    CREATE VIRTUAL TABLE IF NOT EXISTS messages_fts USING fts5(
-      content, senderName, content='messages', content_rowid='rowid'
-    );
-    CREATE TRIGGER IF NOT EXISTS messages_ai AFTER INSERT ON messages BEGIN
-      INSERT INTO messages_fts(rowid, content, senderName)
-      VALUES (new.rowid, new.content, new.senderName);
-    END;
-    CREATE TRIGGER IF NOT EXISTS messages_ad AFTER DELETE ON messages BEGIN
-      INSERT INTO messages_fts(messages_fts, rowid, content, senderName)
-      VALUES ('delete', old.rowid, old.content, old.senderName);
-    END;
-    CREATE TRIGGER IF NOT EXISTS messages_au AFTER UPDATE ON messages BEGIN
-      INSERT INTO messages_fts(messages_fts, rowid, content, senderName)
-      VALUES ('delete', old.rowid, old.content, old.senderName);
-      INSERT INTO messages_fts(rowid, content, senderName)
-      VALUES (new.rowid, new.content, new.senderName);
-    END;
   `);
-  return db;
 }
 
 // ─── Row converters ───
-function rowToConversation(row: Record<string, unknown>): Conversation {
+function rowToConversation(row: typeof conversations.$inferSelect): Conversation {
   return {
-    id: row.id as string,
+    id: row.id,
     type: row.type as Conversation["type"],
-    title: row.title as string,
-    participants: JSON.parse((row.participants as string) || "[]"),
-    lastMessage: (row.lastMessage as string) ?? null,
-    lastMessageAt: (row.lastMessageAt as string) ?? null,
-    pinned: (row.pinned as number) === 1,
-    createdAt: row.createdAt as string,
-    updatedAt: row.updatedAt as string,
+    title: row.title,
+    participants: JSON.parse(row.participants || "[]"),
+    lastMessage: row.lastMessage ?? null,
+    lastMessageAt: row.lastMessageAt ?? null,
+    pinned: row.pinned === 1,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
-function rowToMessage(row: Record<string, unknown>): Message {
+function rowToMessage(row: typeof messages.$inferSelect): Message {
   return {
-    id: row.id as string,
-    conversationId: row.conversationId as string,
+    id: row.id,
+    conversationId: row.conversationId,
     role: row.role as Message["role"],
-    senderModelId: (row.senderModelId as string) ?? null,
-    senderName: (row.senderName as string) ?? null,
-    identityId: (row.identityId as string) ?? null,
-    content: (row.content as string) || "",
-    reasoningContent: (row.reasoningContent as string) ?? null,
-    toolCalls: JSON.parse((row.toolCalls as string) || "[]"),
-    toolResults: JSON.parse((row.toolResults as string) || "[]"),
-    branchId: (row.branchId as string) ?? null,
-    parentMessageId: (row.parentMessageId as string) ?? null,
-    isStreaming: (row.isStreaming as number) === 1,
-    createdAt: row.createdAt as string,
+    senderModelId: row.senderModelId ?? null,
+    senderName: row.senderName ?? null,
+    identityId: row.identityId ?? null,
+    content: row.content || "",
+    reasoningContent: row.reasoningContent ?? null,
+    toolCalls: JSON.parse(row.toolCalls || "[]"),
+    toolResults: JSON.parse(row.toolResults || "[]"),
+    branchId: row.branchId ?? null,
+    parentMessageId: row.parentMessageId ?? null,
+    isStreaming: row.isStreaming === 1,
+    createdAt: row.createdAt,
   };
 }
 
-// ─── Public API ───
-
-export async function getDatabase() {
-  return getNativeDb();
-}
+// ─── Conversations ───
 
 export async function insertConversation(conv: Conversation): Promise<void> {
-  const database = await getNativeDb();
-  await database.runAsync(
-    `INSERT INTO conversations (id, type, title, participants, lastMessage, lastMessageAt, pinned, createdAt, updatedAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    conv.id, conv.type, conv.title, JSON.stringify(conv.participants),
-    conv.lastMessage, conv.lastMessageAt, conv.pinned ? 1 : 0, conv.createdAt, conv.updatedAt,
-  );
+  await db.insert(conversations).values({
+    id: conv.id,
+    type: conv.type,
+    title: conv.title,
+    participants: JSON.stringify(conv.participants),
+    lastMessage: conv.lastMessage,
+    lastMessageAt: conv.lastMessageAt,
+    pinned: conv.pinned ? 1 : 0,
+    createdAt: conv.createdAt,
+    updatedAt: conv.updatedAt,
+  });
 }
 
 export async function updateConversation(id: string, updates: Partial<Conversation>): Promise<void> {
-  const database = await getNativeDb();
-  const fields: string[] = [];
-  const values: (string | number | null)[] = [];
-  if (updates.title !== undefined) { fields.push("title = ?"); values.push(updates.title); }
-  if (updates.participants !== undefined) { fields.push("participants = ?"); values.push(JSON.stringify(updates.participants)); }
-  if (updates.lastMessage !== undefined) { fields.push("lastMessage = ?"); values.push(updates.lastMessage); }
-  if (updates.lastMessageAt !== undefined) { fields.push("lastMessageAt = ?"); values.push(updates.lastMessageAt); }
-  if (updates.pinned !== undefined) { fields.push("pinned = ?"); values.push(updates.pinned ? 1 : 0); }
-  fields.push("updatedAt = ?"); values.push(new Date().toISOString());
-  values.push(id);
-  if (fields.length > 0) {
-    await database.runAsync(`UPDATE conversations SET ${fields.join(", ")} WHERE id = ?`, ...values);
-  }
+  const values: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+  if (updates.title !== undefined) values.title = updates.title;
+  if (updates.participants !== undefined) values.participants = JSON.stringify(updates.participants);
+  if (updates.lastMessage !== undefined) values.lastMessage = updates.lastMessage;
+  if (updates.lastMessageAt !== undefined) values.lastMessageAt = updates.lastMessageAt;
+  if (updates.pinned !== undefined) values.pinned = updates.pinned ? 1 : 0;
+
+  await db.update(conversations).set(values).where(eq(conversations.id, id));
 }
 
 export async function deleteConversation(id: string): Promise<void> {
-  const database = await getNativeDb();
-  await database.runAsync("DELETE FROM messages WHERE conversationId = ?", id);
-  await database.runAsync("DELETE FROM conversations WHERE id = ?", id);
+  await db.delete(messages).where(eq(messages.conversationId, id));
+  await db.delete(conversations).where(eq(conversations.id, id));
 }
 
 export async function getAllConversations(): Promise<Conversation[]> {
-  const database = await getNativeDb();
-  const rows = await database.getAllAsync<Record<string, unknown>>(
-    "SELECT * FROM conversations ORDER BY pinned DESC, updatedAt DESC",
-  );
+  const rows = await db
+    .select()
+    .from(conversations)
+    .orderBy(desc(conversations.pinned), desc(conversations.updatedAt));
   return rows.map(rowToConversation);
 }
 
 export async function getConversation(id: string): Promise<Conversation | null> {
-  const database = await getNativeDb();
-  const row = await database.getFirstAsync<Record<string, unknown>>(
-    "SELECT * FROM conversations WHERE id = ?", id,
-  );
-  return row ? rowToConversation(row) : null;
+  const rows = await db.select().from(conversations).where(eq(conversations.id, id)).limit(1);
+  return rows.length > 0 ? rowToConversation(rows[0]) : null;
 }
 
+// ─── Messages ───
+
 export async function insertMessage(msg: Message): Promise<void> {
-  const database = await getNativeDb();
-  await database.runAsync(
-    `INSERT INTO messages (id, conversationId, role, senderModelId, senderName, identityId, content, reasoningContent, toolCalls, toolResults, branchId, parentMessageId, isStreaming, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    msg.id, msg.conversationId, msg.role, msg.senderModelId, msg.senderName, msg.identityId,
-    msg.content, msg.reasoningContent, JSON.stringify(msg.toolCalls), JSON.stringify(msg.toolResults),
-    msg.branchId, msg.parentMessageId, msg.isStreaming ? 1 : 0, msg.createdAt,
-  );
+  await db.insert(messages).values({
+    id: msg.id,
+    conversationId: msg.conversationId,
+    role: msg.role,
+    senderModelId: msg.senderModelId,
+    senderName: msg.senderName,
+    identityId: msg.identityId,
+    content: msg.content,
+    reasoningContent: msg.reasoningContent,
+    toolCalls: JSON.stringify(msg.toolCalls),
+    toolResults: JSON.stringify(msg.toolResults),
+    branchId: msg.branchId,
+    parentMessageId: msg.parentMessageId,
+    isStreaming: msg.isStreaming ? 1 : 0,
+    createdAt: msg.createdAt,
+  });
 }
 
 export async function updateMessage(id: string, updates: Partial<Message>): Promise<void> {
-  const database = await getNativeDb();
-  const fields: string[] = [];
-  const values: (string | number | null)[] = [];
-  if (updates.content !== undefined) { fields.push("content = ?"); values.push(updates.content); }
-  if (updates.reasoningContent !== undefined) { fields.push("reasoningContent = ?"); values.push(updates.reasoningContent); }
-  if (updates.toolCalls !== undefined) { fields.push("toolCalls = ?"); values.push(JSON.stringify(updates.toolCalls)); }
-  if (updates.toolResults !== undefined) { fields.push("toolResults = ?"); values.push(JSON.stringify(updates.toolResults)); }
-  if (updates.isStreaming !== undefined) { fields.push("isStreaming = ?"); values.push(updates.isStreaming ? 1 : 0); }
-  values.push(id);
-  if (fields.length > 0) {
-    await database.runAsync(`UPDATE messages SET ${fields.join(", ")} WHERE id = ?`, ...values);
+  const values: Record<string, unknown> = {};
+  if (updates.content !== undefined) values.content = updates.content;
+  if (updates.reasoningContent !== undefined) values.reasoningContent = updates.reasoningContent;
+  if (updates.toolCalls !== undefined) values.toolCalls = JSON.stringify(updates.toolCalls);
+  if (updates.toolResults !== undefined) values.toolResults = JSON.stringify(updates.toolResults);
+  if (updates.isStreaming !== undefined) values.isStreaming = updates.isStreaming ? 1 : 0;
+
+  if (Object.keys(values).length > 0) {
+    await db.update(messages).set(values).where(eq(messages.id, id));
   }
 }
 
@@ -178,32 +158,48 @@ export async function getMessages(
   limit = 100,
   offset = 0,
 ): Promise<Message[]> {
-  const database = await getNativeDb();
-  let query = "SELECT * FROM messages WHERE conversationId = ?";
-  const params: (string | number | null)[] = [conversationId];
+  const conditions = [eq(messages.conversationId, conversationId)];
+
   if (branchId !== undefined) {
-    query += " AND (branchId = ? OR branchId IS NULL)";
-    params.push(branchId ?? null);
+    conditions.push(
+      or(
+        eq(messages.branchId, branchId ?? ""),
+        isNull(messages.branchId),
+      )!,
+    );
   }
-  query += " ORDER BY createdAt ASC LIMIT ? OFFSET ?";
-  params.push(limit, offset);
-  const rows = await database.getAllAsync<Record<string, unknown>>(query, ...params);
+
+  const rows = await db
+    .select()
+    .from(messages)
+    .where(and(...conditions))
+    .orderBy(asc(messages.createdAt))
+    .limit(limit)
+    .offset(offset);
+
   return rows.map(rowToMessage);
 }
 
 export async function searchMessages(query: string): Promise<Message[]> {
-  const database = await getNativeDb();
-  const rows = await database.getAllAsync<Record<string, unknown>>(
-    `SELECT m.* FROM messages m
-     JOIN messages_fts fts ON m.rowid = fts.rowid
-     WHERE messages_fts MATCH ?
-     ORDER BY m.createdAt DESC LIMIT 50`,
-    query,
-  );
+  const rows = await db
+    .select()
+    .from(messages)
+    .where(like(messages.content, `%${query}%`))
+    .orderBy(desc(messages.createdAt))
+    .limit(50);
   return rows.map(rowToMessage);
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-  const database = await getNativeDb();
-  await database.runAsync("DELETE FROM messages WHERE id = ?", id);
+  await db.delete(messages).where(eq(messages.id, id));
 }
+
+// Re-export for backward compat
+export {
+  updateMessage as dbUpdateMessage,
+  deleteConversation as dbDeleteConversation,
+  updateConversation as dbUpdateConversation,
+  getMessages as dbGetMessages,
+  searchMessages as dbSearchMessages,
+  deleteMessage as dbDeleteMessage,
+};
