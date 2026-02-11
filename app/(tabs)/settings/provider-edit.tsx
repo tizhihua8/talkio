@@ -18,6 +18,7 @@ export default function ProviderEditScreen() {
   const testConnection = useProviderStore((s) => s.testConnection);
   const fetchModels = useProviderStore((s) => s.fetchModels);
   const toggleModel = useProviderStore((s) => s.toggleModel);
+  const setProviderModelsEnabled = useProviderStore((s) => s.setProviderModelsEnabled);
   const allModels = useProviderStore((s) => s.models);
 
   const [name, setName] = useState("");
@@ -210,8 +211,21 @@ export default function ProviderEditScreen() {
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between px-1">
             <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
-              Pulled Models ({pulledModels.length})
+              Pulled Models ({displayModels.length})
             </Text>
+            <View className="flex-row items-center gap-4">
+              {savedProviderId && displayModels.length > 0 && (
+                <>
+                  <Pressable onPress={() => {
+                    const allEnabled = displayModels.every((m) => m.enabled);
+                    setProviderModelsEnabled(savedProviderId, !allEnabled);
+                  }}>
+                    <Text className="text-[13px] font-medium text-primary">
+                      {displayModels.every((m) => m.enabled) ? "Deselect All" : "Select All"}
+                    </Text>
+                  </Pressable>
+                </>
+              )}
             <Pressable onPress={handlePullModels} disabled={pulling} className="flex-row items-center">
               {pulling ? (
                 <ActivityIndicator size="small" color="#007AFF" />
@@ -222,6 +236,7 @@ export default function ProviderEditScreen() {
                 </>
               )}
             </Pressable>
+            </View>
           </View>
 
           <View className="mt-3 gap-3">

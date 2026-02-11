@@ -16,6 +16,7 @@ interface ProviderState {
   testConnection: (id: string) => Promise<boolean>;
   fetchModels: (providerId: string) => Promise<Model[]>;
   toggleModel: (modelId: string) => void;
+  setProviderModelsEnabled: (providerId: string, enabled: boolean) => void;
   updateModelCapabilities: (modelId: string, caps: Partial<ModelCapabilities>) => void;
   probeModelCapabilities: (modelId: string) => Promise<ModelCapabilities>;
   getProviderById: (id: string) => Provider | undefined;
@@ -111,6 +112,14 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
   toggleModel: (modelId) => {
     const models = get().models.map((m) =>
       m.id === modelId ? { ...m, enabled: !m.enabled } : m,
+    );
+    set({ models });
+    setItem(STORAGE_KEYS.MODELS, models);
+  },
+
+  setProviderModelsEnabled: (providerId, enabled) => {
+    const models = get().models.map((m) =>
+      m.providerId === providerId ? { ...m, enabled } : m,
     );
     set({ models });
     setItem(STORAGE_KEYS.MODELS, models);
