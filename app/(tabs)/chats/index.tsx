@@ -94,10 +94,14 @@ export default function ChatsScreen() {
     [handleDelete, t],
   );
 
+  const getProviderById = useProviderStore((s) => s.getProviderById);
+
   const renderItem = useCallback(
     ({ item }: { item: Conversation }) => {
       const firstModel = getModelById(item.participants[0]?.modelId);
       const modelName = firstModel?.displayName ?? t("common.unknown");
+      const provider = firstModel ? getProviderById(firstModel.providerId) : null;
+      const isConnected = provider?.status === "connected";
       const identity = item.participants[0]?.identityId
         ? getIdentityById(item.participants[0].identityId)
         : null;
@@ -117,7 +121,7 @@ export default function ChatsScreen() {
                 <ModelAvatar name={modelName} size="md" />
               </View>
               {firstModel && (
-                <View className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-accent-green" />
+                <View className={`absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${isConnected ? "bg-accent-green" : "bg-slate-300"}`} />
               )}
             </View>
             <View className="flex-1">
