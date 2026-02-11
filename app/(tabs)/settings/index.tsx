@@ -42,7 +42,7 @@ export default function SettingsScreen() {
           <Switch
             value={settings.hapticFeedback}
             onValueChange={(v) => updateSettings({ hapticFeedback: v })}
-            trackColor={{ true: "#2b2bee" }}
+            trackColor={{ true: "#007AFF" }}
           />
         </View>
         <View className="mx-4 h-px bg-border-light" />
@@ -54,7 +54,7 @@ export default function SettingsScreen() {
           <Switch
             value={settings.quickPromptEnabled}
             onValueChange={(v) => updateSettings({ quickPromptEnabled: v })}
-            trackColor={{ true: "#2b2bee" }}
+            trackColor={{ true: "#007AFF" }}
           />
         </View>
         <View className="mx-4 h-px bg-border-light" />
@@ -66,7 +66,7 @@ export default function SettingsScreen() {
           <Switch
             value={settings.voiceAutoTranscribe}
             onValueChange={(v) => updateSettings({ voiceAutoTranscribe: v })}
-            trackColor={{ true: "#2b2bee" }}
+            trackColor={{ true: "#007AFF" }}
           />
         </View>
       </View>

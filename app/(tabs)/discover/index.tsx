@@ -7,6 +7,24 @@ import type { Identity, McpTool } from "../../../src/types";
 
 type Tab = "identities" | "tools";
 
+const ICON_COLORS: Array<{ bg: string; color: string }> = [
+  { bg: "bg-blue-100", color: "#2563eb" },
+  { bg: "bg-purple-100", color: "#9333ea" },
+  { bg: "bg-rose-100", color: "#e11d48" },
+  { bg: "bg-amber-100", color: "#d97706" },
+  { bg: "bg-emerald-100", color: "#059669" },
+  { bg: "bg-cyan-100", color: "#0891b2" },
+];
+
+const IDENTITY_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
+  "terminal-outline",
+  "sparkles",
+  "bug-outline",
+  "language-outline",
+  "code-slash-outline",
+  "leaf-outline",
+];
+
 export default function DiscoverScreen() {
   const router = useRouter();
   const identities = useIdentityStore((s) => s.identities);
@@ -31,33 +49,41 @@ export default function DiscoverScreen() {
 
   return (
     <View className="flex-1 bg-bg-secondary">
-      <View className="flex-row bg-white px-4 pb-3">
-        {(["identities", "tools"] as Tab[]).map((tab) => (
-          <Pressable
-            key={tab}
-            onPress={() => setActiveTab(tab)}
-            className={`mr-3 rounded-full px-4 py-2 ${
-              activeTab === tab ? "bg-primary" : "bg-bg-secondary"
-            }`}
-          >
-            <Text
-              className={`text-sm font-medium ${
-                activeTab === tab ? "text-white" : "text-text-muted"
+      <View className="bg-white px-5 pb-4">
+        <View className="flex-row rounded-xl bg-slate-200/60 p-1">
+          {(["identities", "tools"] as Tab[]).map((tab) => (
+            <Pressable
+              key={tab}
+              onPress={() => setActiveTab(tab)}
+              className={`flex-1 items-center rounded-lg py-1.5 ${
+                activeTab === tab ? "bg-white" : ""
               }`}
+              style={
+                activeTab === tab
+                  ? { shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 2 }
+                  : undefined
+              }
             >
-              {tab === "identities" ? "Identity Cards" : "MCP Tools"}
-            </Text>
-          </Pressable>
-        ))}
+              <Text
+                className={`text-sm font-semibold ${
+                  activeTab === tab ? "text-primary" : "text-slate-500"
+                }`}
+              >
+                {tab === "identities" ? "Identity Cards" : "MCP Tools"}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
       </View>
 
-      <ScrollView className="flex-1 px-4 pt-3">
+      <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 100 }}>
         {activeTab === "identities" ? (
-          <>
-            {identities.map((identity) => (
+          <View className="gap-4">
+            {identities.map((identity, idx) => (
               <IdentityCard
                 key={identity.id}
                 identity={identity}
+                colorIndex={idx}
                 onEdit={() =>
                   router.push({
                     pathname: "/(tabs)/discover/identity-edit",
@@ -67,18 +93,9 @@ export default function DiscoverScreen() {
                 onDelete={() => handleDeleteIdentity(identity.id)}
               />
             ))}
-            <Pressable
-              onPress={() => router.push("/(tabs)/discover/identity-edit")}
-              className="mb-4 items-center rounded-xl border border-dashed border-border-light bg-white py-6"
-            >
-              <Ionicons name="add-circle-outline" size={28} color="#2b2bee" />
-              <Text className="mt-1 text-sm font-medium text-primary">
-                Create Identity Card
-              </Text>
-            </Pressable>
-          </>
+          </View>
         ) : (
-          <>
+          <View className="gap-4">
             {mcpTools.map((tool) => (
               <ToolCard
                 key={tool.id}
@@ -92,48 +109,81 @@ export default function DiscoverScreen() {
                 onDelete={() => handleDeleteTool(tool.id)}
               />
             ))}
-            <Pressable
-              onPress={() => router.push("/(tabs)/discover/tool-edit")}
-              className="mb-4 items-center rounded-xl border border-dashed border-border-light bg-white py-6"
-            >
-              <Ionicons name="add-circle-outline" size={28} color="#2b2bee" />
-              <Text className="mt-1 text-sm font-medium text-primary">
-                Add MCP Tool
-              </Text>
-            </Pressable>
-          </>
+          </View>
         )}
       </ScrollView>
+
+      <View className="absolute bottom-20 left-0 right-0 px-5">
+        <Pressable
+          onPress={() =>
+            router.push(
+              activeTab === "identities"
+                ? "/(tabs)/discover/identity-edit"
+                : "/(tabs)/discover/tool-edit",
+            )
+          }
+          className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4"
+          style={{ shadowColor: "#007AFF", shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}
+        >
+          <Ionicons name="add-circle" size={22} color="#fff" />
+          <Text className="text-base font-semibold text-white">
+            {activeTab === "identities" ? "Create New Identity Card" : "Add MCP Tool"}
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 function IdentityCard({
   identity,
+  colorIndex,
   onEdit,
   onDelete,
 }: {
   identity: Identity;
+  colorIndex: number;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const colorSet = ICON_COLORS[colorIndex % ICON_COLORS.length];
+  const iconName = IDENTITY_ICONS[colorIndex % IDENTITY_ICONS.length];
+
   return (
-    <Pressable onPress={onEdit} onLongPress={onDelete} className="mb-3 rounded-xl bg-white p-4">
-      <View className="flex-row items-center">
-        <View className="h-10 w-10 items-center justify-center rounded-lg bg-primary-light">
-          <Ionicons name="sparkles" size={20} color="#2b2bee" />
+    <Pressable
+      onPress={onEdit}
+      onLongPress={onDelete}
+      className="rounded-xl border border-slate-100 bg-white p-4"
+      style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
+    >
+      <View className="flex-row items-start gap-4">
+        <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
+          <Ionicons name={iconName} size={24} color={colorSet.color} />
         </View>
-        <View className="ml-3 flex-1">
-          <Text className="text-base font-semibold text-text-main">{identity.name}</Text>
-          <Text className="text-xs text-text-muted">
-            Temp: {identity.params.temperature} · MCP: {identity.mcpToolIds.length} tools
+        <View className="flex-1">
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-text-main" numberOfLines={1}>
+              {identity.name}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+          </View>
+          <View className="mb-3 flex-row gap-2">
+            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                Temp: {identity.params.temperature}
+              </Text>
+            </View>
+            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                Tools: {identity.mcpToolIds.length}
+              </Text>
+            </View>
+          </View>
+          <Text className="text-sm leading-relaxed text-slate-500" numberOfLines={2}>
+            {identity.systemPrompt}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </View>
-      <Text className="mt-2 text-sm text-text-muted" numberOfLines={2}>
-        {identity.systemPrompt}
-      </Text>
     </Pressable>
   );
 }
@@ -147,31 +197,56 @@ function ToolCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const isLocal = tool.type === "local";
+
   return (
-    <Pressable onPress={onEdit} onLongPress={onDelete} className="mb-3 rounded-xl bg-white p-4">
-      <View className="flex-row items-center">
+    <Pressable
+      onPress={onEdit}
+      onLongPress={onDelete}
+      className="rounded-xl border border-slate-100 bg-white p-4"
+      style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
+    >
+      <View className="flex-row items-start gap-4">
         <View
-          className={`h-10 w-10 items-center justify-center rounded-lg ${
-            tool.type === "local" ? "bg-emerald-50" : "bg-blue-50"
+          className={`h-12 w-12 items-center justify-center rounded-xl ${
+            isLocal ? "bg-emerald-100" : "bg-blue-100"
           }`}
         >
           <Ionicons
-            name={tool.type === "local" ? "phone-portrait-outline" : "cloud-outline"}
-            size={20}
-            color={tool.type === "local" ? "#059669" : "#2563eb"}
+            name={isLocal ? "phone-portrait-outline" : "cloud-outline"}
+            size={24}
+            color={isLocal ? "#059669" : "#2563eb"}
           />
         </View>
-        <View className="ml-3 flex-1">
-          <Text className="text-base font-semibold text-text-main">{tool.name}</Text>
-          <Text className="text-xs text-text-muted">
-            {tool.type} · {tool.scope} · {tool.enabled ? "Enabled" : "Disabled"}
+        <View className="flex-1">
+          <View className="mb-1 flex-row items-center justify-between">
+            <Text className="text-lg font-bold text-text-main" numberOfLines={1}>
+              {tool.name}
+            </Text>
+            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+          </View>
+          <View className="mb-3 flex-row gap-2">
+            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                {tool.type}
+              </Text>
+            </View>
+            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+                {tool.scope}
+              </Text>
+            </View>
+            <View className={`rounded px-2 py-0.5 ${tool.enabled ? "bg-primary/10" : "bg-slate-100"}`}>
+              <Text className={`text-[10px] font-bold uppercase tracking-wider ${tool.enabled ? "text-primary" : "text-slate-500"}`}>
+                {tool.enabled ? "Enabled" : "Disabled"}
+              </Text>
+            </View>
+          </View>
+          <Text className="text-sm leading-relaxed text-slate-500" numberOfLines={1}>
+            {tool.description}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
       </View>
-      <Text className="mt-2 text-sm text-text-muted" numberOfLines={1}>
-        {tool.description}
-      </Text>
     </Pressable>
   );
 }
