@@ -7,6 +7,7 @@ module.exports = function (api) {
     ],
     plugins: [
       "babel-plugin-react-compiler",
+      "react-native-reanimated/plugin",
     ],
   };
 };
