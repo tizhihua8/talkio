@@ -12,76 +12,103 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary">
-      <View className="mx-4 mt-3 rounded-xl bg-white">
-        <SettingsRow
-          icon="server-outline"
-          label="Providers"
-          detail={`${providers.length} configured`}
-          onPress={() => router.push("/(tabs)/settings/providers")}
-        />
-        <SettingsRow
-          icon="sync-outline"
-          label="Data Sync"
-          detail={settings.syncEnabled ? "Enabled" : "Off"}
-          onPress={() => router.push("/(tabs)/settings/sync")}
-        />
-        <SettingsRow
-          icon="shield-checkmark-outline"
-          label="Privacy & Permissions"
-          onPress={() => router.push("/(tabs)/settings/privacy")}
-          isLast
-        />
-      </View>
-
-      <View className="mx-4 mt-4 rounded-xl bg-white">
-        <View className="flex-row items-center justify-between px-4 py-3.5">
-          <View className="flex-row items-center">
-            <Ionicons name="hand-left-outline" size={20} color="#6b7280" />
-            <Text className="ml-3 text-base text-text-main">Haptic Feedback</Text>
-          </View>
-          <Switch
-            value={settings.hapticFeedback}
-            onValueChange={(v) => updateSettings({ hapticFeedback: v })}
-            trackColor={{ true: "#007AFF" }}
+      <View className="px-5 mb-8">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Configuration
+        </Text>
+        <View
+          className="overflow-hidden rounded-xl border border-slate-100 bg-white"
+          style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
+        >
+          <SettingsRow
+            icon="git-network-outline"
+            iconBg="bg-blue-500/10"
+            iconColor="#3b82f6"
+            label="Providers"
+            detail={`${providers.length} configured`}
+            onPress={() => router.push("/(tabs)/settings/providers")}
           />
-        </View>
-        <View className="mx-4 h-px bg-border-light" />
-        <View className="flex-row items-center justify-between px-4 py-3.5">
-          <View className="flex-row items-center">
-            <Ionicons name="flash-outline" size={20} color="#6b7280" />
-            <Text className="ml-3 text-base text-text-main">Quick Prompts</Text>
-          </View>
-          <Switch
-            value={settings.quickPromptEnabled}
-            onValueChange={(v) => updateSettings({ quickPromptEnabled: v })}
-            trackColor={{ true: "#007AFF" }}
+          <SettingsRow
+            icon="sync-outline"
+            iconBg="bg-orange-500/10"
+            iconColor="#f97316"
+            label="Data Sync"
+            detail={settings.syncEnabled ? "Enabled" : "Off"}
+            onPress={() => router.push("/(tabs)/settings/sync")}
           />
-        </View>
-        <View className="mx-4 h-px bg-border-light" />
-        <View className="flex-row items-center justify-between px-4 py-3.5">
-          <View className="flex-row items-center">
-            <Ionicons name="mic-outline" size={20} color="#6b7280" />
-            <Text className="ml-3 text-base text-text-main">Voice Auto-transcribe</Text>
-          </View>
-          <Switch
-            value={settings.voiceAutoTranscribe}
-            onValueChange={(v) => updateSettings({ voiceAutoTranscribe: v })}
-            trackColor={{ true: "#007AFF" }}
+          <SettingsRow
+            icon="lock-closed-outline"
+            iconBg="bg-green-500/10"
+            iconColor="#22c55e"
+            label="Privacy & Permissions"
+            onPress={() => router.push("/(tabs)/settings/privacy")}
+            isLast
           />
         </View>
       </View>
 
-      <View className="mx-4 mt-4 rounded-xl bg-white">
-        <View className="items-center px-4 py-6">
-          <Ionicons name="lock-closed" size={20} color="#9ca3af" />
-          <Text className="mt-2 text-center text-xs text-text-hint">
-            End-to-End Encryption{"\n"}API keys are stored securely on this device{"\n"}and are never sent to our servers.
+      <View className="px-5 mb-8">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Interactions
+        </Text>
+        <View
+          className="overflow-hidden rounded-xl border border-slate-100 bg-white"
+          style={{ shadowColor: "#000", shadowOpacity: 0.04, shadowRadius: 3, shadowOffset: { width: 0, height: 1 }, elevation: 1 }}
+        >
+          <View className="flex-row items-center justify-between p-4 border-b border-slate-50">
+            <View className="flex-row items-center">
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-gray-500/10">
+                <Ionicons name="hand-left-outline" size={16} color="#6b7280" />
+              </View>
+              <Text className="text-[15px] font-medium text-text-main">Haptic Feedback</Text>
+            </View>
+            <Switch
+              value={settings.hapticFeedback}
+              onValueChange={(v) => updateSettings({ hapticFeedback: v })}
+              trackColor={{ true: "#007AFF" }}
+            />
+          </View>
+          <View className="flex-row items-center justify-between p-4 border-b border-slate-50">
+            <View className="flex-row items-center">
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-purple-500/10">
+                <Ionicons name="flash-outline" size={16} color="#a855f7" />
+              </View>
+              <Text className="text-[15px] font-medium text-text-main">Quick Prompts</Text>
+            </View>
+            <Switch
+              value={settings.quickPromptEnabled}
+              onValueChange={(v) => updateSettings({ quickPromptEnabled: v })}
+              trackColor={{ true: "#007AFF" }}
+            />
+          </View>
+          <View className="flex-row items-center justify-between p-4">
+            <View className="flex-row items-center">
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-red-500/10">
+                <Ionicons name="mic-outline" size={16} color="#ef4444" />
+              </View>
+              <Text className="text-[15px] font-medium text-text-main">Voice Auto-transcribe</Text>
+            </View>
+            <Switch
+              value={settings.voiceAutoTranscribe}
+              onValueChange={(v) => updateSettings({ voiceAutoTranscribe: v })}
+              trackColor={{ true: "#007AFF" }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View className="px-8 mt-4">
+        <View className="rounded-xl border border-blue-100/50 bg-blue-50/50 p-4 mb-6">
+          <Text className="text-center text-xs leading-relaxed text-slate-500">
+            <Ionicons name="shield-checkmark" size={10} color="#6b7280" /> Security Tip: API Keys are end-to-end encrypted and stored only locally.
           </Text>
         </View>
-      </View>
-
-      <View className="items-center py-6">
-        <Text className="text-xs text-text-hint">Avatar v0.1.0</Text>
+        <View className="items-center pb-6">
+          <Text className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+            Avatar AI Client
+          </Text>
+          <Text className="mt-1 text-xs text-slate-400">v0.1.0</Text>
+        </View>
       </View>
     </ScrollView>
   );
@@ -89,26 +116,36 @@ export default function SettingsScreen() {
 
 function SettingsRow({
   icon,
+  iconBg,
+  iconColor,
   label,
   detail,
   onPress,
   isLast = false,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
+  iconBg: string;
+  iconColor: string;
   label: string;
   detail?: string;
   onPress: () => void;
   isLast?: boolean;
 }) {
   return (
-    <>
-      <Pressable onPress={onPress} className="flex-row items-center px-4 py-3.5">
-        <Ionicons name={icon} size={20} color="#6b7280" />
-        <Text className="ml-3 flex-1 text-base text-text-main">{label}</Text>
-        {detail && <Text className="mr-2 text-sm text-text-muted">{detail}</Text>}
-        <Ionicons name="chevron-forward" size={18} color="#d1d5db" />
-      </Pressable>
-      {!isLast && <View className="mx-4 h-px bg-border-light" />}
-    </>
+    <Pressable
+      onPress={onPress}
+      className={`flex-row items-center justify-between p-4 ${!isLast ? "border-b border-slate-50" : ""}`}
+    >
+      <View className="flex-row items-center">
+        <View className={`mr-3 h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
+          <Ionicons name={icon} size={16} color={iconColor} />
+        </View>
+        <Text className="text-[15px] font-medium text-text-main">{label}</Text>
+      </View>
+      <View className="flex-row items-center">
+        {detail && <Text className="mr-2 text-sm text-slate-400">{detail}</Text>}
+        <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+      </View>
+    </Pressable>
   );
 }
