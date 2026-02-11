@@ -1,49 +1,27 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { Markdown } from "react-native-remark";
+import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { Message } from "../../types";
+
 const mdStyles = {
-  container: { margin: 0, padding: 0, gap: 0 },
-  text: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
-  paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginTop: 0, marginBottom: 0 },
-  heading: (level: number) => ({
-    fontSize: [22, 19, 17, 15, 14, 13][level - 1] ?? 15,
-    fontWeight: (level <= 2 ? "700" : "600") as "700" | "600",
-    color: "#111827",
-    marginTop: 10,
-    marginBottom: 4,
-  }),
+  body: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
+  heading1: { fontSize: 22, fontWeight: "700" as const, color: "#111827", marginTop: 8, marginBottom: 4 },
+  heading2: { fontSize: 19, fontWeight: "700" as const, color: "#111827", marginTop: 6, marginBottom: 4 },
+  heading3: { fontSize: 17, fontWeight: "600" as const, color: "#111827", marginTop: 4, marginBottom: 2 },
+  paragraph: { marginTop: 0, marginBottom: 6 },
   strong: { fontWeight: "700" as const },
-  emphasis: { fontStyle: "italic" as const },
-  link: { color: "#2563eb", textDecorationLine: "underline" as const },
-  inlineCode: {
-    backgroundColor: "#f3f4f6",
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-    fontSize: 13,
-    fontFamily: "monospace",
-    color: "#e11d48",
-  },
-  codeBlock: {
-    headerBackgroundColor: "#374151",
-    contentBackgroundColor: "#1f2937",
-    headerTextStyle: { color: "#9ca3af", fontSize: 12 },
-    contentTextStyle: { color: "#e5e7eb", fontSize: 13, fontFamily: "monospace" },
-  },
-  blockquote: {
-    backgroundColor: "#f9fafb",
-    borderRadius: 4,
-    paddingLeft: 12,
-    paddingVertical: 4,
-    marginVertical: 6,
-  },
-  borderColor: "#d1d5db",
-  list: { gap: 0, marginBottom: 0 },
-  listItem: { gap: 0, marginBottom: 0 },
-  thematicBreak: { backgroundColor: "#e5e7eb", height: 1, marginVertical: 6 },
+  em: { fontStyle: "italic" as const },
+  link: { color: "#2563eb" },
+  blockquote: { backgroundColor: "#f9fafb", borderLeftWidth: 3, borderLeftColor: "#d1d5db", paddingLeft: 10, paddingVertical: 4, marginVertical: 4 },
+  code_inline: { backgroundColor: "#f3f4f6", paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, fontSize: 13, fontFamily: "monospace", color: "#e11d48" },
+  code_block: { backgroundColor: "#1f2937", padding: 12, borderRadius: 8, fontSize: 13, fontFamily: "monospace", color: "#e5e7eb", marginVertical: 4 },
+  fence: { backgroundColor: "#1f2937", padding: 12, borderRadius: 8, fontSize: 13, fontFamily: "monospace", color: "#e5e7eb", marginVertical: 4 },
+  bullet_list: { marginVertical: 2 },
+  ordered_list: { marginVertical: 2 },
+  list_item: { marginVertical: 2 },
+  hr: { backgroundColor: "#e5e7eb", height: 1, marginVertical: 8 },
 };
 
 interface MessageBubbleProps {
@@ -120,12 +98,9 @@ export function MessageBubble({
               <Ionicons name="ellipsis-horizontal" size={20} color="#6b7280" />
             </View>
           ) : (
-            <View style={{ flexShrink: 1, flexGrow: 0 }}>
-              <Markdown
-                markdown={markdownContent}
-                customStyles={mdStyles}
-              />
-            </View>
+            <Markdown style={mdStyles}>
+              {markdownContent}
+            </Markdown>
           )}
         </Pressable>
 
