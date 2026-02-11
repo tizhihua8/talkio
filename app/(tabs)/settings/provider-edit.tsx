@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Alert, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { CapabilityTag } from "../../../src/components/common/CapabilityTag";
@@ -9,7 +9,13 @@ import type { Model } from "../../../src/types";
 
 export default function ProviderEditScreen() {
   const router = useRouter();
+  const { id: editId } = useLocalSearchParams<{ id?: string }>();
+  const isEditing = !!editId;
+
   const addProvider = useProviderStore((s) => s.addProvider);
+  const updateProvider = useProviderStore((s) => s.updateProvider);
+  const getProviderById = useProviderStore((s) => s.getProviderById);
+  const getModelsByProvider = useProviderStore((s) => s.getModelsByProvider);
   const testConnection = useProviderStore((s) => s.testConnection);
   const fetchModels = useProviderStore((s) => s.fetchModels);
 
@@ -22,6 +28,20 @@ export default function ProviderEditScreen() {
   const [pulling, setPulling] = useState(false);
   const [savedProviderId, setSavedProviderId] = useState<string | null>(null);
   const [showApiKey, setShowApiKey] = useState(false);
+
+  useEffect(() => {
+    if (editId) {
+      const provider = getProviderById(editId);
+      if (provider) {
+        setName(provider.name);
+        setBaseUrl(provider.baseUrl);
+        setApiKey(provider.apiKey);
+        setSavedProviderId(provider.id);
+        setConnected(provider.status === "connected");
+        setPulledModels(getModelsByProvider(provider.id));
+      }
+    }
+  }, [editId]);
 
   const applyPreset = (key: string) => {
     const preset = PROVIDER_PRESETS[key];
@@ -38,15 +58,26 @@ export default function ProviderEditScreen() {
     }
 
     setTesting(true);
-    const provider = addProvider({
-      name: name.trim(),
-      type: "official",
-      baseUrl: baseUrl.trim(),
-      apiKey: apiKey.trim(),
-    });
-    setSavedProviderId(provider.id);
 
-    const ok = await testConnection(provider.id);
+    let providerId = savedProviderId;
+    if (isEditing && providerId) {
+      updateProvider(providerId, {
+        name: name.trim(),
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+    } else {
+      const provider = addProvider({
+        name: name.trim(),
+        type: "official",
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+      providerId = provider.id;
+      setSavedProviderId(providerId);
+    }
+
+    const ok = await testConnection(providerId!);
     setConnected(ok);
     setTesting(false);
 
@@ -69,6 +100,13 @@ export default function ProviderEditScreen() {
   };
 
   const handleSave = () => {
+    if (savedProviderId) {
+      updateProvider(savedProviderId, {
+        name: name.trim(),
+        baseUrl: baseUrl.trim(),
+        apiKey: apiKey.trim(),
+      });
+    }
     router.back();
   };
 
@@ -196,7 +234,7 @@ export default function ProviderEditScreen() {
 
       <View className="items-center pb-6">
         <Ionicons name="lock-closed" size={16} color="#9ca3af" />
-        <Text className="mt-1 text-center text-[10px] text-text-hint">
+        <Text className="mt-1 text-center text-xs text-text-hint">
           API keys are stored securely on this device and are never sent to our servers.
         </Text>
       </View>

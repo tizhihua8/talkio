@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { View, Text, Pressable, KeyboardAvoidingView, Platform, Alert, ActionSheetIOS } from "react-native";
-import { FlashList } from "@shopify/flash-list";
+import { FlashList, FlashListRef } from "@shopify/flash-list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useChatStore } from "../../../src/stores/chat-store";
@@ -15,7 +15,7 @@ export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const listRef = useRef<FlashList<Message>>(null);
+  const listRef = useRef<FlashListRef<Message>>(null);
 
   const conversations = useChatStore((s) => s.conversations);
   const messages = useChatStore((s) => s.messages);
@@ -178,7 +178,6 @@ export default function ChatDetailScreen() {
         ref={listRef}
         data={messages}
         renderItem={renderItem}
-        estimatedItemSize={100}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 8 }}
       />

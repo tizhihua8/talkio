@@ -125,7 +125,7 @@ export function MessageBubble({
         )}
 
         <View className="mt-0.5 flex-row items-center">
-          <Text className="text-[10px] text-text-hint">
+          <Text className="text-xs text-text-hint">
             {formatTime(message.createdAt)}
           </Text>
           {onBranch && !isUser && (

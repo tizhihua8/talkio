@@ -132,7 +132,6 @@ export default function ChatsScreen() {
         <FlashList
           data={filtered}
           renderItem={renderItem}
-          estimatedItemSize={72}
           keyExtractor={(item) => item.id}
         />
       )}

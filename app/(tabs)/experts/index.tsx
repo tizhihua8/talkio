@@ -154,7 +154,7 @@ export default function ExpertsScreen() {
                   {p.name.slice(0, 2)}
                 </Text>
               </View>
-              <Text className="mt-1 text-[10px] text-text-muted">{p.name}</Text>
+              <Text className="mt-1 text-xs text-text-muted">{p.name}</Text>
             </Pressable>
           ))}
           <Pressable
@@ -164,7 +164,7 @@ export default function ExpertsScreen() {
             <View className="h-12 w-12 items-center justify-center rounded-xl border border-dashed border-border-light">
               <Ionicons name="add" size={20} color="#9ca3af" />
             </View>
-            <Text className="mt-1 text-[10px] text-text-muted">Add</Text>
+            <Text className="mt-1 text-xs text-text-muted">Add</Text>
           </Pressable>
         </ScrollView>
       </View>
@@ -196,7 +196,6 @@ export default function ExpertsScreen() {
         <FlashList
           data={filtered}
           renderItem={renderModelItem}
-          estimatedItemSize={90}
           keyExtractor={(item) => item.id}
         />
       )}

@@ -26,6 +26,7 @@ export default function ProvidersScreen() {
         return (
           <Pressable
             key={p.id}
+            onPress={() => router.push({ pathname: "/(tabs)/settings/provider-edit", params: { id: p.id } })}
             onLongPress={() => handleDelete(p.id, p.name)}
             className="mx-4 mt-3 rounded-xl bg-white p-4"
           >
