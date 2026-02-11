@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
 import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -165,7 +166,25 @@ export default function ChatDetailScreen() {
     );
   }
 
+  const handleSwipeGesture = useCallback((event: any) => {
+    const { translationX, velocityX, state: gestureState } = event.nativeEvent;
+    if (gestureState === State.END && translationX > 0) {
+      const hasGoodDistance = translationX > 20;
+      const hasGoodVelocity = velocityX > 100;
+      const hasExcellentDistance = translationX > 80;
+      if ((hasGoodDistance && hasGoodVelocity) || hasExcellentDistance) {
+        router.back();
+      }
+    }
+  }, [router]);
+
   return (
+    <PanGestureHandler
+      onGestureEvent={handleSwipeGesture}
+      onHandlerStateChange={handleSwipeGesture}
+      activeOffsetX={[0, 10]}
+      failOffsetY={[-20, 20]}
+    >
     <KeyboardAvoidingView
       className="flex-1 bg-bg-chat"
       behavior="padding"
@@ -201,5 +220,6 @@ export default function ChatDetailScreen() {
         showQuickPrompts={!isGroup}
       />
     </KeyboardAvoidingView>
+    </PanGestureHandler>
   );
 }
