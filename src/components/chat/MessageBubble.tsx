@@ -68,7 +68,6 @@ export function MessageBubble({
       <View className="flex-1 flex-col gap-1">
         <Text className="ml-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
           {message.senderName}
-          {message.identityId ? ` (${message.identityId})` : ""}
         </Text>
 
         {message.reasoningContent && (
