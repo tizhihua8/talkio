@@ -95,6 +95,10 @@
     "models": "Models",
     "theme": "Theme",
     "language": "Language",
-    "about": "About"
+    "about": "About",
+    "languageSetting": "Language",
+    "langSystem": "System",
+    "langEn": "English",
+    "langZh": "中文"
   }
 }

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Switch } from "react-native";
+import { View, Text, Pressable, ScrollView, Switch, Platform, ActionSheetIOS } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -43,6 +43,25 @@ export default function SettingsScreen() {
             iconColor="#22c55e"
             label={t("settings.privacyPermissions")}
             onPress={() => router.push("/(tabs)/settings/privacy")}
+          />
+          <SettingsRow
+            icon="language-outline"
+            iconBg="bg-indigo-500/10"
+            iconColor="#6366f1"
+            label={t("settings.languageSetting")}
+            detail={settings.language === "system" ? t("settings.langSystem") : settings.language === "zh" ? t("settings.langZh") : t("settings.langEn")}
+            onPress={() => {
+              const options = [t("common.cancel"), t("settings.langSystem"), t("settings.langEn"), t("settings.langZh")];
+              const values: Array<"system" | "en" | "zh"> = ["system", "system", "en", "zh"];
+              if (Platform.OS === "ios") {
+                ActionSheetIOS.showActionSheetWithOptions(
+                  { options, cancelButtonIndex: 0 },
+                  (idx) => { if (idx > 0) updateSettings({ language: values[idx] }); },
+                );
+              } else {
+                updateSettings({ language: settings.language === "en" ? "zh" : settings.language === "zh" ? "system" : "en" });
+              }
+            }}
             isLast
           />
         </View>
