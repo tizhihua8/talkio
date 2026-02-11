@@ -54,7 +54,7 @@ export default function ModelsScreen() {
     const conv = await createConversation("group", participants);
     setGroupMode(false);
     setSelectedForGroup([]);
-    router.push(`/(tabs)/chats/${conv.id}`);
+    router.push(`/chat/${conv.id}`);
   }, [selectedForGroup, createConversation, router]);
 
   return (

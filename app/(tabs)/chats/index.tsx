@@ -74,7 +74,7 @@ export default function ChatsScreen() {
 
       return (
         <Pressable
-          onPress={() => router.push(`/(tabs)/chats/${item.id}`)}
+          onPress={() => router.push(`/chat/${item.id}`)}
           onLongPress={() => handleDelete(item.id)}
           className="flex-row items-center gap-4 rounded-2xl px-3 py-3"
         >

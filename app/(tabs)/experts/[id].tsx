@@ -36,7 +36,7 @@ export default function ModelDetailScreen() {
     const conv = await createConversation("single", [
       { modelId: model.id, identityId: null },
     ]);
-    router.push(`/(tabs)/chats/${conv.id}`);
+    router.push(`/chat/${conv.id}`);
   };
 
   const handleProbe = async () => {
