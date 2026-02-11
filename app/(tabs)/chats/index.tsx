@@ -110,7 +110,7 @@ export default function ChatsScreen() {
         >
           <Pressable
             onPress={() => router.push(`/chat/${item.id}`)}
-            className="flex-row items-center gap-4 bg-white px-3 py-3"
+            className="flex-row items-center gap-4 border-b border-divider bg-white px-4 py-3"
           >
             <View className="relative">
               <View className="h-12 w-12 overflow-hidden rounded-full">
@@ -120,7 +120,7 @@ export default function ChatsScreen() {
                 <View className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-accent-green" />
               )}
             </View>
-            <View className="flex-1 border-b border-divider pb-3">
+            <View className="flex-1">
               <View className="flex-row items-center justify-between mb-1">
                 <Text className="flex-1 text-[16px] font-semibold text-text-main" numberOfLines={1}>
                   {item.type === "group" ? item.title : modelName}
