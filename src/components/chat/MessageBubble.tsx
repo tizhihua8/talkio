@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { Message } from "../../types";
 const mdStyles = {
+  container: { margin: 0, padding: 0 },
   text: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
   paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginBottom: 8 },
   heading: (level: number) => ({
@@ -62,7 +63,7 @@ export function MessageBubble({
   const isUser = message.role === "user";
 
   return (
-    <View className={`mb-3 flex-row px-4 ${isUser ? "justify-end" : "justify-start"}`}>
+    <View className={`mb-4 flex-row px-4 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
         <View className="mr-2 mt-1">
           <ModelAvatar name={message.senderName ?? "AI"} size="sm" />
@@ -99,7 +100,7 @@ export function MessageBubble({
 
         <Pressable
           onLongPress={() => onLongPress?.(message)}
-          className={`rounded-2xl px-4 py-2.5 ${
+          className={`overflow-hidden rounded-2xl px-4 py-2.5 ${
             isUser ? "bg-primary" : "bg-white"
           }`}
           style={
