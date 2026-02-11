@@ -224,25 +224,41 @@ export default function ProviderEditScreen() {
             </Pressable>
           </View>
 
-          <View className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {displayModels.map((m, idx) => (
+          <View className="mt-3 gap-3">
+            {displayModels.map((m) => (
               <View
                 key={m.id}
-                className={`flex-row items-center justify-between px-4 py-3 ${idx < displayModels.length - 1 ? "border-b border-slate-100" : ""}`}
+                className="rounded-xl border border-slate-200 bg-white p-4"
               >
-                <View className="flex-1 mr-3">
-                  <Text className={`text-[15px] font-medium ${m.enabled ? "text-slate-900" : "text-slate-400"}`} numberOfLines={1}>
-                    {m.displayName}
-                  </Text>
-                  <Text className="text-[12px] text-slate-400" numberOfLines={1}>{m.modelId}</Text>
+                <View className="flex-row items-center justify-between">
+                  <View className="flex-1 mr-3">
+                    <Text className={`text-[17px] font-semibold ${m.enabled ? "text-slate-900" : "text-slate-400"}`} numberOfLines={1}>
+                      {m.displayName}
+                    </Text>
+                    <Text className="text-[13px] text-slate-400" numberOfLines={1}>{m.modelId}</Text>
+                  </View>
+                  <Switch
+                    value={m.enabled}
+                    onValueChange={() => toggleModel(m.id)}
+                    trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+                    thumbColor="#fff"
+                    ios_backgroundColor="#e5e7eb"
+                  />
                 </View>
-                <Switch
-                  value={m.enabled}
-                  onValueChange={() => toggleModel(m.id)}
-                  trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
-                  thumbColor="#fff"
-                  ios_backgroundColor="#e5e7eb"
-                />
+                <View className="mt-3 flex-row flex-wrap gap-2">
+                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.vision ? "opacity-40" : ""}`}>
+                    <Ionicons name="eye-outline" size={14} color={m.capabilities.vision ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
+                    <Text className="text-[12px] font-medium text-slate-700">Vision</Text>
+                  </View>
+                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.toolCall ? "opacity-40" : ""}`}>
+                    <Ionicons name="construct-outline" size={14} color={m.capabilities.toolCall ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
+                    <Text className="text-[12px] font-medium text-slate-700">Tools</Text>
+                  </View>
+                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.reasoning ? "opacity-40" : ""}`}>
+                    <Ionicons name="bulb-outline" size={14} color={m.capabilities.reasoning ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
+                    <Text className="text-[12px] font-medium text-slate-700">Reasoning</Text>
+                  </View>
+                </View>
               </View>
             ))}
           </View>
