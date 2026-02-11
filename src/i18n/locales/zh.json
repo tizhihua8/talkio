@@ -22,8 +22,15 @@
   "tabs": {
     "chats": "消息",
     "models": "模型",
-    "discover": "发现",
+    "personas": "身份",
     "settings": "设置"
+  },
+  "layout": {
+    "backChats": "对话",
+    "providers": "供应商",
+    "addProvider": "添加供应商",
+    "dataSync": "数据同步",
+    "privacy": "隐私"
   },
   "chats": {
     "deleteChat": "删除对话",
@@ -66,7 +73,8 @@
     "selectModelsHint": "至少选择 2 个模型以创建群聊。",
     "createGroup": "创建群聊 ({{count}})"
   },
-  "discover": {
+  "personas": {
+    "title": "身份",
     "identityCards": "身份卡片",
     "mcpTools": "MCP 工具",
     "deleteIdentity": "删除身份",
@@ -74,7 +82,9 @@
     "createIdentity": "创建新身份卡片",
     "addTool": "添加 MCP 工具",
     "temp": "温度：{{value}}",
-    "tools": "工具：{{count}}"
+    "tools": "工具：{{count}}",
+    "editIdentity": "编辑身份",
+    "editTool": "编辑工具"
   },
   "settings": {
     "title": "设置",

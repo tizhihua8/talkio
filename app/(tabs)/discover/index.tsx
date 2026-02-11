@@ -36,14 +36,14 @@ export default function DiscoverScreen() {
   const [activeTab, setActiveTab] = useState<Tab>("identities");
 
   const handleDeleteIdentity = (id: string) => {
-    Alert.alert(t("discover.deleteIdentity"), t("common.areYouSure"), [
+    Alert.alert(t("personas.deleteIdentity"), t("common.areYouSure"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("common.delete"), style: "destructive", onPress: () => removeIdentity(id) },
     ]);
   };
 
   const handleDeleteTool = (id: string) => {
-    Alert.alert(t("discover.deleteTool"), t("common.areYouSure"), [
+    Alert.alert(t("personas.deleteTool"), t("common.areYouSure"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("common.delete"), style: "destructive", onPress: () => removeMcpTool(id) },
     ]);
@@ -66,7 +66,7 @@ export default function DiscoverScreen() {
                   activeTab === tab ? "text-primary" : "text-slate-500"
                 }`}
               >
-                {tab === "identities" ? t("discover.identityCards") : t("discover.mcpTools")}
+                {tab === "identities" ? t("personas.identityCards") : t("personas.mcpTools")}
               </Text>
             </Pressable>
           ))}
@@ -123,7 +123,7 @@ export default function DiscoverScreen() {
         >
           <Ionicons name="add-circle" size={22} color="#fff" />
           <Text className="text-base font-semibold text-white">
-            {activeTab === "identities" ? t("discover.createIdentity") : t("discover.addTool")}
+            {activeTab === "identities" ? t("personas.createIdentity") : t("personas.addTool")}
           </Text>
         </Pressable>
       </View>
@@ -166,12 +166,12 @@ function IdentityCard({
           <View className="mb-3 flex-row gap-2">
             <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
               <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                {t("discover.temp", { value: identity.params.temperature })}
+                {t("personas.temp", { value: identity.params.temperature })}
               </Text>
             </View>
             <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
               <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                {t("discover.tools", { count: identity.mcpToolIds.length })}
+                {t("personas.tools", { count: identity.mcpToolIds.length })}
               </Text>
             </View>
           </View>

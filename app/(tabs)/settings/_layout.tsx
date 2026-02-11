@@ -1,22 +1,24 @@
 import { Stack } from "expo-router";
+import { useTranslation } from "react-i18next";
 
 export default function SettingsLayout() {
+  const { t } = useTranslation();
   return (
     <Stack>
       <Stack.Screen
         name="index"
         options={{
-          title: "Settings",
+          title: t("settings.title"),
           headerLargeTitle: true,
           headerLargeStyle: { backgroundColor: "#F2F2F7" },
           headerStyle: { backgroundColor: "#F2F2F7" },
           headerShadowVisible: false,
         }}
       />
-      <Stack.Screen name="providers" options={{ title: "Providers" }} />
-      <Stack.Screen name="provider-edit" options={{ title: "Add Provider", presentation: "modal" }} />
-      <Stack.Screen name="sync" options={{ title: "Data Sync" }} />
-      <Stack.Screen name="privacy" options={{ title: "Privacy" }} />
+      <Stack.Screen name="providers" options={{ title: t("layout.providers") }} />
+      <Stack.Screen name="provider-edit" options={{ title: t("layout.addProvider"), presentation: "modal" }} />
+      <Stack.Screen name="sync" options={{ title: t("layout.dataSync") }} />
+      <Stack.Screen name="privacy" options={{ title: t("layout.privacy") }} />
     </Stack>
   );
 }

@@ -34,17 +34,17 @@ export default function TabLayout() {
           title: t("tabs.models"),
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people" size={size} color={color} />
+            <Ionicons name="cube" size={size} color={color} />
           ),
         }}
       />
       <Tabs.Screen
         name="discover"
         options={{
-          title: t("tabs.discover"),
+          title: t("tabs.personas"),
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="compass" size={size} color={color} />
+            <Ionicons name="person-circle" size={size} color={color} />
           ),
         }}
       />

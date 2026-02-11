@@ -22,8 +22,15 @@
   "tabs": {
     "chats": "Messages",
     "models": "Models",
-    "discover": "Discover",
+    "personas": "Personas",
     "settings": "Settings"
+  },
+  "layout": {
+    "backChats": "Chats",
+    "providers": "Providers",
+    "addProvider": "Add Provider",
+    "dataSync": "Data Sync",
+    "privacy": "Privacy"
   },
   "chats": {
     "deleteChat": "Delete Chat",
@@ -66,7 +73,8 @@
     "selectModelsHint": "Pick at least 2 models for a group chat.",
     "createGroup": "Create Group ({{count}})"
   },
-  "discover": {
+  "personas": {
+    "title": "Personas",
     "identityCards": "Identity Cards",
     "mcpTools": "MCP Tools",
     "deleteIdentity": "Delete Identity",
@@ -74,7 +82,9 @@
     "createIdentity": "Create New Identity Card",
     "addTool": "Add MCP Tool",
     "temp": "Temp: {{value}}",
-    "tools": "Tools: {{count}}"
+    "tools": "Tools: {{count}}",
+    "editIdentity": "Edit Identity",
+    "editTool": "Edit Tool"
   },
   "settings": {
     "title": "Settings",
