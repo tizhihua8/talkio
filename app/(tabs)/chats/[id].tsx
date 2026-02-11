@@ -68,13 +68,16 @@ export default function ChatDetailScreen() {
     });
   }, [conv, model, activeIdentity, isGroup, showIdentitySlider]);
 
+  const lastMsg = messages[messages.length - 1];
+  const lastMsgContent = lastMsg?.content;
+
   useEffect(() => {
     if (messages.length > 0) {
       setTimeout(() => {
         listRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      }, 150);
     }
-  }, [messages.length]);
+  }, [messages.length, lastMsgContent]);
 
   const handleSend = useCallback(
     (text: string, mentionedModelIds?: string[]) => {
