@@ -5,9 +5,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { Message } from "../../types";
 const mdStyles = {
-  container: { margin: 0, padding: 0 },
+  container: { margin: 0, padding: 0, paddingBottom: 0, marginBottom: -6 },
   text: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
-  paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginBottom: 8 },
+  paragraph: { fontSize: 15, lineHeight: 22, color: "#1f2937", marginTop: 0, marginBottom: 6 },
   heading: (level: number) => ({
     fontSize: [22, 19, 17, 15, 14, 13][level - 1] ?? 15,
     fontWeight: (level <= 2 ? "700" : "600") as "700" | "600",
