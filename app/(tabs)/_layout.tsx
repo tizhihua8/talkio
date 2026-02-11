@@ -52,7 +52,7 @@ export default function TabLayout() {
           title: "Settings",
           headerShown: false,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
+            <Ionicons name="settings" size={size} color={color} />
           ),
         }}
       />
