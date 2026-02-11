@@ -21,6 +21,7 @@ export default function ProviderEditScreen() {
   const [pulledModels, setPulledModels] = useState<Model[]>([]);
   const [pulling, setPulling] = useState(false);
   const [savedProviderId, setSavedProviderId] = useState<string | null>(null);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   const applyPreset = (key: string) => {
     const preset = PROVIDER_PRESETS[key];
@@ -121,9 +122,12 @@ export default function ProviderEditScreen() {
               onChangeText={setApiKey}
               placeholder="sk-..."
               placeholderTextColor="#9ca3af"
-              secureTextEntry
+              secureTextEntry={!showApiKey}
               autoCapitalize="none"
             />
+            <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
+              <Ionicons name={showApiKey ? "eye-off" : "eye"} size={18} color="#9ca3af" />
+            </Pressable>
           </View>
         </View>
       </View>
