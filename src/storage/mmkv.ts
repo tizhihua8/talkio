@@ -1,7 +1,11 @@
 import { MMKV } from "react-native-mmkv";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// In-memory fallback when MMKV native module is unavailable (e.g. Expo Go)
-const memStore = new Map<string, string>();
+const AS_PREFIX = "@avatar:";
+
+// Sync in-memory cache backed by AsyncStorage for persistence in Expo Go
+const cache = new Map<string, string>();
+let cacheReady = false;
 
 interface StorageLike {
   getString(key: string): string | undefined;
@@ -11,28 +15,53 @@ interface StorageLike {
 }
 
 let storage: StorageLike;
+let useAsyncFallback = false;
 
 try {
   storage = new MMKV({ id: "avatar-storage" });
 } catch {
-  console.warn("[mmkv] Native module unavailable, using in-memory fallback");
+  console.warn("[mmkv] Native module unavailable, using AsyncStorage fallback");
+  useAsyncFallback = true;
   storage = {
     getString(key: string) {
-      return memStore.get(key);
+      return cache.get(key);
     },
     set(key: string, value: string) {
-      memStore.set(key, value);
+      cache.set(key, value);
+      AsyncStorage.setItem(AS_PREFIX + key, value).catch(() => {});
     },
     delete(key: string) {
-      memStore.delete(key);
+      cache.delete(key);
+      AsyncStorage.removeItem(AS_PREFIX + key).catch(() => {});
     },
     getAllKeys() {
-      return Array.from(memStore.keys());
+      return Array.from(cache.keys());
     },
   };
 }
 
 export { storage };
+
+/**
+ * Must be called once at app startup to hydrate in-memory cache from AsyncStorage.
+ * No-op if MMKV native module is available.
+ */
+export async function hydrateStorage(): Promise<void> {
+  if (!useAsyncFallback || cacheReady) return;
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const avatarKeys = allKeys.filter((k) => k.startsWith(AS_PREFIX));
+    if (avatarKeys.length > 0) {
+      const pairs = await AsyncStorage.multiGet(avatarKeys);
+      for (const [k, v] of pairs) {
+        if (v != null) cache.set(k.slice(AS_PREFIX.length), v);
+      }
+    }
+  } catch {
+    console.warn("[mmkv] Failed to hydrate from AsyncStorage");
+  }
+  cacheReady = true;
+}
 
 export function getItem<T>(key: string): T | null {
   const value = storage.getString(key);
