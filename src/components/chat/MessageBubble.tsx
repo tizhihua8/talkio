@@ -1,22 +1,20 @@
 import { useState } from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import { View, Text, Pressable } from "react-native";
 import Markdown from "react-native-markdown-display";
 import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { Message } from "../../types";
 
-const markdownStyles = StyleSheet.create({
+const markdownStyles = {
   body: { fontSize: 15, lineHeight: 22, color: "#1f2937" },
-  heading1: { fontSize: 22, fontWeight: "700", color: "#111827", marginTop: 12, marginBottom: 6 },
-  heading2: { fontSize: 19, fontWeight: "700", color: "#111827", marginTop: 10, marginBottom: 4 },
-  heading3: { fontSize: 17, fontWeight: "600", color: "#111827", marginTop: 8, marginBottom: 4 },
-  heading4: { fontSize: 15, fontWeight: "600", color: "#374151", marginTop: 6, marginBottom: 2 },
+  heading1: { fontSize: 22, fontWeight: "700" as const, color: "#111827", marginTop: 12, marginBottom: 6 },
+  heading2: { fontSize: 19, fontWeight: "700" as const, color: "#111827", marginTop: 10, marginBottom: 4 },
+  heading3: { fontSize: 17, fontWeight: "600" as const, color: "#111827", marginTop: 8, marginBottom: 4 },
+  heading4: { fontSize: 15, fontWeight: "600" as const, color: "#374151", marginTop: 6, marginBottom: 2 },
   paragraph: { marginTop: 0, marginBottom: 8 },
   bullet_list: { marginBottom: 8 },
   ordered_list: { marginBottom: 8 },
-  list_item: { marginBottom: 4, flexDirection: "row" },
-  bullet_list_icon: { fontSize: 15, lineHeight: 22, marginRight: 6, color: "#6b7280" },
-  ordered_list_icon: { fontSize: 15, lineHeight: 22, marginRight: 6, color: "#6b7280" },
+  list_item: { marginBottom: 4 },
   hr: { backgroundColor: "#e5e7eb", height: 1, marginVertical: 12 },
   blockquote: {
     backgroundColor: "#f9fafb",
@@ -26,9 +24,9 @@ const markdownStyles = StyleSheet.create({
     paddingVertical: 4,
     marginVertical: 6,
   },
-  link: { color: "#2563eb", textDecorationLine: "underline" },
-  strong: { fontWeight: "700" },
-  em: { fontStyle: "italic" },
+  link: { color: "#2563eb" },
+  strong: { fontWeight: "700" as const },
+  em: { fontStyle: "italic" as const },
   code_inline: {
     backgroundColor: "#f3f4f6",
     paddingHorizontal: 5,
@@ -56,11 +54,7 @@ const markdownStyles = StyleSheet.create({
     color: "#e5e7eb",
     marginVertical: 6,
   },
-  table: { borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 4, marginVertical: 6 },
-  thead: { backgroundColor: "#f3f4f6" },
-  th: { padding: 6, fontWeight: "600", fontSize: 13 },
-  td: { padding: 6, fontSize: 13, borderTopWidth: 1, borderColor: "#e5e7eb" },
-});
+};
 
 interface MessageBubbleProps {
   message: Message;
