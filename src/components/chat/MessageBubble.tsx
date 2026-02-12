@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
@@ -41,13 +41,25 @@ export function MessageBubble({
           <Text className="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
             {t("chat.you")}
           </Text>
+          {message.images && message.images.length > 0 && (
+            <View className="flex-row flex-wrap gap-1.5 max-w-[80%]">
+              {message.images.map((uri, idx) => (
+                <Image
+                  key={idx}
+                  source={{ uri }}
+                  className="h-32 w-32 rounded-xl"
+                  resizeMode="cover"
+                />
+              ))}
+            </View>
+          )}
           <Pressable
             onLongPress={() => onLongPress?.(message)}
             className="max-w-[80%] rounded-2xl bg-primary px-4 py-3"
             style={{ borderTopRightRadius: 0 }}
           >
             <Text className="text-[15px] leading-relaxed text-white">
-              {markdownContent}
+              {markdownContent || (message.images?.length ? "📷" : "")}
             </Text>
           </Pressable>
         </View>

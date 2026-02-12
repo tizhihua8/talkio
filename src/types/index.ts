@@ -104,6 +104,7 @@ export interface Message {
   senderName: string | null;
   identityId: string | null;
   content: string;
+  images: string[];
   reasoningContent: string | null;
   reasoningDuration: number | null;
   toolCalls: ToolCall[];

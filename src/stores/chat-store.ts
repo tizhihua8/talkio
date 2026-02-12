@@ -40,7 +40,7 @@ interface ChatState {
     identityId: string | null,
   ) => Promise<void>;
 
-  sendMessage: (text: string, mentionedModelIds?: string[]) => Promise<void>;
+  sendMessage: (text: string, mentionedModelIds?: string[], images?: string[]) => Promise<void>;
   branchFromMessage: (messageId: string) => Promise<string>;
   switchBranch: (branchId: string | null) => void;
   deleteMessageById: (messageId: string) => Promise<void>;
@@ -126,7 +126,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ conversations });
   },
 
-  sendMessage: async (text, mentionedModelIds) => {
+  sendMessage: async (text, mentionedModelIds, images) => {
     const state = get();
     const convId = state.currentConversationId;
     if (!convId) return;
@@ -142,6 +142,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       senderName: "You",
       identityId: null,
       content: text,
+      images: images ?? [],
       reasoningContent: null,
       reasoningDuration: null,
       toolCalls: [],

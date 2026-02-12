@@ -30,6 +30,7 @@ export const messages = sqliteTable(
     toolResults: text("toolResults").notNull().default("[]"),
     branchId: text("branchId"),
     parentMessageId: text("parentMessageId"),
+    images: text("images").notNull().default("[]"),
     isStreaming: integer("isStreaming").notNull().default(0),
     createdAt: text("createdAt").notNull(),
   },

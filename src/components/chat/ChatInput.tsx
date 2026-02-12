@@ -1,16 +1,17 @@
 import { useState, useRef } from "react";
-import { View, TextInput, Pressable, Text, Alert, Platform } from "react-native";
+import { View, TextInput, Pressable, Text, Alert, Platform, Image, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as FileSystem from "expo-file-system/legacy";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { ConversationParticipant } from "../../types";
 import { useProviderStore } from "../../stores/provider-store";
 import { extractMentionedModelIds } from "../../utils/mention-parser";
 
 interface ChatInputProps {
-  onSend: (text: string, mentionedModelIds?: string[]) => void;
+  onSend: (text: string, mentionedModelIds?: string[], images?: string[]) => void;
   isGenerating: boolean;
   isGroup?: boolean;
   participants?: ConversationParticipant[];
@@ -26,6 +27,7 @@ export function ChatInput({
   const insets = useSafeAreaInsets();
   const bottomPad = Platform.OS === "ios" ? insets.bottom : insets.bottom + 10;
   const [text, setText] = useState("");
+  const [attachedImages, setAttachedImages] = useState<{ uri: string; base64: string }[]>([]);
   const [showMentionPicker, setShowMentionPicker] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const getModelById = useProviderStore((s) => s.getModelById);
@@ -38,22 +40,38 @@ export function ChatInput({
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      quality: 0.8,
-      allowsMultipleSelection: false,
+      quality: 0.7,
+      allowsMultipleSelection: true,
+      selectionLimit: 4,
     });
-    if (!result.canceled && result.assets[0]) {
-      // TODO: integrate image attachment into message flow
-      Alert.alert(t("chat.imageSelected"), result.assets[0].uri.split("/").pop() ?? "image");
+    if (!result.canceled && result.assets.length > 0) {
+      const newImages: { uri: string; base64: string }[] = [];
+      for (const asset of result.assets) {
+        try {
+          const b64 = await FileSystem.readAsStringAsync(asset.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const mime = asset.mimeType || "image/jpeg";
+          newImages.push({ uri: asset.uri, base64: `data:${mime};base64,${b64}` });
+        } catch {
+          // skip unreadable files
+        }
+      }
+      setAttachedImages((prev) => [...prev, ...newImages].slice(0, 4));
     }
+  };
+
+  const removeImage = (idx: number) => {
+    setAttachedImages((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSend = () => {
     const trimmed = text.trim();
-    if (!trimmed || isGenerating) return;
+    const hasImages = attachedImages.length > 0;
+    if ((!trimmed && !hasImages) || isGenerating) return;
 
     let mentionedIds: string[] | undefined;
     if (isGroup) {
-      // P1-4: Use robust mention parser instead of naive includes
       const modelNames = new Map<string, string>();
       for (const p of participants) {
         const model = getModelById(p.modelId);
@@ -63,8 +81,10 @@ export function ChatInput({
       if (ids.length > 0) mentionedIds = ids;
     }
 
-    onSend(trimmed, mentionedIds);
+    const imageDataUris = hasImages ? attachedImages.map((img) => img.base64) : undefined;
+    onSend(trimmed || "", mentionedIds, imageDataUris);
     setText("");
+    setAttachedImages([]);
     inputRef.current?.focus();
   };
 
@@ -91,6 +111,22 @@ export function ChatInput({
       className="border-t border-slate-100 bg-white"
       style={{ paddingBottom: bottomPad }}
     >
+      {attachedImages.length > 0 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4 pt-2">
+          {attachedImages.map((img, idx) => (
+            <View key={idx} className="mr-2 relative">
+              <Image source={{ uri: img.uri }} className="h-16 w-16 rounded-lg" />
+              <Pressable
+                onPress={() => removeImage(idx)}
+                className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-black/60"
+              >
+                <Ionicons name="close" size={12} color="#fff" />
+              </Pressable>
+            </View>
+          ))}
+        </ScrollView>
+      )}
+
       {showMentionPicker && isGroup && (
         <View className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
           <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
@@ -142,15 +178,15 @@ export function ChatInput({
 
         <Pressable
           onPress={handleSend}
-          disabled={!text.trim() || isGenerating}
+          disabled={(!text.trim() && attachedImages.length === 0) || isGenerating}
           className={`h-8 w-8 items-center justify-center rounded-full ${
-            text.trim() && !isGenerating ? "bg-primary" : "bg-slate-200"
+            (text.trim() || attachedImages.length > 0) && !isGenerating ? "bg-primary" : "bg-slate-200"
           }`}
         >
           <Ionicons
             name="arrow-up"
             size={18}
-            color={text.trim() && !isGenerating ? "#fff" : "#9ca3af"}
+            color={(text.trim() || attachedImages.length > 0) && !isGenerating ? "#fff" : "#9ca3af"}
           />
         </Pressable>
       </View>

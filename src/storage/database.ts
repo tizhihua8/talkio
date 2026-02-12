@@ -30,6 +30,7 @@ export async function initDatabase(): Promise<void> {
       toolResults TEXT NOT NULL DEFAULT '[]',
       branchId TEXT,
       parentMessageId TEXT,
+      images TEXT NOT NULL DEFAULT '[]',
       isStreaming INTEGER NOT NULL DEFAULT 0,
       createdAt TEXT NOT NULL,
       FOREIGN KEY (conversationId) REFERENCES conversations(id) ON DELETE CASCADE
@@ -37,6 +38,13 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);
     CREATE INDEX IF NOT EXISTS idx_messages_branch ON messages(branchId);
   `);
+
+  // Migration: add images column if missing
+  try {
+    expoDb.execSync(`ALTER TABLE messages ADD COLUMN images TEXT NOT NULL DEFAULT '[]'`);
+  } catch {
+    // Column already exists
+  }
 }
 
 // ─── Row converters ───
@@ -63,6 +71,7 @@ function rowToMessage(row: typeof messages.$inferSelect): Message {
     senderName: row.senderName ?? null,
     identityId: row.identityId ?? null,
     content: row.content || "",
+    images: JSON.parse((row as any).images || "[]"),
     reasoningContent: row.reasoningContent ?? null,
     reasoningDuration: (row as any).reasoningDuration ?? null,
     toolCalls: JSON.parse(row.toolCalls || "[]"),
@@ -130,6 +139,7 @@ export async function insertMessage(msg: Message): Promise<void> {
     senderName: msg.senderName,
     identityId: msg.identityId,
     content: msg.content,
+    images: JSON.stringify(msg.images ?? []),
     reasoningContent: msg.reasoningContent,
     toolCalls: JSON.stringify(msg.toolCalls),
     toolResults: JSON.stringify(msg.toolResults),
@@ -143,6 +153,7 @@ export async function insertMessage(msg: Message): Promise<void> {
 export async function updateMessage(id: string, updates: Partial<Message>): Promise<void> {
   const values: Record<string, unknown> = {};
   if (updates.content !== undefined) values.content = updates.content;
+  if (updates.images !== undefined) values.images = JSON.stringify(updates.images);
   if (updates.reasoningContent !== undefined) values.reasoningContent = updates.reasoningContent;
   if (updates.toolCalls !== undefined) values.toolCalls = JSON.stringify(updates.toolCalls);
   if (updates.toolResults !== undefined) values.toolResults = JSON.stringify(updates.toolResults);

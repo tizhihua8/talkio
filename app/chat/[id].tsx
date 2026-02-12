@@ -93,8 +93,8 @@ export default function ChatDetailScreen() {
   }, [messages.length, lastMsgContent]);
 
   const handleSend = useCallback(
-    (text: string, mentionedModelIds?: string[]) => {
-      sendMessage(text, mentionedModelIds);
+    (text: string, mentionedModelIds?: string[], images?: string[]) => {
+      sendMessage(text, mentionedModelIds, images);
     },
     [sendMessage],
   );
