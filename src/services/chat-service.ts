@@ -90,6 +90,27 @@ export async function generateResponse(
 
   const client = new ApiClient(provider);
 
+  // Build reasoning params if model supports it (ref: Cherry Studio reasoning.ts)
+  const reasoningParams: Record<string, unknown> = {};
+  if (model.capabilities.reasoning) {
+    const mid = model.modelId.toLowerCase();
+    if (mid.includes("claude")) {
+      // Claude: enable extended thinking
+      reasoningParams.thinking = { type: "enabled", budget_tokens: 8192 };
+    } else if (mid.includes("gemini") && mid.includes("thinking")) {
+      // Gemini thinking models
+      reasoningParams.extra_body = {
+        google: { thinking_config: { thinking_budget: -1, include_thoughts: true } },
+      };
+    } else if (mid.includes("hunyuan")) {
+      reasoningParams.enable_thinking = true;
+    } else if (mid.match(/\b(o1|o3|o4)\b/) || mid.includes("grok")) {
+      // OpenAI o-series / Grok: reasoning_effort
+      reasoningParams.reasoning_effort = "medium";
+    }
+    // DeepSeek R1, QwQ etc: no special params needed, they return reasoning_content automatically
+  }
+
   try {
     const stream = client.streamChat({
       model: model.modelId,
@@ -98,6 +119,7 @@ export async function generateResponse(
       temperature: identity?.params.temperature,
       top_p: identity?.params.topP,
       tools: tools.length > 0 ? tools : undefined,
+      ...reasoningParams,
     });
 
     let content = "";
@@ -108,12 +130,43 @@ export async function generateResponse(
       arguments: string;
     }> = [];
 
+    let inThinkTag = false;
+
     for await (const delta of stream) {
       if (delta.content) {
-        content += delta.content;
+        // Handle <think> tags embedded in content
+        let chunk = delta.content;
+        while (chunk) {
+          if (inThinkTag) {
+            const closeIdx = chunk.indexOf("</think>");
+            if (closeIdx !== -1) {
+              reasoningContent += chunk.slice(0, closeIdx);
+              chunk = chunk.slice(closeIdx + 8);
+              inThinkTag = false;
+            } else {
+              reasoningContent += chunk;
+              chunk = "";
+            }
+          } else {
+            const openIdx = chunk.indexOf("<think>");
+            if (openIdx !== -1) {
+              content += chunk.slice(0, openIdx);
+              chunk = chunk.slice(openIdx + 7);
+              inThinkTag = true;
+            } else {
+              content += chunk;
+              chunk = "";
+            }
+          }
+        }
       }
+      // Direct reasoning_content field (DeepSeek R1, etc.)
       if (delta.reasoning_content) {
         reasoningContent += delta.reasoning_content;
+      }
+      // Some providers use 'reasoning' field
+      if ((delta as any).reasoning) {
+        reasoningContent += (delta as any).reasoning;
       }
       if (delta.tool_calls) {
         for (const tc of delta.tool_calls) {

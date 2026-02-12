@@ -150,6 +150,7 @@ export interface ChatApiRequest {
   top_p?: number;
   max_tokens?: number;
   tools?: ChatApiToolDef[];
+  [key: string]: unknown;
 }
 
 export interface ChatApiToolDef {
