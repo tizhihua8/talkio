@@ -1,14 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Share } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
-import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useChatStore } from "../../src/stores/chat-store";
 import { useProviderStore } from "../../src/stores/provider-store";
 import { useIdentityStore } from "../../src/stores/identity-store";
@@ -17,14 +16,16 @@ import { ChatInput } from "../../src/components/chat/ChatInput";
 import { IdentitySlider } from "../../src/components/chat/IdentitySlider";
 import type { Message } from "../../src/types";
 
+KeyboardController.preload();
+
 export default function ChatDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const listRef = useRef<LegendListRef>(null);
-  const headerHeight = useHeaderHeight();
-  const shouldAvoidKeyboard = Platform.OS === "ios";
+  const specificBottom = Platform.OS === "ios" ? insets.bottom : insets.bottom + 10;
 
   const conversations = useChatStore((s) => s.conversations);
   const messages = useChatStore((s) => s.messages);
@@ -226,12 +227,11 @@ export default function ChatDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-chat" edges={["bottom"]}>
+    <View style={{ flex: 1, backgroundColor: '#F2F2F7', paddingBottom: 0 }}>
     <KeyboardAvoidingView
-      className="flex-1"
-      enabled={shouldAvoidKeyboard}
+      style={{ flex: 1 }}
       behavior="padding"
-      keyboardVerticalOffset={shouldAvoidKeyboard ? headerHeight : 0}
+      keyboardVerticalOffset={Platform.OS === "ios" ? -20 : -specificBottom}
     >
       <IdentitySlider
         visible={showIdentitySlider}
@@ -260,6 +260,6 @@ export default function ChatDetailScreen() {
         participants={conv.participants}
       />
     </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
