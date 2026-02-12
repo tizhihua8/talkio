@@ -3,6 +3,7 @@ import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Share } from "r
 import * as Clipboard from "expo-clipboard";
 import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useTranslation } from "react-i18next";
 import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
@@ -25,7 +26,7 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const listRef = useRef<LegendListRef>(null);
-  const specificBottom = Platform.OS === "ios" ? insets.bottom : insets.bottom + 10;
+  const headerHeight = useHeaderHeight();
 
   const conversations = useChatStore((s) => s.conversations);
   const messages = useChatStore((s) => s.messages);
@@ -231,7 +232,7 @@ export default function ChatDetailScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
-      keyboardVerticalOffset={0}
+      keyboardVerticalOffset={headerHeight}
     >
       <IdentitySlider
         visible={showIdentitySlider}
