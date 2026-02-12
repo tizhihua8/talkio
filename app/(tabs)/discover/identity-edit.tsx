@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert } from "react-native";
+import { useState, useMemo } from "react";
+import { View, Text, TextInput, Pressable, ScrollView, Alert, ActivityIndicator, Modal, FlatList } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useIdentityStore } from "../../../src/stores/identity-store";
+import { useProviderStore } from "../../../src/stores/provider-store";
+import { ApiClient } from "../../../src/services/api-client";
 import { DEFAULT_IDENTITY_PARAMS, IDENTITY_ICONS } from "../../../src/constants";
 export default function IdentityEditScreen() {
   const { t } = useTranslation();
@@ -14,8 +16,21 @@ export default function IdentityEditScreen() {
   const updateIdentity = useIdentityStore((s) => s.updateIdentity);
   const mcpTools = useIdentityStore((s) => s.mcpTools);
 
+  const providers = useProviderStore((s) => s.providers);
+  const models = useProviderStore((s) => s.models);
+  const getProviderById = useProviderStore((s) => s.getProviderById);
+
+  const enabledModels = useMemo(() => models.filter((m) => m.enabled), [models]);
+
   const existing = id ? getIdentityById(id) : undefined;
   const isNew = !existing;
+
+  const [aiDesc, setAiDesc] = useState("");
+  const [aiModelId, setAiModelId] = useState(enabledModels[0]?.id ?? "");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showModelPicker, setShowModelPicker] = useState(false);
+
+  const selectedAiModel = models.find((m) => m.id === aiModelId);
 
   const [name, setName] = useState(existing?.name ?? "");
   const [icon, setIcon] = useState(existing?.icon ?? "general");
@@ -60,8 +75,125 @@ export default function IdentityEditScreen() {
     );
   };
 
+  const handleAiGenerate = async () => {
+    if (!aiDesc.trim()) {
+      Alert.alert(t("common.error"), t("identityEdit.aiDescRequired"));
+      return;
+    }
+    if (!aiModelId) {
+      Alert.alert(t("common.error"), t("identityEdit.aiSelectModel"));
+      return;
+    }
+    const model = models.find((m) => m.id === aiModelId);
+    if (!model) return;
+    const provider = getProviderById(model.providerId);
+    if (!provider) return;
+
+    setAiLoading(true);
+    try {
+      const client = new ApiClient(provider);
+      const icons = IDENTITY_ICONS.join(", ");
+      const resp = await client.chat({
+        model: model.modelId,
+        messages: [
+          {
+            role: "system",
+            content: `You generate identity card configurations for an AI assistant app. Given a description, return ONLY a JSON object with these fields:\n- name: short identity name (2-5 words)\n- icon: one of [${icons}]\n- systemPrompt: a detailed system prompt (200-500 words) that defines this identity's behavior, expertise, communication style, and constraints.\nReturn raw JSON only, no markdown fences.`,
+          },
+          { role: "user", content: aiDesc.trim() },
+        ],
+        stream: false,
+        temperature: 0.7,
+      });
+
+      const text = resp.choices?.[0]?.message?.content ?? "";
+      const jsonStr = text.replace(/^```[\s\S]*?\n/, "").replace(/\n```$/, "").trim();
+      const result = JSON.parse(jsonStr);
+
+      if (result.name) setName(result.name);
+      if (result.icon && IDENTITY_ICONS.includes(result.icon)) setIcon(result.icon);
+      if (result.systemPrompt) setSystemPrompt(result.systemPrompt);
+    } catch (err) {
+      Alert.alert(t("common.error"), err instanceof Error ? err.message : "Generation failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
+      {isNew && enabledModels.length > 0 && (
+        <View className="mx-4 mt-4 rounded-xl border border-purple-200 bg-purple-50 p-4">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="sparkles" size={18} color="#9333ea" />
+            <Text className="text-sm font-semibold text-purple-800">{t("identityEdit.aiGenerate")}</Text>
+          </View>
+
+          <TextInput
+            className="mt-3 rounded-lg border border-purple-200 bg-white px-3 py-2.5 text-sm text-text-main"
+            value={aiDesc}
+            onChangeText={setAiDesc}
+            placeholder={t("identityEdit.aiDescPlaceholder")}
+            placeholderTextColor="#9ca3af"
+            multiline
+          />
+
+          <View className="mt-3 flex-row items-center gap-2">
+            <Pressable
+              onPress={() => setShowModelPicker(true)}
+              className="flex-1 flex-row items-center justify-between rounded-lg border border-purple-200 bg-white px-3 py-2.5"
+            >
+              <Text className="text-xs text-text-muted" numberOfLines={1}>
+                {selectedAiModel?.displayName ?? t("identityEdit.aiSelectModel")}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color="#9ca3af" />
+            </Pressable>
+
+            <Pressable
+              onPress={handleAiGenerate}
+              disabled={aiLoading || !aiDesc.trim()}
+              className={`flex-row items-center gap-1.5 rounded-lg px-4 py-2.5 ${
+                aiLoading || !aiDesc.trim() ? "bg-purple-300" : "bg-purple-600"
+              }`}
+            >
+              {aiLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Ionicons name="sparkles" size={14} color="#fff" />
+              )}
+              <Text className="text-sm font-semibold text-white">{t("identityEdit.generate")}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      <Modal visible={showModelPicker} transparent animationType="slide">
+        <Pressable className="flex-1 bg-black/30" onPress={() => setShowModelPicker(false)} />
+        <View className="bg-white rounded-t-2xl max-h-[50%] pb-8">
+          <View className="flex-row items-center justify-between px-4 py-3 border-b border-slate-100">
+            <Text className="text-base font-semibold text-text-main">{t("identityEdit.selectModel")}</Text>
+            <Pressable onPress={() => setShowModelPicker(false)}>
+              <Ionicons name="close" size={22} color="#6b7280" />
+            </Pressable>
+          </View>
+          <FlatList
+            data={enabledModels}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable
+                onPress={() => { setAiModelId(item.id); setShowModelPicker(false); }}
+                className={`flex-row items-center px-4 py-3 ${item.id === aiModelId ? "bg-purple-50" : ""}`}
+              >
+                <Text className={`flex-1 text-sm ${item.id === aiModelId ? "font-semibold text-purple-700" : "text-text-main"}`}>
+                  {item.displayName}
+                </Text>
+                {item.id === aiModelId && <Ionicons name="checkmark" size={18} color="#9333ea" />}
+              </Pressable>
+            )}
+          />
+        </View>
+      </Modal>
+
       <View className="px-4 pt-4">
         <Text className="mb-1 text-sm font-medium text-text-muted">{t("identityEdit.name")}</Text>
         <TextInput

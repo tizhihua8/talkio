@@ -190,12 +190,17 @@
     "parameters": "参数",
     "temperature": "温度",
     "topP": "Top P",
-    "maxTokens": "最大 Token：{{value}}",
     "bindTools": "绑定 MCP 工具",
     "createIdentity": "创建身份",
     "saveChanges": "保存更改",
     "nameRequired": "名称为必填项",
-    "promptRequired": "系统提示词为必填项"
+    "promptRequired": "系统提示词为必填项",
+    "aiGenerate": "AI 生成",
+    "aiDescPlaceholder": "描述你想要的身份，例如「一个 React Native 专家」",
+    "aiDescRequired": "请先输入描述",
+    "aiSelectModel": "选择模型",
+    "selectModel": "选择模型",
+    "generate": "生成"
   },
   "toolEdit": {
     "name": "名称",
