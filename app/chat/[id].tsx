@@ -232,7 +232,7 @@ export default function ChatDetailScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
-      keyboardVerticalOffset={headerHeight}
+      keyboardVerticalOffset={50}
     >
       <IdentitySlider
         visible={showIdentitySlider}
