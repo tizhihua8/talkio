@@ -1,4 +1,4 @@
-export type ProviderType = "official" | "aggregator" | "local";
+export type ProviderType = "openai" | "anthropic" | "gemini" | "azure-openai";
 export type ProviderStatus = "connected" | "disconnected" | "error" | "pending";
 export type ConversationType = "single" | "group";
 export type MessageRole = "user" | "assistant" | "system" | "tool";

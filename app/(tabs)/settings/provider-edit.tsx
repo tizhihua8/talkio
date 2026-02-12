@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProviderStore } from "../../../src/stores/provider-store";
-import { PROVIDER_PRESETS } from "../../../src/constants";
-import type { Model } from "../../../src/types";
+import { PROVIDER_PRESETS, PROVIDER_TYPE_OPTIONS } from "../../../src/constants";
+import type { Model, ProviderType } from "../../../src/types";
 
 export default function ProviderEditScreen() {
   const { t } = useTranslation();
@@ -28,6 +28,7 @@ export default function ProviderEditScreen() {
   const [name, setName] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [apiKey, setApiKey] = useState("");
+  const [providerType, setProviderType] = useState<ProviderType>("openai");
   const [testing, setTesting] = useState(false);
   const [connected, setConnected] = useState<boolean | null>(null);
   const [pulledModels, setPulledModels] = useState<Model[]>([]);
@@ -46,6 +47,7 @@ export default function ProviderEditScreen() {
         setName(provider.name);
         setBaseUrl(provider.baseUrl);
         setApiKey(provider.apiKey);
+        setProviderType(provider.type);
         setSavedProviderId(provider.id);
         setConnected(provider.status === "connected");
         setPulledModels(getModelsByProvider(provider.id));
@@ -58,6 +60,7 @@ export default function ProviderEditScreen() {
     if (preset) {
       setName(preset.name);
       setBaseUrl(preset.baseUrl);
+      setProviderType(preset.type);
     }
   };
 
@@ -75,11 +78,12 @@ export default function ProviderEditScreen() {
         name: name.trim(),
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
+        type: providerType,
       });
     } else {
       const provider = addProvider({
         name: name.trim(),
-        type: "official",
+        type: providerType,
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
       });
@@ -115,6 +119,7 @@ export default function ProviderEditScreen() {
         name: name.trim(),
         baseUrl: baseUrl.trim(),
         apiKey: apiKey.trim(),
+        type: providerType,
       });
     }
     router.back();
@@ -165,7 +170,7 @@ export default function ProviderEditScreen() {
               keyboardType="url"
             />
           </View>
-          <View className="flex-row items-center px-4 py-3.5">
+          <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
             <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.apiKey")}</Text>
             <TextInput
               className="flex-1 bg-transparent text-[16px] text-slate-600"
@@ -179,6 +184,32 @@ export default function ProviderEditScreen() {
             <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
               <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
             </Pressable>
+          </View>
+          <View className="flex-row items-center px-4 py-3.5">
+            <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.type")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
+              <View className="flex-row gap-2">
+                {PROVIDER_TYPE_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setProviderType(opt.value)}
+                    className={`rounded-full border px-3 py-1.5 ${
+                      providerType === opt.value
+                        ? "border-primary bg-primary-light"
+                        : "border-slate-200 bg-white"
+                    }`}
+                  >
+                    <Text
+                      className={`text-[13px] font-medium ${
+                        providerType === opt.value ? "text-primary" : "text-slate-500"
+                      }`}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </ScrollView>
           </View>
         </View>
       </View>

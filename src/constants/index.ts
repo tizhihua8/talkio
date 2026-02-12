@@ -21,44 +21,56 @@ export const IDENTITY_ICONS = [
 
 export const PROVIDER_PRESETS: Record<
   string,
-  { name: string; baseUrl: string; type: "official" | "aggregator" | "local" }
+  { name: string; baseUrl: string; type: import("../types").ProviderType }
 > = {
   deepseek: {
     name: "DeepSeek",
     baseUrl: "https://api.deepseek.com/v1",
-    type: "official",
+    type: "openai",
   },
   openai: {
     name: "OpenAI",
     baseUrl: "https://api.openai.com/v1",
-    type: "official",
+    type: "openai",
   },
   anthropic: {
     name: "Anthropic",
     baseUrl: "https://api.anthropic.com/v1",
-    type: "official",
+    type: "anthropic",
   },
   google: {
     name: "Google",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-    type: "official",
+    type: "gemini",
+  },
+  azure: {
+    name: "Azure OpenAI",
+    baseUrl: "https://{resource}.openai.azure.com/openai/deployments/{deployment}",
+    type: "azure-openai",
   },
   openrouter: {
     name: "OpenRouter",
     baseUrl: "https://openrouter.ai/api/v1",
-    type: "aggregator",
+    type: "openai",
   },
   groq: {
     name: "Groq",
     baseUrl: "https://api.groq.com/openai/v1",
-    type: "aggregator",
+    type: "openai",
   },
   ollama: {
     name: "Ollama",
     baseUrl: "http://localhost:11434/v1",
-    type: "local",
+    type: "openai",
   },
 };
+
+export const PROVIDER_TYPE_OPTIONS: { value: import("../types").ProviderType; label: string }[] = [
+  { value: "openai", label: "OpenAI" },
+  { value: "anthropic", label: "Anthropic" },
+  { value: "gemini", label: "Gemini" },
+  { value: "azure-openai", label: "Azure OpenAI" },
+];
 
 export const QUICK_PROMPTS = [
   { label: "Translate", prompt: "Translate the following to English:" },

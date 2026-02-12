@@ -27,7 +27,7 @@ export default function WebConfigScreen() {
     const onConfig = async (config: ProviderConfig) => {
       const provider = addProvider({
         name: config.name,
-        type: "official",
+        type: "openai",
         baseUrl: config.baseUrl,
         apiKey: config.apiKey,
       });
