@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Alert, ActivityIndicator, Modal, FlatList } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -290,19 +290,48 @@ function ParamSlider({
   step: number;
   onChange: (v: number) => void;
 }) {
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const calcValue = (pageX: number, layoutX: number) => {
+    const x = Math.max(0, Math.min(pageX - layoutX, trackWidth));
+    const ratio = x / trackWidth;
+    const raw = min + ratio * (max - min);
+    const stepped = Math.round(raw / step) * step;
+    return Math.max(min, Math.min(max, stepped));
+  };
+
+  const trackRef = useRef<View>(null);
+  const layoutXRef = useRef(0);
+
   return (
     <View className="mt-2">
       <View className="flex-row justify-between">
         <Text className="text-xs text-text-muted">{label}</Text>
         <Text className="text-xs font-medium text-text-main">{value.toFixed(2)}</Text>
       </View>
-      <View className="h-10 justify-center">
-        <View className="h-1 rounded-full bg-gray-200">
+      <View
+        ref={trackRef}
+        className="h-10 justify-center"
+        onLayout={(e) => {
+          setTrackWidth(e.nativeEvent.layout.width);
+          trackRef.current?.measureInWindow((x) => { layoutXRef.current = x; });
+        }}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(e) => onChange(calcValue(e.nativeEvent.pageX, layoutXRef.current))}
+        onResponderMove={(e) => onChange(calcValue(e.nativeEvent.pageX, layoutXRef.current))}
+      >
+        <View className="h-1.5 rounded-full bg-gray-200">
           <View
-            className="h-1 rounded-full bg-primary"
+            className="h-1.5 rounded-full bg-primary"
             style={{ width: `${((value - min) / (max - min)) * 100}%` }}
           />
         </View>
+        <View
+          className="absolute h-5 w-5 rounded-full border-2 border-primary bg-white"
+          style={{ left: `${((value - min) / (max - min)) * 100}%`, marginLeft: -10 }}
+          pointerEvents="none"
+        />
       </View>
     </View>
   );
