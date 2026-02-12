@@ -8,6 +8,7 @@ import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useChatStore } from "../../src/stores/chat-store";
 import { useProviderStore } from "../../src/stores/provider-store";
 import { useIdentityStore } from "../../src/stores/identity-store";
@@ -22,6 +23,7 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const listRef = useRef<LegendListRef>(null);
+  const headerHeight = useHeaderHeight();
 
   const conversations = useChatStore((s) => s.conversations);
   const messages = useChatStore((s) => s.messages);
@@ -223,11 +225,11 @@ export default function ChatDetailScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-bg-chat" edges={["bottom"]}>
+    <SafeAreaView className="flex-1 bg-bg-chat" edges={[]}>
     <KeyboardAvoidingView
       className="flex-1"
       behavior="padding"
-      keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 80}
+      keyboardVerticalOffset={headerHeight}
     >
       <IdentitySlider
         visible={showIdentitySlider}
