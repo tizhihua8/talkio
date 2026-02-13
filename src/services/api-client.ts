@@ -469,7 +469,7 @@ export class ApiClient {
           },
         ],
         stream: false,
-        max_tokens: 20,
+        max_tokens: 50,
       });
       return !!response.choices?.[0]?.message?.content;
     } catch {
@@ -481,18 +481,18 @@ export class ApiClient {
     try {
       const response = await this.chat({
         model: modelId,
-        messages: [{ role: "user", content: "What is the weather?" }],
+        messages: [{ role: "user", content: "What is the weather in Tokyo?" }],
         stream: false,
-        max_tokens: 20,
+        max_tokens: 200,
         tools: [
           {
             type: "function",
             function: {
               name: "get_weather",
-              description: "Get current weather",
+              description: "Get current weather for a location",
               parameters: {
                 type: "object",
-                properties: { location: { type: "string" } },
+                properties: { location: { type: "string", description: "City name" } },
                 required: ["location"],
               },
             },
@@ -507,19 +507,13 @@ export class ApiClient {
 
   async probeReasoning(modelId: string): Promise<boolean> {
     try {
-      const response = await fetch(this.getUrl("/chat/completions"), {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          model: modelId,
-          messages: [{ role: "user", content: "What is 2+2?" }],
-          stream: false,
-          max_tokens: 50,
-        }),
+      const response = await this.chat({
+        model: modelId,
+        messages: [{ role: "user", content: "What is 2+2?" }],
+        stream: false,
+        max_tokens: 100,
       });
-      const data = await response.json();
-      const msg = data.choices?.[0]?.message;
-      return !!msg?.reasoning_content;
+      return !!response.choices?.[0]?.message?.reasoning_content;
     } catch {
       return false;
     }
