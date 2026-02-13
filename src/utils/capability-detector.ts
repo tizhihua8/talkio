@@ -110,11 +110,11 @@ const KNOWN_MODELS: [string, ModelCapabilities, number][] = [
   ["moonshot",    { vision: false, reasoning: false, toolCall: true, streaming: true }, 128000],
 ];
 
-// Default for unrecognized models: all capabilities off, user can manually toggle
+// Default for unrecognized models: vision & toolCall on (most modern models support them)
 const DEFAULT_CAPS: ModelCapabilities = {
-  vision: false,
+  vision: true,
   reasoning: false,
-  toolCall: false,
+  toolCall: true,
   streaming: true,
 };
 

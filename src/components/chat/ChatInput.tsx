@@ -33,6 +33,14 @@ export function ChatInput({
   const inputRef = useRef<TextInput>(null);
   const getModelById = useProviderStore((s) => s.getModelById);
 
+  // Check if any participant model supports vision
+  const supportsVision = participants.length > 0
+    ? participants.some((p) => {
+        const m = getModelById(p.modelId);
+        return m?.capabilities.vision !== false;
+      })
+    : true; // default to true if no participants info
+
   const handleAttach = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
@@ -165,9 +173,11 @@ export function ChatInput({
       )}
 
       <View className="flex-row items-center gap-3 px-4 py-2.5">
-        <Pressable onPress={handleAttach} className="text-primary p-1">
-          <Ionicons name="add" size={24} color="#007AFF" />
-        </Pressable>
+        {supportsVision && (
+          <Pressable onPress={handleAttach} className="text-primary p-1">
+            <Ionicons name="image-outline" size={22} color="#007AFF" />
+          </Pressable>
+        )}
         {isGroup && (
           <Pressable onPress={toggleMentionPicker} className="p-1">
             <Ionicons name="at" size={22} color={showMentionPicker ? "#007AFF" : "#8E8E93"} />
