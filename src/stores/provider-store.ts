@@ -174,15 +174,15 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     if (!provider) throw new Error("Provider not found");
 
     const client = new ApiClient(provider);
-    const [vision, toolCall, reasoning] = await Promise.all([
-      client.probeVision(model.modelId),
-      client.probeToolCall(model.modelId),
-      client.probeReasoning(model.modelId),
-    ]);
+    // Only probe reasoning (reliable). Vision/toolCall probes are unreliable:
+    // non-vision models respond to text without error, giving false positives.
+    // Trust the heuristic inference from capability-detector instead.
+    const reasoning = await client.probeReasoning(model.modelId);
+    const inferred = inferCapabilities(model.modelId);
 
     const caps: ModelCapabilities = {
-      vision,
-      toolCall,
+      vision: inferred.vision,
+      toolCall: inferred.toolCall,
       reasoning,
       streaming: true,
     };
