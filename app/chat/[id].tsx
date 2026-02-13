@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Share } from "react-native";
+import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
@@ -81,14 +81,9 @@ export default function ChatDetailScreen() {
         </Pressable>
       ),
       headerRight: () => (
-        <View className="flex-row items-center gap-1">
-          <Pressable onPress={clearHistory} className="px-2">
-            <Ionicons name="create-outline" size={20} color="#007AFF" />
-          </Pressable>
-          <Pressable onPress={() => showChatOptions()} className="px-2">
-            <Ionicons name="ellipsis-horizontal" size={22} color="#007AFF" />
-          </Pressable>
-        </View>
+        <Pressable onPress={clearHistory} className="px-2">
+          <Ionicons name="create-outline" size={20} color="#007AFF" />
+        </Pressable>
       ),
     });
   }, [conv, model, activeIdentity, isGroup, showIdentitySlider]);
@@ -167,16 +162,6 @@ export default function ChatDetailScreen() {
     }
   }, [copyMessage, handleDeleteMessage]);
 
-  const exportChat = useCallback(async () => {
-    const lines = messages.map((m) => `[${m.senderName ?? m.role}]: ${m.content}`);
-    const text = lines.join("\n\n");
-    try {
-      await Share.share({ message: text, title: conv?.title ?? "Chat Export" });
-    } catch {
-      // user cancelled
-    }
-  }, [messages, conv]);
-
   const clearHistory = useCallback(() => {
     if (!id) return;
     Alert.alert(t("chat.clearHistory"), t("chat.clearHistoryConfirm"), [
@@ -192,29 +177,6 @@ export default function ChatDetailScreen() {
       },
     ]);
   }, [id, messages]);
-
-  const showChatOptions = () => {
-    const options = [t("common.cancel"), t("chat.export"), t("chat.clearHistory")];
-    if (Platform.OS === "ios") {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: 2,
-        },
-        (index) => {
-          if (index === 1) exportChat();
-          if (index === 2) clearHistory();
-        },
-      );
-    } else {
-      Alert.alert(t("chat.messageOptions"), undefined, [
-        { text: t("chat.export"), onPress: exportChat },
-        { text: t("chat.clearHistory"), style: "destructive", onPress: clearHistory },
-        { text: t("common.cancel"), style: "cancel" },
-      ]);
-    }
-  };
 
   const lastAssistantId = (() => {
     for (let i = messages.length - 1; i >= 0; i--) {
