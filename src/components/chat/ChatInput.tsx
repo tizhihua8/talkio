@@ -101,7 +101,12 @@ export function ChatInput({
   const insertMention = (modelId: string) => {
     const model = getModelById(modelId);
     if (model) {
-      setText((prev) => prev + "@" + model.displayName + " ");
+      const mentionTag = model.displayName.replace(/\s+/g, "");
+      setText((prev) => {
+        // Remove trailing @ if user typed it to trigger the picker
+        const base = prev.endsWith("@") ? prev.slice(0, -1) : prev;
+        return base + (base.length > 0 && !base.endsWith(" ") ? " " : "") + "@" + mentionTag + " ";
+      });
     }
     setShowMentionPicker(false);
     inputRef.current?.focus();
@@ -161,7 +166,14 @@ export function ChatInput({
 
         <View className="flex-1 flex-row items-center rounded-3xl border border-slate-200/50 bg-[#F2F2F7] px-4 py-1.5">
           {isGroup && (
-            <Pressable onPress={() => setShowMentionPicker((v) => !v)}>
+            <Pressable onPress={() => {
+              if (!showMentionPicker) {
+                setText((prev) => prev + "@");
+                setShowMentionPicker(true);
+              } else {
+                setShowMentionPicker(false);
+              }
+            }}>
               <Text className="text-primary text-[16px] font-semibold mr-0.5">@</Text>
             </Pressable>
           )}
