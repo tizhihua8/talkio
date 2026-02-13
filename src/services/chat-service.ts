@@ -475,10 +475,9 @@ function buildTools(model: { capabilities: { toolCall: boolean } }, identity: Id
   if (!model.capabilities.toolCall) return [];
 
   const identityStore = useIdentityStore.getState();
-  // Built-in tools (global) + role-bound custom tools
-  const builtInTools = identityStore.mcpTools.filter((t) => t.builtIn && t.enabled);
-  const roleTools = identity ? identityStore.getToolsForIdentity(identity.id) : [];
-  const allTools = [...builtInTools, ...roleTools];
+  // All enabled tools: built-in (global) + custom enabled tools
+  const enabledTools = identityStore.mcpTools.filter((t) => t.enabled);
+  const allTools = [...enabledTools];
 
   // Deduplicate by function name to avoid "Duplicate function declaration" errors
   const seen = new Set<string>();
@@ -499,11 +498,18 @@ async function executeToolCalls(
   const results: Array<{ toolCallId: string; content: string }> = [];
 
   for (const tc of toolCalls) {
+    const tcLower = tc.name.toLowerCase();
     const tool = identityStore.mcpTools.find(
-      (t) => t.schema?.name === tc.name || t.name === tc.name,
+      (t) => {
+        const schemaName = t.schema?.name?.toLowerCase() ?? "";
+        const toolName = t.name.toLowerCase();
+        return schemaName === tcLower || toolName === tcLower
+          || toolName.replace(/\s+/g, "_") === tcLower;
+      },
     );
 
     if (!tool) {
+      console.warn(`[MCP] Tool not found: "${tc.name}". Available:`, identityStore.mcpTools.map((t) => `${t.name} (schema: ${t.schema?.name})`));
       results.push({
         toolCallId: tc.id,
         content: `Tool not found: ${tc.name}`,
