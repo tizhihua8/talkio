@@ -68,7 +68,9 @@
     "selectModel": "选择模型",
     "messageGroup": "发送群消息...",
     "message": "发送消息...",
-    "called": "调用：{{name}}"
+    "called": "调用：{{name}}",
+    "modelCount": "{{count}} 个模型",
+    "noIdentity": "未设置身份"
   },
   "models": {
     "title": "模型",

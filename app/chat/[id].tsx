@@ -36,9 +36,11 @@ export default function ChatDetailScreen() {
   const conv = conversations.find((c) => c.id === id);
   const isGroup = conv?.type === "group";
   const [showIdentitySlider, setShowIdentitySlider] = useState(false);
-  const [selectedParticipantIdx, setSelectedParticipantIdx] = useState(0);
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [editingParticipantModelId, setEditingParticipantModelId] = useState<string | null>(null);
 
-  const currentParticipant = conv?.participants[isGroup ? selectedParticipantIdx : 0];
+  // For single chat, use the first participant
+  const currentParticipant = conv?.participants[0];
   const model = currentParticipant ? getModelById(currentParticipant.modelId) : null;
   const activeIdentity = currentParticipant?.identityId
     ? getIdentityById(currentParticipant.identityId)
@@ -61,15 +63,15 @@ export default function ChatDetailScreen() {
           className="items-center"
         >
           <Text className="text-sm font-bold tracking-tight text-text-main">{title}</Text>
-          {isGroup && model ? (
+          {isGroup ? (
             <View className="mt-0.5 flex-row items-center gap-1">
-              <Ionicons name="swap-horizontal-outline" size={12} color="#007AFF" />
-              <Text className="text-[10px] font-bold uppercase tracking-widest text-primary" numberOfLines={1}>
-                {model.displayName}{activeIdentity ? ` · ${activeIdentity.name}` : ""}
+              <Ionicons name="people-outline" size={12} color="#007AFF" />
+              <Text className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                {t("chat.modelCount", { count: conv?.participants.length ?? 0 })}
               </Text>
-              <Ionicons name="chevron-down" size={12} color="#007AFF" />
+              <Ionicons name={showParticipants ? "chevron-up" : "chevron-down"} size={12} color="#007AFF" />
             </View>
-          ) : !isGroup ? (
+          ) : (
             <View className="mt-0.5 flex-row items-center gap-1">
               <Ionicons name="person-circle-outline" size={12} color="#007AFF" />
               <Text className="text-[10px] font-bold uppercase tracking-widest text-primary">
@@ -77,7 +79,7 @@ export default function ChatDetailScreen() {
               </Text>
               <Ionicons name="chevron-down" size={12} color="#007AFF" />
             </View>
-          ) : null}
+          )}
         </Pressable>
       ),
       headerRight: () => (
@@ -86,7 +88,7 @@ export default function ChatDetailScreen() {
         </Pressable>
       ),
     });
-  }, [conv, model, activeIdentity, isGroup, showIdentitySlider]);
+  }, [conv, model, activeIdentity, isGroup, showParticipants]);
 
   const lastMsg = messages[messages.length - 1];
   const lastMsgContent = lastMsg?.content;
@@ -108,24 +110,29 @@ export default function ChatDetailScreen() {
 
   const handleIdentitySelect = useCallback(
     (identityId: string | null) => {
-      if (id && currentParticipant) {
-        updateParticipantIdentity(id, currentParticipant.modelId, identityId);
+      const targetModelId = editingParticipantModelId ?? currentParticipant?.modelId;
+      if (id && targetModelId) {
+        updateParticipantIdentity(id, targetModelId, identityId);
       }
       setShowIdentitySlider(false);
+      setEditingParticipantModelId(null);
     },
-    [id, currentParticipant, updateParticipantIdentity],
+    [id, editingParticipantModelId, currentParticipant, updateParticipantIdentity],
   );
 
   const handleHeaderPress = useCallback(() => {
-    if (isGroup && conv) {
-      // Cycle to next participant and open slider
-      const nextIdx = (selectedParticipantIdx + 1) % conv.participants.length;
-      setSelectedParticipantIdx(nextIdx);
-      setShowIdentitySlider(true);
+    if (isGroup) {
+      setShowParticipants((v) => !v);
+      setShowIdentitySlider(false);
     } else {
       setShowIdentitySlider((v) => !v);
     }
-  }, [isGroup, conv, selectedParticipantIdx]);
+  }, [isGroup]);
+
+  const handleEditParticipantIdentity = useCallback((modelId: string) => {
+    setEditingParticipantModelId(modelId);
+    setShowIdentitySlider(true);
+  }, []);
 
   const copyMessage = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
@@ -212,9 +219,50 @@ export default function ChatDetailScreen() {
       behavior="padding"
       keyboardVerticalOffset={50}
     >
+      {/* Group participant panel */}
+      {isGroup && showParticipants && conv && (
+        <View className="border-b border-slate-100 bg-white px-4 py-2">
+          {conv.participants.map((p) => {
+            const pModel = getModelById(p.modelId);
+            const pIdentity = p.identityId ? getIdentityById(p.identityId) : null;
+            return (
+              <View key={p.modelId} className="flex-row items-center justify-between py-2">
+                <View className="flex-row items-center flex-1">
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10 mr-3">
+                    <Text className="text-xs font-bold text-primary">
+                      {(pModel?.displayName ?? "?").slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-[14px] font-semibold text-slate-900" numberOfLines={1}>
+                      {pModel?.displayName ?? p.modelId}
+                    </Text>
+                  </View>
+                </View>
+                <Pressable
+                  onPress={() => handleEditParticipantIdentity(p.modelId)}
+                  className="flex-row items-center rounded-full bg-slate-100 px-3 py-1.5"
+                >
+                  <Ionicons name="person-outline" size={12} color="#64748b" style={{ marginRight: 4 }} />
+                  <Text className="text-[12px] text-slate-600">
+                    {pIdentity ? pIdentity.name : t("chat.noIdentity")}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={12} color="#94a3b8" style={{ marginLeft: 2 }} />
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Identity slider */}
       <IdentitySlider
         visible={showIdentitySlider}
-        activeIdentityId={currentParticipant?.identityId ?? null}
+        activeIdentityId={
+          editingParticipantModelId
+            ? conv?.participants.find((p) => p.modelId === editingParticipantModelId)?.identityId ?? null
+            : currentParticipant?.identityId ?? null
+        }
         onSelect={handleIdentitySelect}
       />
 

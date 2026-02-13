@@ -68,7 +68,9 @@
     "selectModel": "Select Model",
     "messageGroup": "Message Group...",
     "message": "Message...",
-    "called": "Called: {{name}}"
+    "called": "Called: {{name}}",
+    "modelCount": "{{count}} models",
+    "noIdentity": "No identity"
   },
   "models": {
     "title": "Models",
