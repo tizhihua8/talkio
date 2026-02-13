@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, Modal, SafeAreaView } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +30,7 @@ const IDENTITY_ICONS: Array<keyof typeof Ionicons.glyphMap> = [
 export default function DiscoverScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const identities = useIdentityStore((s) => s.identities);
   const mcpTools = useIdentityStore((s) => s.mcpTools);
   const removeIdentity = useIdentityStore((s) => s.removeIdentity);
@@ -261,7 +263,7 @@ export default function DiscoverScreen() {
 
       {/* JSON Import Modal */}
       <Modal visible={showImportModal} animationType="slide" presentationStyle="pageSheet">
-        <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
           <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3">
             <Pressable onPress={() => { setShowImportModal(false); setImportJson(""); }}>
               <Text className="text-[16px] text-slate-500">{t("common.cancel")}</Text>
@@ -285,7 +287,7 @@ export default function DiscoverScreen() {
               autoCorrect={false}
             />
           </View>
-        </SafeAreaView>
+        </View>
       </Modal>
     </View>
   );
