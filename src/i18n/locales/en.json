@@ -151,7 +151,14 @@
     "enabled": "Enabled",
     "customHeaders": "Custom Headers",
     "searchModels": "Search models...",
-    "addModelPlaceholder": "Enter model ID (e.g. gpt-4o)"
+    "addModelPlaceholder": "Enter model ID (e.g. gpt-4o)",
+    "custom": "Custom",
+    "customHint": "Manual setup",
+    "advancedSettings": "Advanced Settings",
+    "connecting": "Connecting...",
+    "fetchingModels": "Fetching models...",
+    "retryConnection": "Retry Connection",
+    "connectAndFetch": "Connect & Fetch Models"
   },
   "providers": {
     "deleteProvider": "Delete Provider",

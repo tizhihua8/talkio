@@ -41,6 +41,8 @@ export default function ProviderEditScreen() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
   const [newModelId, setNewModelId] = useState("");
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const displayModels = savedProviderId
     ? allModels.filter((m) => m.providerId === savedProviderId)
@@ -70,16 +72,27 @@ export default function ProviderEditScreen() {
       setName(preset.name);
       setBaseUrl(preset.baseUrl);
       setProviderType(preset.type);
+      setSelectedPreset(key);
+      setConnected(null);
     }
   };
 
-  const handleTest = async () => {
+  const selectCustom = () => {
+    setSelectedPreset("__custom__");
+    setName("");
+    setBaseUrl("");
+    setProviderType("openai");
+    setConnected(null);
+  };
+
+  const handleConnect = async () => {
     if (!name.trim() || !baseUrl.trim() || !apiKey.trim()) {
       Alert.alert(t("common.error"), t("providerEdit.allFieldsRequired"));
       return;
     }
 
     setTesting(true);
+    setConnected(null);
 
     const providerData = {
       name: name.trim(),
@@ -102,14 +115,22 @@ export default function ProviderEditScreen() {
 
     const ok = await testConnection(providerId!);
     setConnected(ok);
-    setTesting(false);
 
-    if (!ok) {
+    if (ok) {
+      // Auto-fetch models after successful connection
+      setPulling(true);
+      try {
+        const models = await fetchModels(providerId!);
+        setPulledModels(models);
+      } catch { /* ignore fetch errors */ }
+      setPulling(false);
+    } else {
       Alert.alert(t("providerEdit.connectionFailed"), t("providerEdit.connectionFailedHint"));
     }
+    setTesting(false);
   };
 
-  const handlePullModels = async () => {
+  const handleRefreshModels = async () => {
     if (!savedProviderId) return;
     setPulling(true);
     try {
@@ -164,182 +185,241 @@ export default function ProviderEditScreen() {
       )
     : displayModels;
 
+  const PRESET_ICONS: Record<string, string> = {
+    deepseek: "flash-outline",
+    openai: "cube-outline",
+    anthropic: "diamond-outline",
+    google: "logo-google",
+    azure: "cloud-outline",
+    openrouter: "globe-outline",
+    groq: "speedometer-outline",
+    ollama: "server-outline",
+  };
+
+  const isCustom = selectedPreset === "__custom__";
+  const showForm = isEditing || selectedPreset;
+
   return (
     <ScrollView className="flex-1 bg-bg-secondary" keyboardShouldPersistTaps="handled">
-      <View className="px-4 pt-4">
-        <Text className="mb-2 text-xs font-semibold uppercase text-text-muted">{t("providerEdit.quickSelect")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {Object.keys(PROVIDER_PRESETS).map((key) => (
+      {/* ── Step 1: Choose Provider ── */}
+      {!isEditing && !selectedPreset && (
+        <View className="px-4 pt-6">
+          <Text className="mb-4 px-1 text-[15px] font-semibold text-slate-900">
+            {t("providerEdit.quickSelect")}
+          </Text>
+          <View className="flex-row flex-wrap gap-3">
+            {Object.entries(PROVIDER_PRESETS).map(([key, preset]) => (
+              <Pressable
+                key={key}
+                onPress={() => applyPreset(key)}
+                className="w-[47%] items-center rounded-2xl border border-slate-200 bg-white px-3 py-5"
+              >
+                <Ionicons name={(PRESET_ICONS[key] ?? "ellipse-outline") as any} size={28} color="#007AFF" />
+                <Text className="mt-2 text-[15px] font-semibold text-slate-800">{preset.name}</Text>
+                <Text className="mt-0.5 text-[11px] text-slate-400">{preset.type}</Text>
+              </Pressable>
+            ))}
             <Pressable
-              key={key}
-              onPress={() => applyPreset(key)}
-              className="mr-2 rounded-full border border-border-light bg-white px-3 py-1.5"
+              onPress={selectCustom}
+              className="w-[47%] items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-5"
             >
-              <Text className="text-xs text-text-muted">{PROVIDER_PRESETS[key].name}</Text>
+              <Ionicons name="add-circle-outline" size={28} color="#94a3b8" />
+              <Text className="mt-2 text-[15px] font-semibold text-slate-500">{t("providerEdit.custom")}</Text>
+              <Text className="mt-0.5 text-[11px] text-slate-400">{t("providerEdit.customHint")}</Text>
             </Pressable>
-          ))}
-        </ScrollView>
-      </View>
+          </View>
+        </View>
+      )}
 
-      <View className="px-4 pt-6">
-        <Text className="mb-2 px-1 text-[13px] font-normal uppercase tracking-tight text-slate-500">
-          {t("providerEdit.providerDetails")}
-        </Text>
-        <View className="overflow-hidden rounded-xl border border-slate-200 bg-white"
-        >
-          <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-            <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.name")}</Text>
-            <TextInput
-              className="flex-1 bg-transparent text-[16px] text-slate-600"
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. OpenRouter"
-              placeholderTextColor="#cbd5e1"
-            />
-          </View>
-          <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-            <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.baseUrl")}</Text>
-            <TextInput
-              className="flex-1 bg-transparent text-[16px] text-slate-600"
-              value={baseUrl}
-              onChangeText={setBaseUrl}
-              placeholder="https://api.example.com/v1"
-              placeholderTextColor="#cbd5e1"
-              autoCapitalize="none"
-              keyboardType="url"
-            />
-          </View>
-          <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-            <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.apiKey")}</Text>
-            <TextInput
-              className="flex-1 bg-transparent text-[16px] text-slate-600"
-              value={apiKey}
-              onChangeText={setApiKey}
-              placeholder="sk-..."
-              placeholderTextColor="#cbd5e1"
-              secureTextEntry={!showApiKey}
-              autoCapitalize="none"
-            />
-            <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
-              <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
-            </Pressable>
-          </View>
-          <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-            <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.type")}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
-              <View className="flex-row gap-2">
-                {PROVIDER_TYPE_OPTIONS.map((opt) => (
-                  <Pressable
-                    key={opt.value}
-                    onPress={() => setProviderType(opt.value)}
-                    className={`rounded-full border px-3 py-1.5 ${
-                      providerType === opt.value
-                        ? "border-primary bg-primary-light"
-                        : "border-slate-200 bg-white"
-                    }`}
-                  >
-                    <Text
-                      className={`text-[13px] font-medium ${
-                        providerType === opt.value ? "text-primary" : "text-slate-500"
-                      }`}
-                    >
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-          {providerType === "azure-openai" && (
-            <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-              <Text className="w-24 text-[15px] text-slate-900">API Ver.</Text>
-              <TextInput
-                className="flex-1 bg-transparent text-[16px] text-slate-600"
-                value={apiVersion}
-                onChangeText={setApiVersion}
-                placeholder="2024-02-01"
-                placeholderTextColor="#cbd5e1"
-                autoCapitalize="none"
+      {/* ── Step 2: Configuration ── */}
+      {showForm && (
+        <View className="px-4 pt-6">
+          {/* Provider summary when using preset */}
+          {selectedPreset && !isCustom && (
+            <Pressable
+              onPress={() => { setSelectedPreset(null); setConnected(null); }}
+              className="mb-4 flex-row items-center rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3"
+            >
+              <Ionicons
+                name={(PRESET_ICONS[selectedPreset] ?? "ellipse-outline") as any}
+                size={24}
+                color="#007AFF"
               />
+              <View className="ml-3 flex-1">
+                <Text className="text-[16px] font-semibold text-slate-900">{name}</Text>
+                <Text className="text-[12px] text-slate-500">{baseUrl}</Text>
+              </View>
+              <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+            </Pressable>
+          )}
+
+          {/* Full form for Custom or Editing */}
+          {(isCustom || isEditing) && (
+            <View className="overflow-hidden rounded-xl border border-slate-200 bg-white mb-4">
+              <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
+                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.name")}</Text>
+                <TextInput
+                  className="flex-1 bg-transparent text-[16px] text-slate-600"
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="e.g. OpenRouter"
+                  placeholderTextColor="#cbd5e1"
+                />
+              </View>
+              <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
+                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.baseUrl")}</Text>
+                <TextInput
+                  className="flex-1 bg-transparent text-[16px] text-slate-600"
+                  value={baseUrl}
+                  onChangeText={setBaseUrl}
+                  placeholder="https://api.example.com/v1"
+                  placeholderTextColor="#cbd5e1"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+              </View>
+              <View className="flex-row items-center px-4 py-3.5">
+                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.type")}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
+                  <View className="flex-row gap-2">
+                    {PROVIDER_TYPE_OPTIONS.map((opt) => (
+                      <Pressable
+                        key={opt.value}
+                        onPress={() => setProviderType(opt.value)}
+                        className={`rounded-full border px-3 py-1.5 ${
+                          providerType === opt.value
+                            ? "border-primary bg-primary/10"
+                            : "border-slate-200 bg-white"
+                        }`}
+                      >
+                        <Text className={`text-[13px] font-medium ${providerType === opt.value ? "text-primary" : "text-slate-500"}`}>
+                          {opt.label}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
             </View>
           )}
-          <View className="flex-row items-center justify-between px-4 py-3.5">
-            <Text className="text-[15px] text-slate-900">{t("providerEdit.enabled")}</Text>
-            <Switch
-              value={providerEnabled}
-              onValueChange={setProviderEnabled}
-              trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
-              thumbColor="#fff"
-              ios_backgroundColor="#e5e7eb"
-            />
-          </View>
-        </View>
-      </View>
 
-      {/* Custom Headers */}
-      <View className="px-4 pt-4">
-        <View className="flex-row items-center justify-between px-1 mb-2">
-          <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
-            {t("providerEdit.customHeaders")}
-          </Text>
-          <Pressable onPress={addCustomHeader} className="flex-row items-center">
-            <Ionicons name="add-circle-outline" size={16} color="#007AFF" />
-            <Text className="ml-1 text-[13px] font-medium text-primary">{t("common.add")}</Text>
+          {/* API Key */}
+          <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <View className="flex-row items-center px-4 py-3.5">
+              <Ionicons name="key-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+              <TextInput
+                className="flex-1 bg-transparent text-[16px] text-slate-600"
+                value={apiKey}
+                onChangeText={setApiKey}
+                placeholder="API Key"
+                placeholderTextColor="#cbd5e1"
+                secureTextEntry={!showApiKey}
+                autoCapitalize="none"
+              />
+              <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
+                <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Advanced Settings Toggle */}
+          <Pressable
+            onPress={() => setShowAdvanced(!showAdvanced)}
+            className="mt-4 flex-row items-center justify-between px-1 py-2"
+          >
+            <Text className="text-[13px] font-medium text-slate-500">{t("providerEdit.advancedSettings")}</Text>
+            <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color="#94a3b8" />
+          </Pressable>
+
+          {showAdvanced && (
+            <View className="overflow-hidden rounded-xl border border-slate-200 bg-white mb-4">
+              {providerType === "azure-openai" && (
+                <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
+                  <Text className="w-24 text-[15px] text-slate-900">API Ver.</Text>
+                  <TextInput
+                    className="flex-1 bg-transparent text-[16px] text-slate-600"
+                    value={apiVersion}
+                    onChangeText={setApiVersion}
+                    placeholder="2024-02-01"
+                    placeholderTextColor="#cbd5e1"
+                    autoCapitalize="none"
+                  />
+                </View>
+              )}
+              <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3.5">
+                <Text className="text-[15px] text-slate-900">{t("providerEdit.enabled")}</Text>
+                <Switch
+                  value={providerEnabled}
+                  onValueChange={setProviderEnabled}
+                  trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+                  thumbColor="#fff"
+                  ios_backgroundColor="#e5e7eb"
+                />
+              </View>
+              {/* Custom Headers */}
+              <View className="px-4 py-3.5">
+                <View className="flex-row items-center justify-between mb-2">
+                  <Text className="text-[14px] text-slate-700">{t("providerEdit.customHeaders")}</Text>
+                  <Pressable onPress={addCustomHeader} className="flex-row items-center">
+                    <Ionicons name="add-circle-outline" size={16} color="#007AFF" />
+                    <Text className="ml-1 text-[13px] font-medium text-primary">{t("common.add")}</Text>
+                  </Pressable>
+                </View>
+                {customHeaders.map((h, idx) => (
+                  <View key={idx} className="mb-2 flex-row items-center gap-2">
+                    <TextInput
+                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px]"
+                      value={h.name}
+                      onChangeText={(v) => updateCustomHeader(idx, "name", v)}
+                      placeholder="Header"
+                      placeholderTextColor="#cbd5e1"
+                      autoCapitalize="none"
+                    />
+                    <TextInput
+                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px]"
+                      value={h.value}
+                      onChangeText={(v) => updateCustomHeader(idx, "value", v)}
+                      placeholder="Value"
+                      placeholderTextColor="#cbd5e1"
+                      autoCapitalize="none"
+                    />
+                    <Pressable onPress={() => removeCustomHeader(idx)} className="p-1">
+                      <Ionicons name="close-circle" size={20} color="#ef4444" />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* ── Connect Button ── */}
+          <Pressable
+            onPress={handleConnect}
+            disabled={testing || !apiKey.trim()}
+            className={`mt-2 flex-row items-center justify-center rounded-xl py-3.5 ${
+              testing ? "bg-slate-300" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
+            }`}
+          >
+            {testing ? (
+              <>
+                <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+                <Text className="text-base font-semibold text-white">{pulling ? t("providerEdit.fetchingModels") : t("providerEdit.connecting")}</Text>
+              </>
+            ) : connected === true ? (
+              <>
+                <Ionicons name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
+                <Text className="text-base font-semibold text-white">{t("providerEdit.connectionSuccessful")}</Text>
+              </>
+            ) : connected === false ? (
+              <Text className="text-base font-semibold text-white">{t("providerEdit.retryConnection")}</Text>
+            ) : (
+              <Text className="text-base font-semibold text-white">{t("providerEdit.connectAndFetch")}</Text>
+            )}
           </Pressable>
         </View>
-        {customHeaders.map((h, idx) => (
-          <View key={idx} className="mb-2 flex-row items-center gap-2">
-            <TextInput
-              className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px]"
-              value={h.name}
-              onChangeText={(v) => updateCustomHeader(idx, "name", v)}
-              placeholder="Header Name"
-              placeholderTextColor="#cbd5e1"
-              autoCapitalize="none"
-            />
-            <TextInput
-              className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[14px]"
-              value={h.value}
-              onChangeText={(v) => updateCustomHeader(idx, "value", v)}
-              placeholder="Value"
-              placeholderTextColor="#cbd5e1"
-              autoCapitalize="none"
-            />
-            <Pressable onPress={() => removeCustomHeader(idx)} className="p-1">
-              <Ionicons name="close-circle" size={20} color="#ef4444" />
-            </Pressable>
-          </View>
-        ))}
-      </View>
+      )}
 
-      <View className="px-4 pt-6">
-        <Pressable
-          onPress={handleTest}
-          disabled={testing}
-          className={`flex-row items-center justify-center rounded-xl py-3.5 ${
-            connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
-          }`}
-        >
-          {testing ? (
-            <ActivityIndicator color="#fff" />
-          ) : connected === true ? (
-            <>
-              <Ionicons name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
-              <Text className="text-base font-semibold text-white">{t("providerEdit.connectionSuccessful")}</Text>
-            </>
-          ) : connected === false ? (
-            <Text className="text-base font-semibold text-white">{t("providerEdit.connectionFailed")}</Text>
-          ) : (
-            <Text className="text-base font-semibold text-white">{t("providerEdit.testConnection")}</Text>
-          )}
-        </Pressable>
-        {connected === true && (
-          <Text className="mt-2 text-center text-[12px] text-slate-400">
-            {t("providerEdit.verifiedAt", { time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) })}
-          </Text>
-        )}
-      </View>
-
+      {/* ── Step 3: Models ── */}
       {connected && (
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between px-1">
@@ -348,27 +428,25 @@ export default function ProviderEditScreen() {
             </Text>
             <View className="flex-row items-center gap-4">
               {savedProviderId && displayModels.length > 0 && (
-                <>
-                  <Pressable onPress={() => {
-                    const allEnabled = displayModels.every((m) => m.enabled);
-                    setProviderModelsEnabled(savedProviderId, !allEnabled);
-                  }}>
-                    <Text className="text-[13px] font-medium text-primary">
-                      {displayModels.every((m) => m.enabled) ? t("providerEdit.deselectAll") : t("providerEdit.selectAll")}
-                    </Text>
-                  </Pressable>
-                </>
+                <Pressable onPress={() => {
+                  const allEnabled = displayModels.every((m) => m.enabled);
+                  setProviderModelsEnabled(savedProviderId, !allEnabled);
+                }}>
+                  <Text className="text-[13px] font-medium text-primary">
+                    {displayModels.every((m) => m.enabled) ? t("providerEdit.deselectAll") : t("providerEdit.selectAll")}
+                  </Text>
+                </Pressable>
               )}
-            <Pressable onPress={handlePullModels} disabled={pulling} className="flex-row items-center">
-              {pulling ? (
-                <ActivityIndicator size="small" color="#007AFF" />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={14} color="#007AFF" />
-                  <Text className="ml-1 text-[13px] font-medium text-primary">{t("providerEdit.refresh")}</Text>
-                </>
-              )}
-            </Pressable>
+              <Pressable onPress={handleRefreshModels} disabled={pulling} className="flex-row items-center">
+                {pulling ? (
+                  <ActivityIndicator size="small" color="#007AFF" />
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={14} color="#007AFF" />
+                    <Text className="ml-1 text-[13px] font-medium text-primary">{t("providerEdit.refresh")}</Text>
+                  </>
+                )}
+              </Pressable>
             </View>
           </View>
 
@@ -413,18 +491,16 @@ export default function ProviderEditScreen() {
             </View>
           )}
 
-          <View className="mt-3 gap-3">
+          {/* Model List */}
+          <View className="mt-3 gap-2">
             {filteredModels.map((m) => (
-              <View
-                key={m.id}
-                className="rounded-xl border border-slate-200 bg-white p-4"
-              >
+              <View key={m.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 mr-3">
-                    <Text className={`text-[17px] font-semibold ${m.enabled ? "text-slate-900" : "text-slate-400"}`} numberOfLines={1}>
+                    <Text className={`text-[15px] font-semibold ${m.enabled ? "text-slate-900" : "text-slate-400"}`} numberOfLines={1}>
                       {m.displayName}
                     </Text>
-                    <Text className="text-[13px] text-slate-400" numberOfLines={1}>{m.modelId}</Text>
+                    <Text className="text-[12px] text-slate-400" numberOfLines={1}>{m.modelId}</Text>
                   </View>
                   <Switch
                     value={m.enabled}
@@ -434,39 +510,33 @@ export default function ProviderEditScreen() {
                     ios_backgroundColor="#e5e7eb"
                   />
                 </View>
-                <View className="mt-3 flex-row flex-wrap items-center gap-2">
-                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.vision ? "opacity-40" : ""}`}>
-                    <Ionicons name="eye-outline" size={14} color={m.capabilities.vision ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
-                    <Text className="text-[12px] font-medium text-slate-700">{t("providerEdit.vision")}</Text>
-                  </View>
-                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.toolCall ? "opacity-40" : ""}`}>
-                    <Ionicons name="construct-outline" size={14} color={m.capabilities.toolCall ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
-                    <Text className="text-[12px] font-medium text-slate-700">{t("providerEdit.tools")}</Text>
-                  </View>
-                  <View className={`flex-row items-center rounded-lg border border-slate-100 bg-slate-50 px-3 py-1 ${!m.capabilities.reasoning ? "opacity-40" : ""}`}>
-                    <Ionicons name="bulb-outline" size={14} color={m.capabilities.reasoning ? "#007AFF" : "#94a3b8"} style={{ marginRight: 4 }} />
-                    <Text className="text-[12px] font-medium text-slate-700">{t("providerEdit.reasoning")}</Text>
-                  </View>
+                <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
+                  {[
+                    { key: "vision", icon: "eye-outline", on: m.capabilities.vision },
+                    { key: "tools", icon: "construct-outline", on: m.capabilities.toolCall },
+                    { key: "reasoning", icon: "bulb-outline", on: m.capabilities.reasoning },
+                  ].map((cap) => (
+                    <View key={cap.key} className={`flex-row items-center rounded-md bg-slate-50 px-2 py-0.5 ${!cap.on ? "opacity-30" : ""}`}>
+                      <Ionicons name={cap.icon as any} size={12} color={cap.on ? "#007AFF" : "#94a3b8"} style={{ marginRight: 3 }} />
+                      <Text className="text-[11px] text-slate-600">{t(`providerEdit.${cap.key}`)}</Text>
+                    </View>
+                  ))}
                   <Pressable
                     onPress={async () => {
                       setProbingModelId(m.id);
-                      try {
-                        await probeModelCapabilities(m.id);
-                      } catch (err) {
-                        Alert.alert(t("common.error"), err instanceof Error ? err.message : "Probe failed");
-                      } finally {
-                        setProbingModelId(null);
-                      }
+                      try { await probeModelCapabilities(m.id); }
+                      catch (err) { Alert.alert(t("common.error"), err instanceof Error ? err.message : "Probe failed"); }
+                      finally { setProbingModelId(null); }
                     }}
                     disabled={probingModelId === m.id}
-                    className="flex-row items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-1"
+                    className="flex-row items-center rounded-md bg-blue-50 px-2 py-0.5"
                   >
                     {probingModelId === m.id ? (
                       <ActivityIndicator size="small" color="#007AFF" />
                     ) : (
                       <>
-                        <Ionicons name="pulse-outline" size={14} color="#007AFF" style={{ marginRight: 4 }} />
-                        <Text className="text-[12px] font-medium text-primary">{t("providerEdit.probe")}</Text>
+                        <Ionicons name="pulse-outline" size={12} color="#007AFF" style={{ marginRight: 3 }} />
+                        <Text className="text-[11px] font-medium text-primary">{t("providerEdit.probe")}</Text>
                       </>
                     )}
                   </Pressable>
@@ -477,25 +547,21 @@ export default function ProviderEditScreen() {
         </View>
       )}
 
-      <View className="px-4 pb-8 pt-6">
-        {connected && (
-          <Pressable onPress={handleSave} className="items-center rounded-xl bg-primary py-3.5"
-          >
+      {/* ── Save Button ── */}
+      {connected && (
+        <View className="px-4 pb-8 pt-6">
+          <Pressable onPress={handleSave} className="items-center rounded-xl bg-primary py-3.5">
             <Text className="text-[17px] font-semibold text-white">{t("providerEdit.save")}</Text>
           </Pressable>
-        )}
-      </View>
-
-      <View className="items-center pb-8 px-6">
-        <View className="flex-row items-center gap-1.5 mb-2">
-          <Ionicons name="lock-closed" size={14} color="#94a3b8" />
-          <Text className="text-[11px] font-medium uppercase tracking-tight text-slate-500">
-            {t("providerEdit.encryption")}
-          </Text>
         </View>
-        <Text className="text-center text-[12px] leading-normal text-slate-400">
-          {t("providerEdit.encryptionHint")}
-        </Text>
+      )}
+
+      {/* Security note */}
+      <View className="items-center pb-8 px-6">
+        <View className="flex-row items-center gap-1.5 mb-1">
+          <Ionicons name="lock-closed" size={12} color="#94a3b8" />
+          <Text className="text-[11px] text-slate-400">{t("providerEdit.encryption")}</Text>
+        </View>
       </View>
     </ScrollView>
   );
