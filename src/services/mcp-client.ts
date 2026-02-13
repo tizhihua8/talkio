@@ -224,7 +224,10 @@ function extractToolResult(result: Record<string, unknown>): McpExecutionResult 
     const textParts = contentItems
       .map((c: any) => (typeof c === "string" ? c : c.text ?? JSON.stringify(c)))
       .join("\n");
-    return { success: !rpcResult.isError, content: textParts };
+    if (rpcResult.isError) {
+      return { success: false, content: "", error: textParts || "Tool execution failed" };
+    }
+    return { success: true, content: textParts };
   }
 
   // Result exists but no content field
