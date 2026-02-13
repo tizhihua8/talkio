@@ -389,8 +389,9 @@ function buildApiMessages(
     };
 
     if (msg.role === "assistant" && msg.senderModelId !== targetModelId && msg.senderName) {
-      // Prefix content with model name instead of using name field (better proxy compatibility)
-      const prefix = `[${msg.senderName}]: `;
+      // Convert other models' responses to "user" role to avoid "must end with user message" errors
+      apiMsg.role = "user";
+      const prefix = `[${msg.senderName} said]: `;
       if (typeof apiMsg.content === "string") {
         apiMsg.content = prefix + apiMsg.content;
       }
