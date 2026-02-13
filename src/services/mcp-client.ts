@@ -1,4 +1,14 @@
-import type { McpTool, McpToolSchema } from "../types";
+import type { McpTool, McpToolSchema, CustomHeader } from "../types";
+
+function buildHeaders(base: Record<string, string>, extra?: CustomHeader[]): Record<string, string> {
+  const headers = { ...base };
+  if (extra) {
+    for (const h of extra) {
+      if (h.name && h.value) headers[h.name] = h.value;
+    }
+  }
+  return headers;
+}
 
 export interface McpExecutionResult {
   success: boolean;
@@ -62,14 +72,14 @@ interface McpSession {
  * Connect to MCP SSE endpoint and discover the message endpoint URL.
  * MCP SSE protocol: GET /sse → server sends "endpoint" event with POST URL.
  */
-async function connectMcpSse(sseUrl: string, timeoutMs = 10000): Promise<McpSession> {
+async function connectMcpSse(sseUrl: string, extraHeaders?: CustomHeader[], timeoutMs = 10000): Promise<McpSession> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       reject(new Error("MCP SSE connection timeout"));
     }, timeoutMs);
 
     fetch(sseUrl, {
-      headers: { Accept: "text/event-stream" },
+      headers: buildHeaders({ Accept: "text/event-stream" }, extraHeaders),
     })
       .then(async (response) => {
         if (!response.ok) {
@@ -139,10 +149,11 @@ async function mcpRpcCall(
   method: string,
   params: Record<string, unknown>,
   id: number = 1,
+  extraHeaders?: CustomHeader[],
 ): Promise<Record<string, unknown>> {
   const response = await fetch(messageEndpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: buildHeaders({ "Content-Type": "application/json" }, extraHeaders),
     body: JSON.stringify({
       jsonrpc: "2.0",
       id,
@@ -187,17 +198,17 @@ async function mcpRpcCall(
 /**
  * Initialize an MCP session on a given message endpoint.
  */
-async function initMcpSession(messageEndpoint: string): Promise<void> {
+async function initMcpSession(messageEndpoint: string, extraHeaders?: CustomHeader[]): Promise<void> {
   await mcpRpcCall(messageEndpoint, "initialize", {
     protocolVersion: "2024-11-05",
     capabilities: {},
     clientInfo: { name: "avatar-app", version: "1.0.0" },
-  }, 1);
+  }, 1, extraHeaders);
 
   // Send initialized notification (fire and forget)
   fetch(messageEndpoint, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: buildHeaders({ "Content-Type": "application/json" }, extraHeaders),
     body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
   }).catch(() => {});
 }
@@ -247,14 +258,15 @@ async function tryStreamableHttp(
   method: string,
   params: Record<string, unknown>,
   id: number,
+  extraHeaders?: CustomHeader[],
 ): Promise<Record<string, unknown> | null> {
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: {
+      headers: buildHeaders({
         "Content-Type": "application/json",
         Accept: "application/json, text/event-stream",
-      },
+      }, extraHeaders),
       body: JSON.stringify({ jsonrpc: "2.0", id, method, params }),
     });
 
@@ -295,33 +307,35 @@ async function executeRemoteTool(
     return { success: false, content: "", error: "No endpoint configured" };
   }
 
+  const hdrs = tool.customHeaders;
+
   try {
     // Try Streamable HTTP first (new protocol: single endpoint)
     const initResult = await tryStreamableHttp(tool.endpoint, "initialize", {
       protocolVersion: "2025-03-26",
       capabilities: {},
       clientInfo: { name: "avatar-app", version: "1.0.0" },
-    }, 1);
+    }, 1, hdrs);
 
     if (initResult !== null) {
       // Streamable HTTP works — send initialized + tools/call
-      await tryStreamableHttp(tool.endpoint, "notifications/initialized", {}, 0);
+      await tryStreamableHttp(tool.endpoint, "notifications/initialized", {}, 0, hdrs);
       const result = await tryStreamableHttp(tool.endpoint, "tools/call", {
         name: tool.schema?.name ?? tool.name,
         arguments: args,
-      }, 2);
+      }, 2, hdrs);
       if (!result) throw new Error("tools/call failed");
       return extractToolResult(result);
     }
 
     // Fallback: Old SSE protocol (GET /sse → endpoint event → POST)
-    const session = await connectMcpSse(tool.endpoint);
-    await initMcpSession(session.messageEndpoint);
+    const session = await connectMcpSse(tool.endpoint, hdrs);
+    await initMcpSession(session.messageEndpoint, hdrs);
 
     const result = await mcpRpcCall(session.messageEndpoint, "tools/call", {
       name: tool.schema?.name ?? tool.name,
       arguments: args,
-    }, 2);
+    }, 2, hdrs);
 
     return extractToolResult(result);
   } catch (err) {
@@ -339,25 +353,26 @@ async function executeRemoteTool(
  */
 export async function listRemoteTools(
   endpoint: string,
+  extraHeaders?: CustomHeader[],
 ): Promise<{ name: string; description: string; inputSchema: Record<string, unknown> }[]> {
   // Try Streamable HTTP first
   const initResult = await tryStreamableHttp(endpoint, "initialize", {
     protocolVersion: "2025-03-26",
     capabilities: {},
     clientInfo: { name: "avatar-app", version: "1.0.0" },
-  }, 1);
+  }, 1, extraHeaders);
 
   if (initResult !== null) {
-    await tryStreamableHttp(endpoint, "notifications/initialized", {}, 0);
-    const result = await tryStreamableHttp(endpoint, "tools/list", {}, 2);
+    await tryStreamableHttp(endpoint, "notifications/initialized", {}, 0, extraHeaders);
+    const result = await tryStreamableHttp(endpoint, "tools/list", {}, 2, extraHeaders);
     return (result as any)?.result?.tools ?? [];
   }
 
   // Fallback: Old SSE protocol
-  const session = await connectMcpSse(endpoint);
-  await initMcpSession(session.messageEndpoint);
+  const session = await connectMcpSse(endpoint, extraHeaders);
+  await initMcpSession(session.messageEndpoint, extraHeaders);
 
-  const result = await mcpRpcCall(session.messageEndpoint, "tools/list", {}, 2);
+  const result = await mcpRpcCall(session.messageEndpoint, "tools/list", {}, 2, extraHeaders);
   return (result as any).result?.tools ?? [];
 }
 

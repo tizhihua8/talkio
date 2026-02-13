@@ -242,7 +242,9 @@
     "addTool": "添加工具",
     "saveChanges": "保存更改",
     "nameRequired": "名称为必填项",
-    "endpointRequired": "服务器地址为必填项"
+    "endpointRequired": "服务器地址为必填项",
+    "headers": "自定义请求头",
+    "headersHint": "添加认证头（如 Authorization: Bearer xxx）"
   },
   "privacy": {
     "privacyFirst": "隐私优先",

@@ -72,6 +72,7 @@ export interface McpTool {
   enabled: boolean;
   builtIn?: boolean;
   schema: McpToolSchema | null;
+  customHeaders?: CustomHeader[];
 }
 
 export interface McpToolSchema {

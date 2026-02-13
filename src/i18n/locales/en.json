@@ -242,7 +242,9 @@
     "addTool": "Add Tool",
     "saveChanges": "Save Changes",
     "nameRequired": "Name is required",
-    "endpointRequired": "Server URL is required"
+    "endpointRequired": "Server URL is required",
+    "headers": "Custom Headers",
+    "headersHint": "Add headers for authentication (e.g. Authorization: Bearer xxx)"
   },
   "privacy": {
     "privacyFirst": "Privacy First",
