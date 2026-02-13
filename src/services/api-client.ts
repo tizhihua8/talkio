@@ -4,18 +4,21 @@ import type {
   ChatApiResponse,
   StreamDelta,
   Provider,
+  ProviderType,
 } from "../types";
 
 export class ApiClient {
   private baseUrl: string;
   private apiKey: string;
   private apiVersion?: string;
+  private providerType: ProviderType;
   private customHeaders: Record<string, string>;
 
   constructor(provider: Provider) {
     this.baseUrl = provider.baseUrl.replace(/\/+$/, "");
     this.apiKey = provider.apiKey;
     this.apiVersion = provider.apiVersion;
+    this.providerType = provider.type;
     this.customHeaders = {};
     for (const h of provider.customHeaders ?? []) {
       if (h.name && h.value) this.customHeaders[h.name] = h.value;
@@ -23,6 +26,8 @@ export class ApiClient {
   }
 
   async listModels(): Promise<Array<{ id: string; object: string }>> {
+    if (this.providerType === "gemini") return this.listModelsGemini();
+    // Anthropic, OpenAI, Azure all use /models endpoint
     const response = await fetch(this.getUrl("/models"), {
       headers: this.getHeaders(),
     });
@@ -43,6 +48,8 @@ export class ApiClient {
   }
 
   async chat(request: ChatApiRequest): Promise<ChatApiResponse> {
+    if (this.providerType === "anthropic") return this.chatAnthropic(request);
+    if (this.providerType === "gemini") return this.chatGemini(request);
     const response = await fetch(this.getUrl("/chat/completions"), {
       method: "POST",
       headers: this.getHeaders(),
@@ -59,7 +66,15 @@ export class ApiClient {
     request: ChatApiRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<StreamDelta, void, unknown> {
-    // expo/fetch provides ReadableStream on both native (Hermes) and web
+    if (this.providerType === "anthropic") {
+      yield* this.streamChatAnthropic(request, signal);
+      return;
+    }
+    if (this.providerType === "gemini") {
+      yield* this.streamChatGemini(request, signal);
+      return;
+    }
+    // OpenAI / Azure OpenAI
     const response = await expoFetch(this.getUrl("/chat/completions"), {
       method: "POST",
       headers: this.getHeaders(),
@@ -131,6 +146,309 @@ export class ApiClient {
       reader.releaseLock();
     }
   }
+
+  // ── Anthropic Implementation ──
+
+  private async chatAnthropic(request: ChatApiRequest): Promise<ChatApiResponse> {
+    const body = this.toAnthropicBody(request);
+    body.stream = false;
+    const response = await fetch(`${this.baseUrl}/messages`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+    }
+    const data = await response.json();
+    return this.fromAnthropicResponse(data);
+  }
+
+  private async *streamChatAnthropic(
+    request: ChatApiRequest,
+    signal?: AbortSignal,
+  ): AsyncGenerator<StreamDelta, void, unknown> {
+    const body = this.toAnthropicBody(request);
+    body.stream = true;
+    const response = await expoFetch(`${this.baseUrl}/messages`, {
+      method: "POST",
+      headers: this.getHeaders(),
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Stream API error: ${response.status} - ${errorText}`);
+    }
+    if (!response.body) throw new Error("Stream response has no body");
+    yield* this.readSSE(response.body, (parsed) => {
+      if (parsed.type === "content_block_delta") {
+        const d = parsed.delta;
+        if (d?.type === "text_delta") return { content: d.text };
+        if (d?.type === "thinking_delta") return { reasoning_content: d.thinking };
+        if (d?.type === "input_json_delta") {
+          return { tool_calls: [{ index: parsed.index ?? 0, function: { arguments: d.partial_json } }] } as StreamDelta;
+        }
+      }
+      if (parsed.type === "content_block_start" && parsed.content_block?.type === "tool_use") {
+        return {
+          tool_calls: [{
+            index: parsed.index ?? 0,
+            id: parsed.content_block.id,
+            type: "function" as const,
+            function: { name: parsed.content_block.name },
+          }],
+        } as StreamDelta;
+      }
+      return null;
+    });
+  }
+
+  private toAnthropicBody(request: ChatApiRequest): Record<string, unknown> {
+    let system: string | undefined;
+    const messages: Array<{ role: string; content: unknown }> = [];
+
+    for (const msg of request.messages) {
+      if (msg.role === "system") {
+        system = typeof msg.content === "string" ? msg.content : "";
+        continue;
+      }
+      let content: unknown;
+      if (typeof msg.content === "string") {
+        content = msg.content;
+      } else if (Array.isArray(msg.content)) {
+        content = msg.content.map((part) => {
+          if (part.type === "text") return { type: "text", text: part.text };
+          if (part.type === "image_url") {
+            const url = part.image_url?.url ?? "";
+            const m = url.match(/^data:([^;]+);base64,(.+)$/);
+            if (m) return { type: "image", source: { type: "base64", media_type: m[1], data: m[2] } };
+            return { type: "image", source: { type: "url", url } };
+          }
+          return part;
+        });
+      }
+      // Merge consecutive same-role messages (Anthropic requirement)
+      if (messages.length > 0 && messages[messages.length - 1].role === msg.role) {
+        const prev = messages[messages.length - 1];
+        const toArr = (c: unknown) => typeof c === "string" ? [{ type: "text", text: c }] : (c as unknown[]);
+        prev.content = [...toArr(prev.content), ...toArr(content)];
+      } else {
+        messages.push({ role: msg.role, content });
+      }
+    }
+
+    const body: Record<string, unknown> = {
+      model: request.model,
+      messages,
+      max_tokens: request.max_tokens ?? 4096,
+    };
+    if (system) body.system = system;
+    if (request.temperature !== undefined) body.temperature = request.temperature;
+    if (request.top_p !== undefined) body.top_p = request.top_p;
+    if (request.tools) {
+      body.tools = request.tools.map((t) => ({
+        name: t.function.name,
+        description: t.function.description,
+        input_schema: t.function.parameters,
+      }));
+    }
+    // Pass through thinking param for extended thinking
+    if ((request as any).thinking) body.thinking = (request as any).thinking;
+    return body;
+  }
+
+  private fromAnthropicResponse(data: any): ChatApiResponse {
+    let content = "";
+    let reasoningContent: string | null = null;
+    const toolCalls: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> = [];
+    for (const block of data.content ?? []) {
+      if (block.type === "text") content += block.text;
+      else if (block.type === "thinking") reasoningContent = (reasoningContent ?? "") + block.thinking;
+      else if (block.type === "tool_use") {
+        toolCalls.push({ id: block.id, type: "function", function: { name: block.name, arguments: JSON.stringify(block.input) } });
+      }
+    }
+    return {
+      id: data.id,
+      choices: [{ index: 0, message: { role: "assistant", content, reasoning_content: reasoningContent, tool_calls: toolCalls.length > 0 ? toolCalls : undefined }, finish_reason: data.stop_reason === "end_turn" ? "stop" : (data.stop_reason ?? "stop") }],
+      model: data.model,
+      usage: data.usage ? { prompt_tokens: data.usage.input_tokens ?? 0, completion_tokens: data.usage.output_tokens ?? 0, total_tokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0) } : undefined,
+    };
+  }
+
+  // ── Gemini Implementation ──
+
+  private async listModelsGemini(): Promise<Array<{ id: string; object: string }>> {
+    const url = `${this.baseUrl}/models?key=${this.apiKey}`;
+    const response = await fetch(url, { headers: this.customHeaders });
+    if (!response.ok) throw new Error(`Failed to list models: ${response.status}`);
+    const data = await response.json();
+    return (data.models ?? []).map((m: any) => ({
+      id: m.name?.replace("models/", "") ?? m.name,
+      object: "model",
+    }));
+  }
+
+  private async chatGemini(request: ChatApiRequest): Promise<ChatApiResponse> {
+    const body = this.toGeminiBody(request);
+    const url = `${this.baseUrl}/models/${request.model}:generateContent?key=${this.apiKey}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...this.customHeaders },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Chat API error: ${response.status} - ${errorText}`);
+    }
+    const data = await response.json();
+    return this.fromGeminiResponse(data);
+  }
+
+  private async *streamChatGemini(
+    request: ChatApiRequest,
+    signal?: AbortSignal,
+  ): AsyncGenerator<StreamDelta, void, unknown> {
+    const body = this.toGeminiBody(request);
+    const url = `${this.baseUrl}/models/${request.model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
+    const response = await expoFetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...this.customHeaders },
+      body: JSON.stringify(body),
+      signal,
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Stream API error: ${response.status} - ${errorText}`);
+    }
+    if (!response.body) throw new Error("Stream response has no body");
+    yield* this.readSSE(response.body, (parsed) => {
+      const candidate = parsed.candidates?.[0];
+      if (!candidate?.content?.parts) return null;
+      for (const part of candidate.content.parts) {
+        if (part.text !== undefined) return { content: part.text };
+        if (part.thought !== undefined) return { reasoning_content: part.thought };
+        if (part.functionCall) {
+          return {
+            tool_calls: [{ index: 0, id: part.functionCall.name, type: "function" as const, function: { name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args ?? {}) } }],
+          } as StreamDelta;
+        }
+      }
+      return null;
+    });
+  }
+
+  private toGeminiBody(request: ChatApiRequest): Record<string, unknown> {
+    const contents: Array<{ role: string; parts: unknown[] }> = [];
+    let systemInstruction: { parts: Array<{ text: string }> } | undefined;
+
+    for (const msg of request.messages) {
+      if (msg.role === "system") {
+        systemInstruction = { parts: [{ text: typeof msg.content === "string" ? msg.content : "" }] };
+        continue;
+      }
+      const role = msg.role === "assistant" ? "model" : "user";
+      const parts: unknown[] = [];
+      if (typeof msg.content === "string") {
+        parts.push({ text: msg.content });
+      } else if (Array.isArray(msg.content)) {
+        for (const part of msg.content) {
+          if (part.type === "text") parts.push({ text: part.text });
+          else if (part.type === "image_url") {
+            const url = part.image_url?.url ?? "";
+            const m = url.match(/^data:([^;]+);base64,(.+)$/);
+            if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
+          }
+        }
+      }
+      // Merge consecutive same-role
+      if (contents.length > 0 && contents[contents.length - 1].role === role) {
+        contents[contents.length - 1].parts.push(...parts);
+      } else {
+        contents.push({ role, parts });
+      }
+    }
+
+    const body: Record<string, unknown> = { contents };
+    if (systemInstruction) body.systemInstruction = systemInstruction;
+    const genConfig: Record<string, unknown> = {};
+    if (request.temperature !== undefined) genConfig.temperature = request.temperature;
+    if (request.top_p !== undefined) genConfig.topP = request.top_p;
+    if (request.max_tokens !== undefined) genConfig.maxOutputTokens = request.max_tokens;
+    if (Object.keys(genConfig).length > 0) body.generationConfig = genConfig;
+    if (request.tools) {
+      body.tools = [{ functionDeclarations: request.tools.map((t) => ({ name: t.function.name, description: t.function.description, parameters: t.function.parameters })) }];
+    }
+    return body;
+  }
+
+  private fromGeminiResponse(data: any): ChatApiResponse {
+    const candidate = data.candidates?.[0];
+    let content = "";
+    let reasoningContent: string | null = null;
+    const toolCalls: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }> = [];
+    for (const part of candidate?.content?.parts ?? []) {
+      if (part.text !== undefined) content += part.text;
+      if (part.thought !== undefined) reasoningContent = (reasoningContent ?? "") + part.thought;
+      if (part.functionCall) toolCalls.push({ id: part.functionCall.name, type: "function", function: { name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args ?? {}) } });
+    }
+    return {
+      id: data.id ?? "gemini",
+      choices: [{ index: 0, message: { role: "assistant", content, reasoning_content: reasoningContent, tool_calls: toolCalls.length > 0 ? toolCalls : undefined }, finish_reason: candidate?.finishReason === "STOP" ? "stop" : (candidate?.finishReason ?? "stop") }],
+      model: data.modelVersion ?? "gemini",
+      usage: data.usageMetadata ? { prompt_tokens: data.usageMetadata.promptTokenCount ?? 0, completion_tokens: data.usageMetadata.candidatesTokenCount ?? 0, total_tokens: data.usageMetadata.totalTokenCount ?? 0 } : undefined,
+    };
+  }
+
+  // ── Shared SSE reader ──
+
+  private async *readSSE(
+    body: ReadableStream<Uint8Array>,
+    parseLine: (parsed: any) => StreamDelta | null,
+  ): AsyncGenerator<StreamDelta, void, unknown> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+          try {
+            const parsed = JSON.parse(data);
+            const delta = parseLine(parsed);
+            if (delta) yield delta;
+          } catch { /* skip malformed JSON */ }
+        }
+      }
+      if (buffer.trim()) {
+        const trimmed = buffer.trim();
+        if (trimmed.startsWith("data: ")) {
+          const data = trimmed.slice(6);
+          if (data !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parseLine(parsed);
+              if (delta) yield delta;
+            } catch { /* skip */ }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  // ── Probe Methods ──
 
   async probeVision(modelId: string): Promise<boolean> {
     try {
@@ -208,11 +526,23 @@ export class ApiClient {
   }
 
   private getHeaders(): Record<string, string> {
-    return {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${this.apiKey}`,
-      ...this.customHeaders,
-    };
+    const base: Record<string, string> = { "Content-Type": "application/json" };
+    switch (this.providerType) {
+      case "anthropic":
+        base["x-api-key"] = this.apiKey;
+        base["anthropic-version"] = "2023-06-01";
+        break;
+      case "azure-openai":
+        base["api-key"] = this.apiKey;
+        break;
+      case "gemini":
+        // Gemini uses key as query param, no auth header needed
+        break;
+      default:
+        base["Authorization"] = `Bearer ${this.apiKey}`;
+        break;
+    }
+    return { ...base, ...this.customHeaders };
   }
 
   private getUrl(path: string): string {
