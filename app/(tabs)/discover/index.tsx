@@ -443,6 +443,16 @@ function ToolCard({
           <Text className="text-sm leading-relaxed text-slate-500" numberOfLines={1}>
             {tool.description}
           </Text>
+          {tool.schema?.name && (
+            <Text className="mt-1 text-[11px] font-mono text-slate-400" numberOfLines={1}>
+              {tool.schema.name}
+            </Text>
+          )}
+          {!isLocal && tool.endpoint && (
+            <Text className="mt-0.5 text-[10px] text-slate-300" numberOfLines={1}>
+              {tool.endpoint}
+            </Text>
+          )}
         </View>
       </View>
     </Pressable>
