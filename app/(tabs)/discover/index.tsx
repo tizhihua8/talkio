@@ -56,16 +56,21 @@ export default function DiscoverScreen() {
       return;
     }
 
-    // Extract server entries: { name, url }
-    let servers: Array<{ name: string; url: string }> = [];
+    // Extract server entries: { name, url, headers }
+    let servers: Array<{ name: string; url: string; headers?: Array<{ name: string; value: string }> }> = [];
 
     if (parsed.mcpServers && typeof parsed.mcpServers === "object") {
       for (const [key, val] of Object.entries(parsed.mcpServers)) {
         const v = val as Record<string, unknown>;
         const url = (v.url ?? v.endpoint ?? "") as string;
         const hasCommand = !!(v.command || v.args);
+        // Extract headers from config
+        let hdrs: Array<{ name: string; value: string }> | undefined;
+        if (v.headers && typeof v.headers === "object") {
+          hdrs = Object.entries(v.headers as Record<string, string>).map(([k, vv]) => ({ name: k, value: String(vv) }));
+        }
         if (url) {
-          servers.push({ name: key, url });
+          servers.push({ name: key, url, headers: hdrs });
         } else if (hasCommand) {
           // Desktop command-based config, skip with info
         }
@@ -101,7 +106,7 @@ export default function DiscoverScreen() {
       for (const server of servers) {
         try {
           // Connect to MCP server and discover tools
-          const remoteTools = await listRemoteTools(server.url);
+          const remoteTools = await listRemoteTools(server.url, server.headers);
           for (const rt of remoteTools) {
             addMcpTool({
               name: rt.name,
@@ -117,6 +122,7 @@ export default function DiscoverScreen() {
                 description: rt.description ?? "",
                 parameters: rt.inputSchema ?? { type: "object", properties: {} },
               },
+              customHeaders: server.headers,
             });
             totalAdded++;
           }
@@ -136,6 +142,7 @@ export default function DiscoverScreen() {
               description: "",
               parameters: { type: "object", properties: {} },
             },
+            customHeaders: server.headers,
           });
           totalAdded++;
         }
