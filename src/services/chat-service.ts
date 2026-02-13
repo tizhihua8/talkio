@@ -136,15 +136,28 @@ export async function generateResponse(
       }
     }
 
-    const stream = client.streamChat({
+    // o1/o3/o4 models don't support temperature, top_p, or system role
+    const isOModel = /\b(o1|o3|o4)\b/.test(model.modelId.toLowerCase());
+    const streamParams: Record<string, unknown> = {
       model: model.modelId,
-      messages: apiMessages,
+      messages: isOModel
+        ? apiMessages.map((m) =>
+            m.role === "system" ? { ...m, role: "user" as const, content: `[System Instructions]\n${typeof m.content === "string" ? m.content : ""}` } : m,
+          )
+        : apiMessages,
       stream: true,
-      temperature: identity?.params.temperature,
-      top_p: identity?.params.topP,
+      ...(isOModel ? {} : {
+        temperature: identity?.params.temperature,
+        top_p: identity?.params.topP,
+      }),
       tools: tools.length > 0 ? tools : undefined,
       ...reasoningParams,
-    }, signal);
+    };
+    // Remove undefined values to avoid sending them to the API
+    for (const key of Object.keys(streamParams)) {
+      if (streamParams[key] === undefined) delete streamParams[key];
+    }
+    const stream = client.streamChat(streamParams as any, signal);
 
     let inThinkTag = false;
 
@@ -282,13 +295,19 @@ export async function generateResponse(
         ...toolApiMsgs,
       ];
 
-      const followUpStream = client.streamChat({
+      const followUpParams: Record<string, unknown> = {
         model: model.modelId,
         messages: followUpMessages,
         stream: true,
-        temperature: identity?.params.temperature,
-        top_p: identity?.params.topP,
-      }, signal);
+        ...(isOModel ? {} : {
+          temperature: identity?.params.temperature,
+          top_p: identity?.params.topP,
+        }),
+      };
+      for (const key of Object.keys(followUpParams)) {
+        if (followUpParams[key] === undefined) delete followUpParams[key];
+      }
+      const followUpStream = client.streamChat(followUpParams as any, signal);
 
       let followUpContent = "";
       for await (const delta of followUpStream) {
@@ -383,8 +402,10 @@ async function autoGenerateTitle(
           role: "system",
           content: "Generate a very short title (3-8 words) for this conversation. Return ONLY the title text, no quotes, no punctuation at the end.",
         },
-        { role: "user", content: userMsg.content.slice(0, 500) },
-        { role: "assistant", content: assistantContent.slice(0, 500) },
+        {
+          role: "user",
+          content: `User: ${userMsg.content.slice(0, 300)}\n\nAssistant: ${assistantContent.slice(0, 300)}\n\nGenerate a short title for this conversation.`,
+        },
       ],
       stream: false,
       temperature: 0.3,
