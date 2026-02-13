@@ -207,26 +207,33 @@ export default function ProviderEditScreen() {
           <Text className="mb-4 px-1 text-[15px] font-semibold text-slate-900">
             {t("providerEdit.quickSelect")}
           </Text>
+          {/* OpenAI Compatible — hero card */}
+          <Pressable
+            onPress={selectCustom}
+            className="mb-3 flex-row items-center rounded-2xl border-2 border-primary/30 bg-primary/5 px-5 py-4"
+          >
+            <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <Ionicons name="link-outline" size={26} color="#007AFF" />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[16px] font-bold text-slate-900">{t("providerEdit.openaiCompatible")}</Text>
+              <Text className="mt-0.5 text-[13px] text-slate-500">{t("providerEdit.openaiCompatibleHint")}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+          </Pressable>
+
+          <Text className="mb-2 mt-2 px-1 text-[13px] text-slate-400">{t("providerEdit.directApi")}</Text>
           <View className="flex-row flex-wrap gap-3">
             {Object.entries(PROVIDER_PRESETS).map(([key, preset]) => (
               <Pressable
                 key={key}
                 onPress={() => applyPreset(key)}
-                className="w-[47%] items-center rounded-2xl border border-slate-200 bg-white px-3 py-5"
+                className="w-[47%] items-center rounded-2xl border border-slate-200 bg-white px-3 py-4"
               >
-                <Ionicons name={(PRESET_ICONS[key] ?? "ellipse-outline") as any} size={28} color="#007AFF" />
-                <Text className="mt-2 text-[15px] font-semibold text-slate-800">{preset.name}</Text>
-                <Text className="mt-0.5 text-[11px] text-slate-400">{preset.type}</Text>
+                <Ionicons name={(PRESET_ICONS[key] ?? "ellipse-outline") as any} size={24} color="#007AFF" />
+                <Text className="mt-1.5 text-[14px] font-semibold text-slate-800">{preset.name}</Text>
               </Pressable>
             ))}
-            <Pressable
-              onPress={selectCustom}
-              className="w-[47%] items-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-5"
-            >
-              <Ionicons name="add-circle-outline" size={28} color="#94a3b8" />
-              <Text className="mt-2 text-[15px] font-semibold text-slate-500">{t("providerEdit.custom")}</Text>
-              <Text className="mt-0.5 text-[11px] text-slate-400">{t("providerEdit.customHint")}</Text>
-            </Pressable>
           </View>
         </View>
       )}

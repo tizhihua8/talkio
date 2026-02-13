@@ -158,7 +158,10 @@
     "connecting": "连接中...",
     "fetchingModels": "获取模型中...",
     "retryConnection": "重试连接",
-    "connectAndFetch": "连接并获取模型"
+    "connectAndFetch": "连接并获取模型",
+    "openaiCompatible": "OpenAI 兼容",
+    "openaiCompatibleHint": "One-API、New-API、OpenRouter 等",
+    "directApi": "或使用供应商的原生 API"
   },
   "providers": {
     "deleteProvider": "删除供应商",

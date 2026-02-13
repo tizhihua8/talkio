@@ -158,7 +158,10 @@
     "connecting": "Connecting...",
     "fetchingModels": "Fetching models...",
     "retryConnection": "Retry Connection",
-    "connectAndFetch": "Connect & Fetch Models"
+    "connectAndFetch": "Connect & Fetch Models",
+    "openaiCompatible": "OpenAI Compatible",
+    "openaiCompatibleHint": "One-API, New-API, OpenRouter, etc.",
+    "directApi": "Or use a provider's direct API"
   },
   "providers": {
     "deleteProvider": "Delete Provider",
