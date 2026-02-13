@@ -348,8 +348,8 @@ export async function generateResponse(
       log.info(`Generation stopped by user for model ${model.displayName}`);
       return;
     }
-    log.error(`Stream error: ${err instanceof Error ? err.message : "Unknown"}`);
-    const errorContent = `Error: ${err instanceof Error ? err.message : "Unknown error"}`;
+    log.error(`Stream error for ${model.displayName}: ${err instanceof Error ? err.message : "Unknown"}`);
+    const errorContent = `[${model.displayName}] Error: ${err instanceof Error ? err.message : "Unknown error"}`;
     await dbUpdateMessage(assistantMsg.id, {
       content: errorContent,
       isStreaming: false,
@@ -394,12 +394,11 @@ function buildApiMessages(
     };
 
     if (msg.role === "assistant" && msg.senderModelId !== targetModelId && msg.senderName) {
-      // OpenAI name field: only a-z, A-Z, 0-9, _ and -. Max 64 chars.
-      let safeName = msg.senderName.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_{2,}/g, "_").replace(/^_|_$/g, "");
-      if (!safeName) {
-        safeName = "model_" + (msg.senderModelId ?? "unknown").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 50);
+      // Prefix content with model name instead of using name field (better proxy compatibility)
+      const prefix = `[${msg.senderName}]: `;
+      if (typeof apiMsg.content === "string") {
+        apiMsg.content = prefix + apiMsg.content;
       }
-      apiMsg.name = safeName.slice(0, 64);
     }
 
     apiMessages.push(apiMsg);
