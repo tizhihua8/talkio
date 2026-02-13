@@ -77,14 +77,25 @@ export default function DiscoverScreen() {
         }];
       }
 
-      if (tools.length === 0) {
-        Alert.alert(t("common.error"), t("personas.importNoTools"));
+      // Detect command-based configs (desktop MCP, not supported on mobile)
+      const hasCommandOnly = tools.length > 0 && tools.every((t) => !t.endpoint);
+      if (tools.length === 0 || hasCommandOnly) {
+        // Check if it's a command-based config
+        const isCommandConfig = parsed.mcpServers && Object.values(parsed.mcpServers).some(
+          (v: any) => v.command || v.args,
+        );
+        if (isCommandConfig) {
+          Alert.alert(t("common.error"), t("personas.importCommandNotSupported"));
+        } else {
+          Alert.alert(t("common.error"), t("personas.importNoTools"));
+        }
         return;
       }
 
       let added = 0;
+      let skipped = 0;
       for (const tool of tools) {
-        if (!tool.name || !tool.endpoint) continue;
+        if (!tool.name || !tool.endpoint) { skipped++; continue; }
         addMcpTool({
           name: tool.name,
           type: "remote",
