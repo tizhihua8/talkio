@@ -83,7 +83,7 @@ export default function ChatDetailScreen() {
       headerRight: () => (
         <View className="flex-row items-center gap-1">
           <Pressable onPress={clearHistory} className="px-2">
-            <Ionicons name="trash-outline" size={20} color="#007AFF" />
+            <Ionicons name="create-outline" size={20} color="#007AFF" />
           </Pressable>
           <Pressable onPress={() => showChatOptions()} className="px-2">
             <Ionicons name="ellipsis-horizontal" size={22} color="#007AFF" />
