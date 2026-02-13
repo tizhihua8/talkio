@@ -564,10 +564,10 @@ export default function ProviderEditScreen() {
       )}
 
       {/* Security note */}
-      <View className="items-center pb-8 px-6">
+      <View className="items-center px-6 pt-10 pb-8">
         <View className="flex-row items-center gap-1.5 mb-1">
-          <Ionicons name="lock-closed" size={12} color="#94a3b8" />
-          <Text className="text-[11px] text-slate-400">{t("providerEdit.encryption")}</Text>
+          <Ionicons name="lock-closed" size={12} color="#cbd5e1" />
+          <Text className="text-[11px] text-slate-300">{t("providerEdit.encryption")}</Text>
         </View>
       </View>
     </ScrollView>
