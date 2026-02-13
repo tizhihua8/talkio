@@ -70,6 +70,7 @@ export interface McpTool {
   nativeModule: string | null;
   permissions: string[];
   enabled: boolean;
+  builtIn?: boolean;
   schema: McpToolSchema | null;
 }
 

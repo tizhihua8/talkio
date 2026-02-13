@@ -225,15 +225,12 @@
     "namePlaceholder": "例如：日历读取器",
     "description": "描述",
     "descPlaceholder": "这个工具做什么？",
-    "type": "类型",
-    "typeLocal": "本地（原生）",
-    "typeRemote": "远程（SSE）",
-    "scope": "作用域",
-    "endpointUrl": "端点 URL",
+    "endpointUrl": "MCP 服务器地址",
     "enabled": "启用",
     "addTool": "添加工具",
     "saveChanges": "保存更改",
-    "nameRequired": "名称为必填项"
+    "nameRequired": "名称为必填项",
+    "endpointRequired": "服务器地址为必填项"
   },
   "privacy": {
     "privacyFirst": "隐私优先",

@@ -24,6 +24,7 @@ export default function RootLayout() {
     Promise.all([hydrateStorage(), initDatabase()]).then(() => {
       loadProviders();
       loadIdentities();
+      useIdentityStore.getState().initBuiltInTools();
       loadSettings();
       loadConversations();
       setReady(true);

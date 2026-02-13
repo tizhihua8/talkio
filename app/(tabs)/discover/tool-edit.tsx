@@ -3,7 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch } from "rea
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useIdentityStore } from "../../../src/stores/identity-store";
-import type { McpToolType, McpToolScope } from "../../../src/types";
+// Remote MCP tool editor (built-in tools are managed separately)
 
 export default function ToolEditScreen() {
   const { t } = useTranslation();
@@ -18,8 +18,6 @@ export default function ToolEditScreen() {
 
   const [name, setName] = useState(existing?.name ?? "");
   const [description, setDescription] = useState(existing?.description ?? "");
-  const [type, setType] = useState<McpToolType>(existing?.type ?? "remote");
-  const [scope, setScope] = useState<McpToolScope>(existing?.scope ?? "global");
   const [endpoint, setEndpoint] = useState(existing?.endpoint ?? "");
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
 
@@ -28,14 +26,18 @@ export default function ToolEditScreen() {
       Alert.alert(t("common.error"), t("toolEdit.nameRequired"));
       return;
     }
+    if (!endpoint.trim()) {
+      Alert.alert(t("common.error"), t("toolEdit.endpointRequired"));
+      return;
+    }
 
     const data = {
       name: name.trim(),
-      type,
-      scope,
+      type: "remote" as const,
+      scope: "global" as const,
       description: description.trim(),
-      endpoint: type === "remote" ? endpoint.trim() || null : null,
-      nativeModule: type === "local" ? name.trim() : null,
+      endpoint: endpoint.trim(),
+      nativeModule: null,
       permissions: [] as string[],
       enabled,
       schema: {
@@ -80,57 +82,17 @@ export default function ToolEditScreen() {
       </View>
 
       <View className="px-4 pt-4">
-        <Text className="mb-2 text-sm font-medium text-text-muted">{t("toolEdit.type")}</Text>
-        <View className="flex-row">
-          {(["local", "remote"] as McpToolType[]).map((tp) => (
-            <Pressable
-              key={tp}
-              onPress={() => setType(tp)}
-              className={`mr-2 rounded-full px-4 py-2 ${
-                type === tp ? "bg-primary" : "bg-bg-secondary"
-              }`}
-            >
-              <Text className={`text-sm ${type === tp ? "text-white" : "text-text-muted"}`}>
-                {tp === "local" ? t("toolEdit.typeLocal") : t("toolEdit.typeRemote")}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text className="mb-1 text-sm font-medium text-text-muted">{t("toolEdit.endpointUrl")}</Text>
+        <TextInput
+          className="rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-main"
+          value={endpoint}
+          onChangeText={setEndpoint}
+          placeholder="https://mcp-server.example.com/sse"
+          placeholderTextColor="#9ca3af"
+          autoCapitalize="none"
+          keyboardType="url"
+        />
       </View>
-
-      <View className="px-4 pt-4">
-        <Text className="mb-2 text-sm font-medium text-text-muted">{t("toolEdit.scope")}</Text>
-        <View className="flex-row flex-wrap">
-          {(["global", "identity-bound", "ad-hoc"] as McpToolScope[]).map((s) => (
-            <Pressable
-              key={s}
-              onPress={() => setScope(s)}
-              className={`mb-2 mr-2 rounded-full px-4 py-2 ${
-                scope === s ? "bg-primary" : "bg-bg-secondary"
-              }`}
-            >
-              <Text className={`text-sm ${scope === s ? "text-white" : "text-text-muted"}`}>
-                {s}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      {type === "remote" && (
-        <View className="px-4 pt-4">
-          <Text className="mb-1 text-sm font-medium text-text-muted">{t("toolEdit.endpointUrl")}</Text>
-          <TextInput
-            className="rounded-xl border border-border-light bg-bg-secondary px-4 py-3 text-sm text-text-main"
-            value={endpoint}
-            onChangeText={setEndpoint}
-            placeholder="https://mcp-server.example.com/sse"
-            placeholderTextColor="#9ca3af"
-            autoCapitalize="none"
-            keyboardType="url"
-          />
-        </View>
-      )}
 
       <View className="mx-4 mt-4 flex-row items-center justify-between rounded-xl border border-border-light bg-bg-secondary px-4 py-3">
         <Text className="text-sm text-text-main">{t("toolEdit.enabled")}</Text>

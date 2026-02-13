@@ -3,10 +3,12 @@ import type { Identity, McpTool } from "../types";
 import { getItem, setItem } from "../storage/mmkv";
 import { STORAGE_KEYS, DEFAULT_IDENTITY_PARAMS } from "../constants";
 import { generateId } from "../utils/id";
+import { BUILT_IN_TOOLS, registerBuiltInTools } from "../services/built-in-tools";
 
 interface IdentityState {
   identities: Identity[];
   mcpTools: McpTool[];
+  initBuiltInTools: () => void;
   loadIdentities: () => void;
   addIdentity: (data: Omit<Identity, "id" | "createdAt">) => Identity;
   updateIdentity: (id: string, updates: Partial<Identity>) => void;
@@ -23,6 +25,35 @@ interface IdentityState {
 export const useIdentityStore = create<IdentityState>((set, get) => ({
   identities: [],
   mcpTools: [],
+
+  initBuiltInTools: () => {
+    const existing = get().mcpTools;
+    let changed = false;
+    const updated = [...existing];
+
+    // Seed any missing built-in tools
+    for (const def of BUILT_IN_TOOLS) {
+      const found = existing.find((t) => t.builtIn && t.nativeModule === def.nativeModule);
+      if (!found) {
+        updated.push({ ...def, id: generateId() });
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      set({ mcpTools: updated });
+      setItem(STORAGE_KEYS.MCP_TOOLS, updated);
+    }
+
+    // Register handlers for all built-in tools
+    const idMap = new Map<string, string>();
+    for (const t of get().mcpTools) {
+      if (t.builtIn && t.nativeModule) {
+        idMap.set(t.nativeModule, t.id);
+      }
+    }
+    registerBuiltInTools(idMap);
+  },
 
   loadIdentities: () => {
     const identities = getItem<Identity[]>(STORAGE_KEYS.IDENTITIES) ?? [];
