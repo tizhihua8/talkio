@@ -104,7 +104,8 @@
     "importNoTools": "No valid tools found in JSON",
     "importInvalidJson": "Invalid JSON format",
     "importSuccess": "Successfully imported {{count}} tool(s)",
-    "importCommandNotSupported": "This is a desktop MCP config (npx/uvx commands). Mobile only supports URL-based remote MCP servers. Please use a config with \"url\" fields."
+    "importCommandNotSupported": "This is a desktop MCP config (npx/uvx commands). Mobile only supports URL-based remote MCP servers. Please use a config with \"url\" fields.",
+    "importDiscoveryFailed": "Failed to discover tools from server"
   },
   "settings": {
     "title": "Settings",

@@ -127,24 +127,12 @@ export default function DiscoverScreen() {
             totalAdded++;
           }
         } catch (err) {
-          // If discovery fails, add server as a single tool entry
-          addMcpTool({
-            name: server.name,
-            type: "remote",
-            scope: "global",
-            description: "",
-            endpoint: server.url,
-            nativeModule: null,
-            permissions: [],
-            enabled: true,
-            schema: {
-              name: server.name.toLowerCase().replace(/\s+/g, "_"),
-              description: "",
-              parameters: { type: "object", properties: {} },
-            },
-            customHeaders: server.headers,
-          });
-          totalAdded++;
+          // Discovery failed — show error, don't create a fake tool
+          const errMsg = err instanceof Error ? err.message : "Connection failed";
+          Alert.alert(
+            server.name,
+            `${t("personas.importDiscoveryFailed")}: ${errMsg}`,
+          );
         }
       }
 
