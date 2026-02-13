@@ -90,28 +90,8 @@ export async function generateResponse(
     messages: [...s.messages, assistantMsg],
   }));
 
-  const client = new ApiClient(provider);
+  console.log(`[GEN] START model=${model.displayName} (${model.modelId})`);
 
-  // Build reasoning params if model supports it (ref: Cherry Studio reasoning.ts)
-  const effort = identity?.params.reasoningEffort ?? "auto";
-  const reasoningParams: Record<string, unknown> = {};
-  if (model.capabilities.reasoning && effort !== "none") {
-    const mid = model.modelId.toLowerCase();
-    if (mid.includes("claude")) {
-      const budgetMap = { low: 4096, medium: 8192, high: 16384, auto: 8192 };
-      reasoningParams.thinking = { type: "enabled", budget_tokens: budgetMap[effort] ?? 8192 };
-    } else if (mid.includes("gemini") && mid.includes("thinking")) {
-      const budgetMap = { low: 1024, medium: 4096, high: -1, auto: -1 };
-      reasoningParams.extra_body = {
-        google: { thinking_config: { thinking_budget: budgetMap[effort] ?? -1, include_thoughts: true } },
-      };
-    } else if (mid.includes("hunyuan")) {
-      reasoningParams.enable_thinking = true;
-    } else if (mid.match(/\b(o1|o3|o4)\b/) || mid.includes("grok") || mid.includes("perplexity")) {
-      reasoningParams.reasoning_effort = effort === "auto" ? "medium" : effort;
-    }
-    // DeepSeek R1, QwQ etc: no special params needed, they return reasoning_content automatically
-  }
   let content = "";
   let reasoningContent = "";
   const generatedImages: string[] = [];
@@ -121,22 +101,45 @@ export async function generateResponse(
     arguments: string;
   }> = [];
 
-  // Safety: guarantee isStreaming is always reset
-  const markDone = async (text?: string) => {
+  // Helper: always mark message as done (isStreaming=false), never throws
+  const finishMessage = async (finalContent: string) => {
     try {
-      const finalContent = text ?? (content || "");
       await dbUpdateMessage(assistantMsg.id, { content: finalContent, isStreaming: false });
-      useChatStore.setState((s) => ({
-        messages: s.messages.map((m) =>
-          m.id === assistantMsg.id ? { ...m, content: finalContent, isStreaming: false } : m,
-        ),
-      }));
     } catch (e) {
-      log.error(`Failed to mark message done: ${e}`);
+      console.error(`[GEN] DB update failed:`, e);
     }
+    useChatStore.setState((s) => ({
+      messages: s.messages.map((m) =>
+        m.id === assistantMsg.id ? { ...m, content: finalContent, isStreaming: false } : m,
+      ),
+    }));
   };
 
   try {
+    const client = new ApiClient(provider);
+
+    // Build reasoning params if model supports it
+    const effort = identity?.params.reasoningEffort ?? "auto";
+    const reasoningParams: Record<string, unknown> = {};
+    if (model.capabilities.reasoning && effort !== "none") {
+      const mid = model.modelId.toLowerCase();
+      if (mid.includes("claude")) {
+        const budgetMap = { low: 4096, medium: 8192, high: 16384, auto: 8192 };
+        reasoningParams.thinking = { type: "enabled", budget_tokens: budgetMap[effort] ?? 8192 };
+      } else if (mid.includes("gemini") && mid.includes("thinking")) {
+        const budgetMap = { low: 1024, medium: 4096, high: -1, auto: -1 };
+        reasoningParams.extra_body = {
+          google: { thinking_config: { thinking_budget: budgetMap[effort] ?? -1, include_thoughts: true } },
+        };
+      } else if (mid.includes("hunyuan")) {
+        reasoningParams.enable_thinking = true;
+      } else if (mid.match(/\b(o1|o3|o4)\b/) || mid.includes("grok") || mid.includes("perplexity")) {
+        reasoningParams.reasoning_effort = effort === "auto" ? "medium" : effort;
+      }
+    }
+
+    console.log(`[GEN] STREAM model=${model.displayName}, msgs=${apiMessages.length}, params=${JSON.stringify(Object.keys(reasoningParams))}`);
+
     const stream = client.streamChat({
       model: model.modelId,
       messages: apiMessages,
@@ -177,7 +180,9 @@ export async function generateResponse(
       }
     };
 
+    let chunkCount = 0;
     for await (const delta of stream) {
+      chunkCount++;
       // Handle content: can be string or multimodal array
       if (delta.content != null) {
         if (typeof delta.content === "string") {
@@ -236,13 +241,14 @@ export async function generateResponse(
       }));
     }
 
-    // Post-stream: extract markdown images from content (fallback for APIs that embed base64 in text)
+    console.log(`[GEN] STREAM_END model=${model.displayName}, chunks=${chunkCount}, contentLen=${content.length}`);
+
+    // Post-stream: extract markdown images from content
     const mdImageRegex = /!\[[^\]]*\]\((data:image\/[^)]+)\)/g;
     let match: RegExpExecArray | null;
     while ((match = mdImageRegex.exec(content)) !== null) {
       generatedImages.push(match[1]);
     }
-    // Remove markdown image syntax from displayed content if we extracted images
     if (generatedImages.length > 0) {
       content = content.replace(/!\[[^\]]*\]\(data:image\/[^)]+\)/g, "").trim();
     }
@@ -262,7 +268,6 @@ export async function generateResponse(
         ),
       }));
 
-      // Build follow-up messages: assistant (with tool_calls) + tool results
       const assistantApiMsg: ChatApiMessage = {
         role: "assistant",
         content: content || "",
@@ -283,7 +288,6 @@ export async function generateResponse(
         ...toolApiMsgs,
       ];
 
-      // Second-round: send tool results back for model to continue reasoning
       const followUpStream = client.streamChat({
         model: model.modelId,
         messages: followUpMessages,
@@ -334,7 +338,6 @@ export async function generateResponse(
       lastMessageAt: now,
     });
 
-    // P1-1: Sync conversations store so list view reflects AI reply
     useChatStore.setState((s) => ({
       conversations: s.conversations.map((c) =>
         c.id === conversationId
@@ -343,16 +346,16 @@ export async function generateResponse(
       ),
     }));
 
-    log.info(`Response complete for model ${model.displayName}`);
+    console.log(`[GEN] DONE model=${model.displayName}`);
   } catch (err) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error(`[GEN] ERROR model=${model.displayName}: ${errMsg}`);
+
     if (signal?.aborted) {
-      log.info(`Generation stopped by user for model ${model.displayName}`);
-      await markDone(content || "(stopped)");
+      await finishMessage(content || "(stopped)");
       return;
     }
-    log.error(`Stream error for ${model.displayName}: ${err instanceof Error ? err.message : "Unknown"}`);
-    const errorContent = `[${model.displayName}] Error: ${err instanceof Error ? err.message : "Unknown error"}`;
-    await markDone(errorContent);
+    await finishMessage(`[${model.displayName}] Error: ${errMsg}`);
   }
 }
 
