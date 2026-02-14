@@ -231,7 +231,8 @@
     "aiDescRequired": "请先输入描述",
     "aiSelectModel": "选择模型",
     "selectModel": "选择模型",
-    "generate": "生成"
+    "generate": "生成",
+    "builtIn": "内置"
   },
   "toolEdit": {
     "name": "名称",

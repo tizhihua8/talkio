@@ -348,7 +348,7 @@ function IdentityCard({
             </View>
             <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
               <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
-                {t("personas.tools", { count: identity.mcpToolIds.length })}
+                {t("personas.tools", { count: identity.mcpToolIds.length + (identity.mcpServerIds?.length ?? 0) })}
               </Text>
             </View>
           </View>

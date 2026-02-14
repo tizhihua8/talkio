@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useIdentityStore } from "../../../src/stores/identity-store";
 import { useProviderStore } from "../../../src/stores/provider-store";
+import type { McpServer } from "../../../src/types";
 import { ApiClient } from "../../../src/services/api-client";
 import { DEFAULT_IDENTITY_PARAMS, IDENTITY_ICONS } from "../../../src/constants";
 export default function IdentityEditScreen() {
@@ -15,6 +16,7 @@ export default function IdentityEditScreen() {
   const addIdentity = useIdentityStore((s) => s.addIdentity);
   const updateIdentity = useIdentityStore((s) => s.updateIdentity);
   const mcpTools = useIdentityStore((s) => s.mcpTools);
+  const mcpServers = useIdentityStore((s) => s.mcpServers);
 
   const providers = useProviderStore((s) => s.providers);
   const models = useProviderStore((s) => s.models);
@@ -42,6 +44,9 @@ export default function IdentityEditScreen() {
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
     existing?.mcpToolIds ?? [],
   );
+  const [selectedServerIds, setSelectedServerIds] = useState<string[]>(
+    existing?.mcpServerIds ?? [],
+  );
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -59,6 +64,7 @@ export default function IdentityEditScreen() {
       systemPrompt: systemPrompt.trim(),
       params: { temperature, topP },
       mcpToolIds: selectedToolIds,
+      mcpServerIds: selectedServerIds,
     };
 
     if (isNew) {
@@ -72,6 +78,12 @@ export default function IdentityEditScreen() {
   const toggleTool = (toolId: string) => {
     setSelectedToolIds((prev) =>
       prev.includes(toolId) ? prev.filter((t) => t !== toolId) : [...prev, toolId],
+    );
+  };
+
+  const toggleServer = (serverId: string) => {
+    setSelectedServerIds((prev) =>
+      prev.includes(serverId) ? prev.filter((s) => s !== serverId) : [...prev, serverId],
     );
   };
 
@@ -243,10 +255,11 @@ export default function IdentityEditScreen() {
         <ParamSlider label={t("identityEdit.topP")} value={topP} min={0} max={1} step={0.05} onChange={setTopP} />
       </View>
 
-      {mcpTools.length > 0 && (
+      {(mcpTools.length > 0 || mcpServers.length > 0) && (
         <View className="px-4 pt-4">
           <Text className="mb-2 text-sm font-medium text-text-muted">{t("identityEdit.bindTools")}</Text>
-          {mcpTools.map((tool) => (
+
+          {mcpTools.length > 0 && mcpTools.map((tool) => (
             <Pressable
               key={tool.id}
               onPress={() => toggleTool(tool.id)}
@@ -257,8 +270,29 @@ export default function IdentityEditScreen() {
                 size={20}
                 color={selectedToolIds.includes(tool.id) ? "#2b2bee" : "#9ca3af"}
               />
-              <Text className="ml-2 flex-1 text-sm text-text-main">{tool.name}</Text>
-              <Text className="text-xs text-text-hint">{tool.type}</Text>
+              <View className="ml-2 flex-1">
+                <Text className="text-sm text-text-main">{tool.name}</Text>
+              </View>
+              <Text className="text-xs text-text-hint">{t("identityEdit.builtIn")}</Text>
+            </Pressable>
+          ))}
+
+          {mcpServers.length > 0 && mcpServers.map((server) => (
+            <Pressable
+              key={server.id}
+              onPress={() => toggleServer(server.id)}
+              className="mb-2 flex-row items-center rounded-lg border border-border-light bg-bg-secondary px-3 py-2.5"
+            >
+              <Ionicons
+                name={selectedServerIds.includes(server.id) ? "checkbox" : "square-outline"}
+                size={20}
+                color={selectedServerIds.includes(server.id) ? "#2b2bee" : "#9ca3af"}
+              />
+              <View className="ml-2 flex-1">
+                <Text className="text-sm text-text-main">{server.name}</Text>
+                <Text className="text-[11px] text-text-hint" numberOfLines={1}>{server.url}</Text>
+              </View>
+              <Ionicons name="cloud-outline" size={14} color="#9ca3af" />
             </Pressable>
           ))}
         </View>

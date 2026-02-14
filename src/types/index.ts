@@ -57,6 +57,7 @@ export interface Identity {
   systemPrompt: string;
   params: IdentityParams;
   mcpToolIds: string[];
+  mcpServerIds?: string[];
   createdAt: string;
 }
 

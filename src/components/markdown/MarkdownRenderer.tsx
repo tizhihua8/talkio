@@ -1,5 +1,7 @@
-import React, { useMemo } from "react";
+import React, { useMemo, createContext, useContext } from "react";
 import { View, Text, useColorScheme } from "react-native";
+
+const DarkModeContext = createContext(false);
 
 let parseMarkdownWithOptions: any = null;
 let isNitroAvailable = false;
@@ -15,25 +17,32 @@ try {
 import { MarkdownFallback } from "./MarkdownFallback";
 import { MarkdownCodeBlock } from "./MarkdownCodeBlock";
 import { MermaidRenderer } from "./MermaidRenderer";
+import { HtmlPreview } from "../common/HtmlPreview";
 
 interface MarkdownRendererProps {
   content: string;
 }
 
-export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+export const MarkdownRenderer = React.memo(function MarkdownRenderer({ content }: MarkdownRendererProps) {
   if (!isNitroAvailable) {
     return <MarkdownFallback content={content} />;
   }
 
   return <NitroMarkdownRenderer content={content} />;
-}
+});
 
 function NitroMarkdownRenderer({ content }: { content: string }) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
   const ast = useMemo(() => {
     return parseMarkdownWithOptions(content, { gfm: true, math: true });
   }, [content]);
 
-  return <NodeRenderer node={ast} />;
+  return (
+    <DarkModeContext.Provider value={isDark}>
+      <NodeRenderer node={ast} />
+    </DarkModeContext.Provider>
+  );
 }
 
 interface NodeRendererProps {
@@ -48,8 +57,7 @@ function getTextContent(node: any): string {
 }
 
 function NodeRenderer({ node }: NodeRendererProps) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+  const isDark = useContext(DarkModeContext);
 
   const renderChildren = (targetNode: any = node) => {
     if (!targetNode.children) return null;
@@ -138,6 +146,9 @@ function NodeRenderer({ node }: NodeRendererProps) {
       const lang = (node.language || "").toLowerCase();
       if (lang === "mermaid") {
         return <MermaidRenderer code={getTextContent(node)} />;
+      }
+      if (lang === "html" || lang === "svg") {
+        return <HtmlPreview code={getTextContent(node)} language={lang} />;
       }
       return (
         <MarkdownCodeBlock

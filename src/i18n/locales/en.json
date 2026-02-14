@@ -231,7 +231,8 @@
     "aiDescRequired": "Please enter a description first",
     "aiSelectModel": "Select Model",
     "selectModel": "Select Model",
-    "generate": "Generate"
+    "generate": "Generate",
+    "builtIn": "Built-in"
   },
   "toolEdit": {
     "name": "Name",

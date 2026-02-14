@@ -64,7 +64,14 @@ export async function generateResponse(
     : undefined;
 
   const apiMessages = buildApiMessages(chatStore.messages, modelId, identity);
-  const tools = await buildTools(model, identity);
+  log.info(`[generateResponse] Building tools for ${model.displayName}...`);
+  let tools: ChatApiToolDef[] = [];
+  try {
+    tools = await buildTools(model, identity);
+  } catch (err) {
+    log.warn(`[generateResponse] buildTools failed, proceeding without tools: ${err instanceof Error ? err.message : err}`);
+  }
+  log.info(`[generateResponse] Tools ready: ${tools.length} tools`);
 
   const assistantMsg: Message = {
     id: generateId(),
@@ -158,6 +165,7 @@ export async function generateResponse(
     for (const key of Object.keys(streamParams)) {
       if (streamParams[key] === undefined) delete streamParams[key];
     }
+    log.info(`[generateResponse] Starting stream for ${model.modelId} to ${provider.baseUrl}...`);
     const stream = client.streamChat(streamParams as any, signal);
 
     let inThinkTag = false;
@@ -193,6 +201,7 @@ export async function generateResponse(
     let chunkCount = 0;
     for await (const delta of stream) {
       chunkCount++;
+      if (chunkCount === 1) log.info(`[generateResponse] First chunk received`);
       // Handle content: can be string or multimodal array
       if (delta.content != null) {
         if (typeof delta.content === "string") {
@@ -361,10 +370,12 @@ export async function generateResponse(
     }));
 
     // Auto-generate conversation title on first response
+    log.info(`[generateResponse] Stream complete. ${chunkCount} chunks, ${content.length} chars`);
     autoGenerateTitle(conversationId, client, model, chatStore.messages, content).catch(() => {});
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err);
-    log.error(`Stream error for ${model.displayName}: ${errMsg}`);
+    const errStack = err instanceof Error ? err.stack : '';
+    log.error(`Stream error for ${model.displayName}: ${errMsg}\n${errStack}`);
 
     if (signal?.aborted) {
       await finishMessage(content || "(stopped)");
@@ -475,29 +486,44 @@ function buildApiMessages(
 let _discoveredToolsCache: Map<string, { server: McpServer; tool: DiscoveredTool }> = new Map();
 
 async function buildTools(model: { capabilities: { toolCall: boolean } }, identity: Identity | undefined): Promise<ChatApiToolDef[]> {
-  // Skip tools entirely if model doesn't support tool calls
+  // Skip tools entirely if model doesn't support tool calls or no identity bound
   if (!model.capabilities.toolCall) return [];
+  if (!identity) return [];
 
   const identityStore = useIdentityStore.getState();
   const seen = new Set<string>();
   const result: ChatApiToolDef[] = [];
 
-  // 1. Built-in tools (local)
-  const enabledBuiltIn = identityStore.mcpTools.filter((t) => t.enabled);
-  for (const t of enabledBuiltIn) {
-    const def = toolToApiDef(t);
-    if (def && !seen.has(def.function.name)) {
-      seen.add(def.function.name);
-      result.push(def);
+  // 1. Built-in tools — only those explicitly bound to the identity
+  const boundToolIds = new Set(identity.mcpToolIds);
+  if (boundToolIds.size > 0) {
+    const boundBuiltIn = identityStore.mcpTools.filter((t) => t.enabled && boundToolIds.has(t.id));
+    for (const t of boundBuiltIn) {
+      const def = toolToApiDef(t);
+      if (def && !seen.has(def.function.name)) {
+        seen.add(def.function.name);
+        result.push(def);
+      }
     }
   }
 
-  // 2. Remote tools from enabled McpServers
+  // 2. Remote MCP servers — only those explicitly bound to the identity
   _discoveredToolsCache = new Map();
-  const enabledServers = identityStore.mcpServers.filter((s) => s.enabled);
+  const enabledServers = identity.mcpServerIds?.length
+    ? identityStore.mcpServers.filter((s) => s.enabled && identity.mcpServerIds!.includes(s.id))
+    : [];
+
+  const DISCOVERY_TIMEOUT = 8000; // 8s per server
   for (const server of enabledServers) {
     try {
-      const tools = await discoverServerTools(server);
+      log.info(`Discovering tools from ${server.name} (${server.url})...`);
+      const tools = await Promise.race([
+        discoverServerTools(server),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error(`Timeout after ${DISCOVERY_TIMEOUT}ms`)), DISCOVERY_TIMEOUT),
+        ),
+      ]);
+      log.info(`Discovered ${tools.length} tools from ${server.name}`);
       for (const tool of tools) {
         if (!seen.has(tool.name)) {
           seen.add(tool.name);
@@ -528,11 +554,24 @@ async function executeToolCalls(
     // Check remote tools cache first (from buildTools discovery)
     const remote = _discoveredToolsCache.get(tc.name);
     if (remote) {
-      const result = await executeServerTool(remote.server, tc.name, args);
-      results.push({
-        toolCallId: tc.id,
-        content: result.success ? result.content : `Error: ${result.error}`,
-      });
+      const EXEC_TIMEOUT = 30000; // 30s for tool execution
+      try {
+        const result = await Promise.race([
+          executeServerTool(remote.server, tc.name, args),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Tool execution timeout after ${EXEC_TIMEOUT}ms`)), EXEC_TIMEOUT),
+          ),
+        ]);
+        results.push({
+          toolCallId: tc.id,
+          content: result.success ? result.content : `Error: ${result.error}`,
+        });
+      } catch (err) {
+        results.push({
+          toolCallId: tc.id,
+          content: `Error: ${err instanceof Error ? err.message : "Tool execution failed"}`,
+        });
+      }
       continue;
     }
 

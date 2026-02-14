@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { View, Text, Pressable, Image } from "react-native";
 import { useTranslation } from "react-i18next";
 import { MotiView } from "moti";
@@ -15,7 +15,7 @@ interface MessageBubbleProps {
   onBranch?: (messageId: string) => void;
 }
 
-export function MessageBubble({
+export const MessageBubble = React.memo(function MessageBubble({
   message,
   isGroup = false,
   isLastAssistant = false,
@@ -128,8 +128,21 @@ export function MessageBubble({
           style={{ borderTopLeftRadius: 0 }}
         >
           {message.isStreaming && !message.content && !message.generatedImages?.length ? (
-            <View className="flex-row items-center">
-              <Ionicons name="ellipsis-horizontal" size={20} color="#6b7280" />
+            <View className="flex-row items-center gap-1.5 py-1">
+              {[0, 1, 2].map((i) => (
+                <MotiView
+                  key={i}
+                  from={{ opacity: 0.3, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{
+                    type: "timing",
+                    duration: 500,
+                    delay: i * 150,
+                    loop: true,
+                  }}
+                  style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: "#9ca3af" }}
+                />
+              ))}
             </View>
           ) : (
             <>
@@ -190,7 +203,18 @@ export function MessageBubble({
       </View>
     </MotiView>
   );
-}
+}, (prev: MessageBubbleProps, next: MessageBubbleProps) => {
+  // Only re-render when these change
+  if (prev.message.id !== next.message.id) return false;
+  if (prev.message.content !== next.message.content) return false;
+  if (prev.message.isStreaming !== next.message.isStreaming) return false;
+  if (prev.message.reasoningContent !== next.message.reasoningContent) return false;
+  if (prev.message.toolCalls.length !== next.message.toolCalls.length) return false;
+  if (prev.message.generatedImages?.length !== next.message.generatedImages?.length) return false;
+  if (prev.isLastAssistant !== next.isLastAssistant) return false;
+  if (prev.isGroup !== next.isGroup) return false;
+  return true;
+});
 
 function formatTime(iso: string): string {
   const d = new Date(iso);

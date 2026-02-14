@@ -37,11 +37,19 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
   initBuiltInTools: () => {
     const existing = get().mcpTools;
     let changed = false;
-    const updated = [...existing];
+
+    // Remove stale non-built-in entries that leaked into mcpTools
+    const knownModules = new Set(BUILT_IN_TOOLS.map((d) => d.nativeModule));
+    let updated = existing.filter((t) => {
+      if (t.builtIn && t.nativeModule && knownModules.has(t.nativeModule)) return true;
+      if (t.builtIn && !knownModules.has(t.nativeModule ?? "")) { changed = true; return false; }
+      if (!t.builtIn) { changed = true; return false; }
+      return true;
+    });
 
     // Seed any missing built-in tools
     for (const def of BUILT_IN_TOOLS) {
-      const found = existing.find((t) => t.builtIn && t.nativeModule === def.nativeModule);
+      const found = updated.find((t) => t.builtIn && t.nativeModule === def.nativeModule);
       if (!found) {
         updated.push({ ...def, id: generateId() });
         changed = true;
@@ -51,6 +59,25 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
     if (changed) {
       set({ mcpTools: updated });
       setItem(STORAGE_KEYS.MCP_TOOLS, updated);
+    }
+
+    // Clean up stale mcpToolIds in identities
+    const validToolIds = new Set(get().mcpTools.map((t) => t.id));
+    const validServerIds = new Set(get().mcpServers.map((s) => s.id));
+    const identities = get().identities;
+    let identitiesChanged = false;
+    const cleanedIdentities = identities.map((identity) => {
+      const cleanToolIds = identity.mcpToolIds.filter((id) => validToolIds.has(id));
+      const cleanServerIds = (identity.mcpServerIds ?? []).filter((id) => validServerIds.has(id));
+      if (cleanToolIds.length !== identity.mcpToolIds.length || cleanServerIds.length !== (identity.mcpServerIds?.length ?? 0)) {
+        identitiesChanged = true;
+        return { ...identity, mcpToolIds: cleanToolIds, mcpServerIds: cleanServerIds };
+      }
+      return identity;
+    });
+    if (identitiesChanged) {
+      set({ identities: cleanedIdentities });
+      setItem(STORAGE_KEYS.IDENTITIES, cleanedIdentities);
     }
 
     // Register handlers for all built-in tools

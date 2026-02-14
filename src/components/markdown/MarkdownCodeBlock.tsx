@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { View, Text, Pressable, useColorScheme } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,7 +21,7 @@ interface MarkdownCodeBlockProps {
   language?: string;
 }
 
-export function MarkdownCodeBlock({ content, language = "text" }: MarkdownCodeBlockProps) {
+export const MarkdownCodeBlock = memo(function MarkdownCodeBlock({ content, language = "text" }: MarkdownCodeBlockProps) {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const lang = language || "text";
@@ -60,4 +60,4 @@ export function MarkdownCodeBlock({ content, language = "text" }: MarkdownCodeBl
       </View>
     </View>
   );
-}
+});

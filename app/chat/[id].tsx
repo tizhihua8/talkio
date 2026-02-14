@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
@@ -24,7 +24,7 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation();
   const listRef = useRef<LegendListRef>(null);
 
-  const conversations = useChatStore((s) => s.conversations);
+  const conv = useChatStore((s) => s.conversations.find((c) => c.id === id));
   const messages = useChatStore((s) => s.messages);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);
@@ -32,12 +32,12 @@ export default function ChatDetailScreen() {
   const updateParticipantIdentity = useChatStore((s) => s.updateParticipantIdentity);
   const getModelById = useProviderStore((s) => s.getModelById);
   const getIdentityById = useIdentityStore((s) => s.getIdentityById);
-
-  const conv = conversations.find((c) => c.id === id);
   const isGroup = conv?.type === "group";
   const [showIdentitySlider, setShowIdentitySlider] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [editingParticipantModelId, setEditingParticipantModelId] = useState<string | null>(null);
+  const userScrolledAway = useRef(false);
+  const isDragging = useRef(false);
 
   // For single chat, use the first participant
   const currentParticipant = conv?.participants[0];
@@ -49,6 +49,23 @@ export default function ChatDetailScreen() {
   useEffect(() => {
     if (id) setCurrentConversation(id);
     return () => setCurrentConversation(null);
+  }, [id]);
+
+  const clearHistory = useCallback(() => {
+    if (!id) return;
+    Alert.alert(t("chat.clearHistory"), t("chat.clearHistoryConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("common.delete"),
+        style: "destructive",
+        onPress: async () => {
+          const currentMessages = useChatStore.getState().messages;
+          for (const msg of currentMessages) {
+            await useChatStore.getState().deleteMessageById(msg.id);
+          }
+        },
+      },
+    ]);
   }, [id]);
 
   useEffect(() => {
@@ -88,21 +105,49 @@ export default function ChatDetailScreen() {
         </Pressable>
       ),
     });
-  }, [conv, model, activeIdentity, isGroup, showParticipants]);
+  }, [conv, model, activeIdentity, isGroup, showParticipants, clearHistory]);
 
   const lastMsg = messages[messages.length - 1];
   const lastMsgContent = lastMsg?.content;
+  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => {
-        listRef.current?.scrollToOffset({ offset: 9999999, animated: true });
-      }, 150);
-    }
+    if (messages.length === 0 || userScrolledAway.current) return;
+    // Throttle: only scroll once per 400ms during streaming
+    if (scrollThrottleRef.current) return;
+    scrollThrottleRef.current = setTimeout(() => {
+      scrollThrottleRef.current = null;
+      if (!userScrolledAway.current) {
+        listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
+      }
+    }, 400);
   }, [messages.length, lastMsgContent]);
+
+  const handleScroll = useCallback((e: any) => {
+    // Only update flag during user drag, ignore programmatic/content-growth scrolls
+    if (!isDragging.current) return;
+    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
+    if (distanceFromBottom > 120) {
+      // User scrolled away from bottom
+      userScrolledAway.current = true;
+    } else if (distanceFromBottom < 80) {
+      // User scrolled back to bottom
+      userScrolledAway.current = false;
+    }
+  }, []);
+
+  const handleScrollBeginDrag = useCallback(() => {
+    isDragging.current = true;
+  }, []);
+
+  const handleScrollEndDrag = useCallback(() => {
+    isDragging.current = false;
+  }, []);
 
   const handleSend = useCallback(
     (text: string, mentionedModelIds?: string[], images?: string[]) => {
+      userScrolledAway.current = false;
       sendMessage(text, mentionedModelIds, images);
     },
     [sendMessage],
@@ -169,39 +214,26 @@ export default function ChatDetailScreen() {
     }
   }, [copyMessage, handleDeleteMessage]);
 
-  const clearHistory = useCallback(() => {
-    if (!id) return;
-    Alert.alert(t("chat.clearHistory"), t("chat.clearHistoryConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: async () => {
-          for (const msg of messages) {
-            await useChatStore.getState().deleteMessageById(msg.id);
-          }
-        },
-      },
-    ]);
-  }, [id, messages]);
-
-  const lastAssistantId = (() => {
+  const lastAssistantId = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") return messages[i].id;
     }
     return null;
-  })();
+  }, [messages]);
+
+  const lastAssistantIdRef = useRef(lastAssistantId);
+  lastAssistantIdRef.current = lastAssistantId;
 
   const renderItem = useCallback(
     ({ item }: { item: Message }) => (
       <MessageBubble
         message={item}
         isGroup={isGroup}
-        isLastAssistant={item.id === lastAssistantId}
+        isLastAssistant={item.id === lastAssistantIdRef.current}
         onLongPress={handleLongPress}
       />
     ),
-    [isGroup, handleLongPress, lastAssistantId],
+    [isGroup, handleLongPress],
   );
 
   if (!conv) {
@@ -273,8 +305,12 @@ export default function ChatDetailScreen() {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 8 }}
         recycleItems
-        maintainScrollAtEnd
+        maintainScrollAtEnd={!userScrolledAway.current}
         maintainScrollAtEndThreshold={0.1}
+        onScroll={handleScroll}
+        scrollEventThrottle={100}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        onScrollEndDrag={handleScrollEndDrag}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
