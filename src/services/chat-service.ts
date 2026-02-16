@@ -151,6 +151,13 @@ export async function generateResponse(
 
     // o1/o3/o4 models don't support temperature, top_p, or system role
     const isOModel = /\b(o1|o3|o4)\b/.test(model.modelId.toLowerCase());
+    // Claude/Gemini: temperature 0..1; OpenAI: 0..2
+    const mid = model.modelId.toLowerCase();
+    const maxTemp = (mid.includes("claude") || mid.includes("gemini")) ? 1 : 2;
+    let temperature = identity?.params.temperature;
+    if (temperature !== undefined) {
+      temperature = Math.min(Math.max(temperature, 0), maxTemp);
+    }
     const streamParams: Record<string, unknown> = {
       model: model.modelId,
       messages: isOModel
@@ -160,7 +167,7 @@ export async function generateResponse(
         : apiMessages,
       stream: true,
       ...(isOModel ? {} : {
-        temperature: identity?.params.temperature,
+        temperature,
         top_p: identity?.params.topP,
       }),
       tools: tools.length > 0 ? tools : undefined,
