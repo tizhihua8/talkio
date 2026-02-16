@@ -281,7 +281,7 @@ export class ApiClient {
   // ── Gemini Implementation ──
 
   private async listModelsGemini(): Promise<Array<{ id: string; object: string }>> {
-    const url = `${this.baseUrl}/models`;
+    const url = `${this.baseUrl}/models?key=${this.apiKey}`;
     const response = await fetch(url, { headers: { ...this.customHeaders, "x-goog-api-key": this.apiKey } });
     if (!response.ok) throw new Error(`Failed to list models: ${response.status}`);
     const data = await response.json();
@@ -293,7 +293,7 @@ export class ApiClient {
 
   private async chatGemini(request: ChatApiRequest): Promise<ChatApiResponse> {
     const body = this.toGeminiBody(request);
-    const url = `${this.baseUrl}/models/${request.model}:generateContent`;
+    const url = `${this.baseUrl}/models/${request.model}:generateContent?key=${this.apiKey}`;
     const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...this.customHeaders, "x-goog-api-key": this.apiKey },
@@ -312,7 +312,7 @@ export class ApiClient {
     signal?: AbortSignal,
   ): AsyncGenerator<StreamDelta, void, unknown> {
     const body = this.toGeminiBody(request);
-    const url = `${this.baseUrl}/models/${request.model}:streamGenerateContent?alt=sse`;
+    const url = `${this.baseUrl}/models/${request.model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
     const response = await expoFetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...this.customHeaders, "x-goog-api-key": this.apiKey },
