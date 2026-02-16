@@ -246,7 +246,11 @@
     "nameRequired": "名称为必填项",
     "endpointRequired": "服务器地址为必填项",
     "headers": "自定义请求头",
-    "headersHint": "添加认证头（如 Authorization: Bearer xxx）"
+    "headersHint": "添加认证头（如 Authorization: Bearer xxx）",
+    "testConnection": "测试连接",
+    "testing": "测试中...",
+    "testSuccess": "连接成功！发现 {{count}} 个工具。",
+    "testFailed": "连接失败"
   },
   "privacy": {
     "privacyFirst": "隐私优先",

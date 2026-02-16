@@ -64,15 +64,8 @@ export async function generateResponse(
     : undefined;
 
   const apiMessages = buildApiMessages(chatStore.messages, modelId, identity);
-  log.info(`[generateResponse] Building tools for ${model.displayName}...`);
-  let tools: ChatApiToolDef[] = [];
-  try {
-    tools = await buildTools(model, identity);
-  } catch (err) {
-    log.warn(`[generateResponse] buildTools failed, proceeding without tools: ${err instanceof Error ? err.message : err}`);
-  }
-  log.info(`[generateResponse] Tools ready: ${tools.length} tools`);
 
+  // Create assistant message FIRST so loading animation appears immediately
   const assistantMsg: Message = {
     id: generateId(),
     conversationId,
@@ -97,6 +90,16 @@ export async function generateResponse(
   useChatStore.setState((s) => ({
     messages: [...s.messages, assistantMsg],
   }));
+
+  // Discover tools AFTER showing loading animation
+  log.info(`[generateResponse] Building tools for ${model.displayName}...`);
+  let tools: ChatApiToolDef[] = [];
+  try {
+    tools = await buildTools(model, identity);
+  } catch (err) {
+    log.warn(`[generateResponse] buildTools failed, proceeding without tools: ${err instanceof Error ? err.message : err}`);
+  }
+  log.info(`[generateResponse] Tools ready: ${tools.length} tools`);
 
   let content = "";
   let reasoningContent = "";
@@ -513,32 +516,40 @@ async function buildTools(model: { capabilities: { toolCall: boolean } }, identi
     }
   }
 
-  // 2. Remote MCP servers — only those explicitly bound to the identity
+  // 2. Remote MCP servers — discover in parallel for faster startup
   _discoveredToolsCache = new Map();
   const enabledServers = identity.mcpServerIds?.length
     ? identityStore.mcpServers.filter((s) => s.enabled && identity.mcpServerIds!.includes(s.id))
     : [];
 
   const DISCOVERY_TIMEOUT = 8000; // 8s per server
-  for (const server of enabledServers) {
-    try {
-      log.info(`Discovering tools from ${server.name} (${server.url})...`);
-      const tools = await Promise.race([
-        discoverServerTools(server),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error(`Timeout after ${DISCOVERY_TIMEOUT}ms`)), DISCOVERY_TIMEOUT),
-        ),
-      ]);
-      log.info(`Discovered ${tools.length} tools from ${server.name}`);
-      for (const tool of tools) {
-        if (!seen.has(tool.name)) {
-          seen.add(tool.name);
-          result.push(discoveredToolToApiDef(tool));
-          _discoveredToolsCache.set(tool.name, { server, tool });
+  if (enabledServers.length > 0) {
+    const discoveries = await Promise.allSettled(
+      enabledServers.map(async (server) => {
+        log.info(`Discovering tools from ${server.name} (${server.url})...`);
+        const tools = await Promise.race([
+          discoverServerTools(server),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error(`Timeout after ${DISCOVERY_TIMEOUT}ms`)), DISCOVERY_TIMEOUT),
+          ),
+        ]);
+        log.info(`Discovered ${tools.length} tools from ${server.name}`);
+        return { server, tools };
+      }),
+    );
+    for (const result_ of discoveries) {
+      if (result_.status === "fulfilled") {
+        const { server, tools: serverTools } = result_.value;
+        for (const tool of serverTools) {
+          if (!seen.has(tool.name)) {
+            seen.add(tool.name);
+            result.push(discoveredToolToApiDef(tool));
+            _discoveredToolsCache.set(tool.name, { server, tool });
+          }
         }
+      } else {
+        log.warn(`Failed to discover tools: ${result_.reason}`);
       }
-    } catch (err) {
-      log.warn(`Failed to discover tools from ${server.name}: ${err instanceof Error ? err.message : err}`);
     }
   }
 

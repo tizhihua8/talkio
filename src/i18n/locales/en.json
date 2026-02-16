@@ -246,7 +246,11 @@
     "nameRequired": "Name is required",
     "endpointRequired": "Server URL is required",
     "headers": "Custom Headers",
-    "headersHint": "Add headers for authentication (e.g. Authorization: Bearer xxx)"
+    "headersHint": "Add headers for authentication (e.g. Authorization: Bearer xxx)",
+    "testConnection": "Test Connection",
+    "testing": "Testing...",
+    "testSuccess": "Connection successful! {{count}} tools discovered.",
+    "testFailed": "Connection failed"
   },
   "privacy": {
     "privacyFirst": "Privacy First",

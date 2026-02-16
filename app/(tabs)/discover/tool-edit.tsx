@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, ActivityIndicator } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import type { CustomHeader } from "../../../src/types";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useIdentityStore } from "../../../src/stores/identity-store";
+import { listRemoteTools } from "../../../src/services/mcp-client";
 // MCP Server editor
 
 export default function ToolEditScreen() {
@@ -23,6 +24,7 @@ export default function ToolEditScreen() {
   const [url, setUrl] = useState(existing?.url ?? "");
   const [enabled, setEnabled] = useState(existing?.enabled ?? true);
   const [headers, setHeaders] = useState<CustomHeader[]>(existing?.customHeaders ?? []);
+  const [testing, setTesting] = useState(false);
 
   const handleSave = () => {
     if (!name.trim()) {
@@ -124,6 +126,50 @@ export default function ToolEditScreen() {
         {headers.length === 0 && (
           <Text className="text-xs text-slate-400">{t("toolEdit.headersHint")}</Text>
         )}
+      </View>
+
+      <View className="px-4 pt-4">
+        <Pressable
+          onPress={async () => {
+            if (!url.trim()) {
+              Alert.alert(t("common.error"), t("toolEdit.endpointRequired"));
+              return;
+            }
+            setTesting(true);
+            try {
+              const validHeaders = headers.filter((h) => h.name.trim() && h.value.trim());
+              const tools = await Promise.race([
+                listRemoteTools(url.trim(), validHeaders.length > 0 ? validHeaders : undefined),
+                new Promise<never>((_, reject) =>
+                  setTimeout(() => reject(new Error("Connection timeout (10s)")), 10000),
+                ),
+              ]);
+              Alert.alert(
+                "✅",
+                t("toolEdit.testSuccess", { count: tools.length }) +
+                  (tools.length > 0 ? "\n\n" + tools.map((t_) => `• ${t_.name}`).join("\n") : ""),
+              );
+            } catch (err) {
+              Alert.alert(
+                t("toolEdit.testFailed"),
+                err instanceof Error ? err.message : "Unknown error",
+              );
+            } finally {
+              setTesting(false);
+            }
+          }}
+          disabled={testing}
+          className="flex-row items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3"
+        >
+          {testing ? (
+            <ActivityIndicator size="small" color="#007AFF" />
+          ) : (
+            <Ionicons name="flash-outline" size={18} color="#007AFF" />
+          )}
+          <Text className="text-sm font-medium text-primary">
+            {testing ? t("toolEdit.testing") : t("toolEdit.testConnection")}
+          </Text>
+        </Pressable>
       </View>
 
       <View className="mx-4 mt-4 flex-row items-center justify-between rounded-xl border border-border-light bg-bg-secondary px-4 py-3">
