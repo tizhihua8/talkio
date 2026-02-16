@@ -393,6 +393,8 @@ export async function generateResponse(
       try { errMsg = JSON.stringify(err); } catch { errMsg = String(err); }
     }
     const errStack = err instanceof Error ? err.stack : '';
+    // Use warn so Metro's HMR client doesn't swallow the message
+    console.warn(`⚠️ Stream error [${model.displayName}]: ${errMsg}`);
     log.error(`Stream error for ${model.displayName}: ${errMsg}\n${errStack}`);
 
     if (signal?.aborted) {
