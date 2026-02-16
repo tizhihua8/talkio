@@ -19,6 +19,7 @@ const LEVEL_COLORS: Record<LogLevel, string> = {
 const IS_DEV = __DEV__;
 const CONSOLE_LEVEL: LogLevel = IS_DEV ? "debug" : "warn";
 const FILE_LOG_LEVEL: LogLevel = "warn";
+const MAX_LOG_SIZE = 512 * 1024; // 512KB
 
 class LoggerService {
   private static instance: LoggerService;
@@ -135,6 +136,10 @@ class LoggerService {
         }
       }
       root.cachedContent += newContent;
+      // Rotate: keep last half when exceeding size limit
+      if (root.cachedContent.length > MAX_LOG_SIZE) {
+        root.cachedContent = root.cachedContent.slice(-Math.floor(MAX_LOG_SIZE / 2));
+      }
       await FileSystem.writeAsStringAsync(uri, root.cachedContent);
     } catch {
       // Silently fail - logging should never crash the app

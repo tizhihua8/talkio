@@ -267,5 +267,8 @@
     "photoLibraryDesc": "用于向支持视觉的模型对话中添加图片。",
     "dataManagement": "数据管理",
     "dataManagementDesc": "您可以随时从设置页面导出或删除所有数据。我们不收集任何分析或遥测数据。"
+  },
+  "htmlPreview": {
+    "writing": "编写中..."
   }
 }

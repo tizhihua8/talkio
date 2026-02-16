@@ -53,7 +53,7 @@ export const MarkdownCodeBlock = memo(function MarkdownCodeBlock({ content, lang
             {content}
           </CodeHighlighter>
         ) : (
-          <Text className="text-[13px] font-mono text-gray-200 dark:text-gray-300">
+          <Text className="text-[13px] font-mono text-gray-800 dark:text-gray-300">
             {content}
           </Text>
         )}

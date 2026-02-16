@@ -239,6 +239,7 @@ export async function startConfigServer(
   server.route("/", "GET", async () => ({
     statusCode: 200,
     contentType: "text/html",
+    headers: { "Access-Control-Allow-Origin": "*" },
     body: CONFIG_PAGE_HTML,
   }));
 
@@ -249,6 +250,7 @@ export async function startConfigServer(
         return {
           statusCode: 400,
           contentType: "application/json",
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ error: "All fields are required" }),
         };
       }
@@ -256,12 +258,14 @@ export async function startConfigServer(
       return {
         statusCode: 200,
         contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ ok: true }),
       };
     } catch {
       return {
         statusCode: 400,
         contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ error: "Invalid JSON" }),
       };
     }
@@ -274,6 +278,7 @@ export async function startConfigServer(
         return {
           statusCode: 400,
           contentType: "application/json",
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ ok: false, error: "baseUrl and apiKey required" }),
         };
       }
@@ -285,6 +290,7 @@ export async function startConfigServer(
         return {
           statusCode: 200,
           contentType: "application/json",
+          headers: { "Access-Control-Allow-Origin": "*" },
           body: JSON.stringify({ ok: true }),
         };
       }
@@ -292,12 +298,14 @@ export async function startConfigServer(
       return {
         statusCode: 200,
         contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ ok: false, error: `${resp.status} ${text.slice(0, 200)}` }),
       };
     } catch (err) {
       return {
         statusCode: 200,
         contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ ok: false, error: err instanceof Error ? err.message : "Unknown" }),
       };
     }

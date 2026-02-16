@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import { MarkdownRenderer } from "../markdown/MarkdownRenderer";
 import type { Message } from "../../types";
+import { useChatStore } from "../../stores/chat-store";
 
 interface MessageBubbleProps {
   message: Message;
@@ -181,8 +182,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           <View className="ml-1 flex-row items-center gap-1">
             <Pressable
               onPress={() => {
-                const { regenerateMessage } = require("../../stores/chat-store").useChatStore.getState();
-                regenerateMessage(message.id);
+                useChatStore.getState().regenerateMessage(message.id);
               }}
               className="self-start rounded-md p-1.5"
               hitSlop={8}

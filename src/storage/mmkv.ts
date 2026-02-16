@@ -1,7 +1,9 @@
 import { MMKV } from "react-native-mmkv";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Crypto from "expo-crypto";
 
 const AS_PREFIX = "@avatar:";
+const ENCRYPTION_KEY_ID = "avatar-encryption-key";
 
 // Sync in-memory cache backed by AsyncStorage for persistence in Expo Go
 const cache = new Map<string, string>();
@@ -17,8 +19,43 @@ interface StorageLike {
 let storage: StorageLike;
 let useAsyncFallback = false;
 
+/**
+ * Retrieve or generate a persistent encryption key for MMKV.
+ * The key itself is stored in a separate, unencrypted MMKV instance
+ * that only holds this single value.
+ */
+function getOrCreateEncryptionKey(): string {
+  const keyStore = new MMKV({ id: "avatar-keychain" });
+  let key = keyStore.getString(ENCRYPTION_KEY_ID);
+  if (!key) {
+    key = Crypto.randomUUID();
+    keyStore.set(ENCRYPTION_KEY_ID, key);
+  }
+  return key;
+}
+
 try {
-  storage = new MMKV({ id: "avatar-storage" });
+  const encryptionKey = getOrCreateEncryptionKey();
+  const encrypted = new MMKV({ id: "avatar-storage-v2", encryptionKey });
+
+  // One-time migration: copy data from old unencrypted instance
+  if (encrypted.getAllKeys().length === 0) {
+    try {
+      const legacy = new MMKV({ id: "avatar-storage" });
+      const legacyKeys = legacy.getAllKeys();
+      if (legacyKeys.length > 0) {
+        for (const k of legacyKeys) {
+          const v = legacy.getString(k);
+          if (v !== undefined) encrypted.set(k, v);
+        }
+        legacy.clearAll();
+      }
+    } catch {
+      // Legacy instance doesn't exist or can't be opened — skip
+    }
+  }
+
+  storage = encrypted;
 } catch {
   console.warn("[mmkv] Native module unavailable, using AsyncStorage fallback");
   useAsyncFallback = true;

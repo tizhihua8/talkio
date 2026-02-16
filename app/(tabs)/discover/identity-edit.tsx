@@ -8,6 +8,7 @@ import { useProviderStore } from "../../../src/stores/provider-store";
 import type { McpServer } from "../../../src/types";
 import { ApiClient } from "../../../src/services/api-client";
 import { DEFAULT_IDENTITY_PARAMS, IDENTITY_ICONS } from "../../../src/constants";
+
 export default function IdentityEditScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();

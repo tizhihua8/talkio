@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Pressable, Modal, Platform, StatusBar } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTranslation } from "react-i18next";
 import { MotiView } from "moti";
 import { WebView } from "react-native-webview";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,6 +14,7 @@ interface HtmlPreviewProps {
 }
 
 export function HtmlPreview({ code, language = "html" }: HtmlPreviewProps) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"preview" | "code">("code");
   const [debouncedCode, setDebouncedCode] = useState(code);
   const [webViewHeight, setWebViewHeight] = useState(300);
@@ -21,6 +23,9 @@ export function HtmlPreview({ code, language = "html" }: HtmlPreviewProps) {
   const [codeStable, setCodeStable] = useState(false);
 
   // Debounce code updates to prevent WebView flashing during streaming
+  const userSwitchedRef = React.useRef(userSwitched);
+  userSwitchedRef.current = userSwitched;
+
   useEffect(() => {
     setCodeStable(false);
     const debounceTimer = setTimeout(() => {
@@ -29,7 +34,7 @@ export function HtmlPreview({ code, language = "html" }: HtmlPreviewProps) {
     // Auto-switch to Preview once code stabilizes (2s without changes)
     const stableTimer = setTimeout(() => {
       setCodeStable(true);
-      if (!userSwitched) {
+      if (!userSwitchedRef.current) {
         setActiveTab("preview");
       }
     }, 2000);
@@ -95,7 +100,7 @@ export function HtmlPreview({ code, language = "html" }: HtmlPreviewProps) {
           </MotiView>
           <View className="flex-1">
             <Text className="text-sm font-medium text-gray-600">
-              {language.toUpperCase()} 编写中...
+              {language.toUpperCase()} {t("htmlPreview.writing")}
             </Text>
             <Text className="mt-0.5 text-[11px] text-gray-400">
               {code.split("\n").length} lines
