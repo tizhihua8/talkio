@@ -133,7 +133,8 @@ export async function generateResponse(
     const reasoningParams: Record<string, unknown> = {};
     if (model.capabilities.reasoning && effort !== "none") {
       const mid = model.modelId.toLowerCase();
-      if (mid.includes("claude")) {
+      if (mid.includes("claude") && provider.type === "anthropic") {
+        // Native Anthropic API only — proxies use <think> tags instead
         const budgetMap = { low: 4096, medium: 8192, high: 16384, auto: 8192 };
         reasoningParams.thinking = { type: "enabled", budget_tokens: budgetMap[effort] ?? 8192 };
       } else if (mid.includes("gemini") && mid.includes("thinking")) {
@@ -383,7 +384,14 @@ export async function generateResponse(
     log.info(`[generateResponse] Stream complete. ${chunkCount} chunks, ${content.length} chars`);
     autoGenerateTitle(conversationId, client, model, chatStore.messages, content).catch(() => {});
   } catch (err) {
-    const errMsg = err instanceof Error ? err.message : String(err);
+    let errMsg: string;
+    if (err instanceof Error) {
+      errMsg = err.message || err.name || "Unknown Error";
+    } else if (typeof err === "string") {
+      errMsg = err;
+    } else {
+      try { errMsg = JSON.stringify(err); } catch { errMsg = String(err); }
+    }
     const errStack = err instanceof Error ? err.stack : '';
     log.error(`Stream error for ${model.displayName}: ${errMsg}\n${errStack}`);
 
