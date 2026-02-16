@@ -24,7 +24,9 @@ export default function ChatDetailScreen() {
   const navigation = useNavigation();
   const listRef = useRef<LegendListRef>(null);
 
-  const conv = useChatStore((s) => s.conversations.find((c) => c.id === id));
+  const conv = useChatStore(
+    useCallback((s) => s.conversations.find((c) => c.id === id), [id]),
+  );
   const messages = useChatStore((s) => s.messages);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);

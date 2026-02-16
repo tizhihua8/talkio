@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { View, Text, Pressable, TextInput, Alert, Animated } from "react-native";
 import { useTranslation } from "react-i18next";
 import { Swipeable } from "react-native-gesture-handler";
@@ -47,14 +47,14 @@ export default function ChatsScreen() {
     });
   }, [navigation, router]);
 
-  const filtered = conversations.filter((c) => {
+  const filtered = useMemo(() => conversations.filter((c) => {
     if (filter === "single" && c.type !== "single") return false;
     if (filter === "group" && c.type !== "group") return false;
     if (searchQuery) {
       return c.title.toLowerCase().includes(searchQuery.toLowerCase());
     }
     return true;
-  });
+  }), [conversations, filter, searchQuery]);
 
   const handleDelete = useCallback(
     (id: string) => {
@@ -64,34 +64,6 @@ export default function ChatsScreen() {
       ]);
     },
     [deleteConversation],
-  );
-
-  const renderRightActions = useCallback(
-    (id: string) =>
-      (_progress: Animated.AnimatedInterpolation<number>, dragX: Animated.AnimatedInterpolation<number>) => {
-        const scale = dragX.interpolate({
-          inputRange: [-80, 0],
-          outputRange: [1, 0.5],
-          extrapolate: "clamp",
-        });
-        return (
-          <Pressable
-            onPress={() => handleDelete(id)}
-            style={{
-              width: 80,
-              backgroundColor: "#ef4444",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
-              <Ionicons name="trash-outline" size={22} color="#fff" />
-              <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
-            </Animated.View>
-          </Pressable>
-        );
-      },
-    [handleDelete, t],
   );
 
   const getProviderById = useProviderStore((s) => s.getProviderById);
@@ -108,7 +80,29 @@ export default function ChatsScreen() {
 
       return (
         <Swipeable
-          renderRightActions={renderRightActions(item.id)}
+          renderRightActions={(_progress, dragX) => {
+            const scale = dragX.interpolate({
+              inputRange: [-80, 0],
+              outputRange: [1, 0.5],
+              extrapolate: "clamp",
+            });
+            return (
+              <Pressable
+                onPress={() => handleDelete(item.id)}
+                style={{
+                  width: 80,
+                  backgroundColor: "#ef4444",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
+                  <Ionicons name="trash-outline" size={22} color="#fff" />
+                  <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
+                </Animated.View>
+              </Pressable>
+            );
+          }}
           overshootRight={false}
           friction={2}
         >
@@ -142,7 +136,7 @@ export default function ChatsScreen() {
         </Swipeable>
       );
     },
-    [getModelById, getIdentityById, router, renderRightActions, t],
+    [getModelById, getIdentityById, getProviderById, router, handleDelete, t],
   );
 
   return (

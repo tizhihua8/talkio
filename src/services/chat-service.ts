@@ -118,11 +118,14 @@ export async function generateResponse(
     } catch (e) {
       log.error(`DB update failed: ${e}`);
     }
-    useChatStore.setState((s) => ({
-      messages: s.messages.map((m) =>
-        m.id === assistantMsg.id ? { ...m, content: finalContent, isStreaming: false } : m,
-      ),
-    }));
+    useChatStore.setState((s) => {
+      const msgs = [...s.messages];
+      const idx = msgs.length - 1;
+      if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
+        msgs[idx] = { ...msgs[idx], content: finalContent, isStreaming: false };
+      }
+      return { messages: msgs };
+    });
   };
 
   try {
@@ -326,7 +329,7 @@ export async function generateResponse(
         messages: followUpMessages,
         stream: true,
         ...(isOModel ? {} : {
-          temperature: identity?.params.temperature,
+          temperature,
           top_p: identity?.params.topP,
         }),
       };
