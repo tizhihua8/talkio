@@ -66,6 +66,7 @@ export class ApiClient {
     request: ChatApiRequest,
     signal?: AbortSignal,
   ): AsyncGenerator<StreamDelta, void, unknown> {
+    try {
     if (this.providerType === "anthropic") {
       yield* this.streamChatAnthropic(request, signal);
       return;
@@ -75,7 +76,6 @@ export class ApiClient {
       return;
     }
     // OpenAI / Azure OpenAI
-    try {
     const url = this.getUrl("/chat/completions");
     let response: Response;
     try {
@@ -158,14 +158,13 @@ export class ApiClient {
       // Ensure error has a meaningful message before propagating
       const msg = streamErr?.message || streamErr?.name || streamErr?.code || "";
       if (!msg) {
-        // Error with no message — capture all available info
         const keys = streamErr ? Object.keys(streamErr) : [];
         const detail = keys.length > 0
           ? JSON.stringify(streamErr, null, 0)
           : `${typeof streamErr}: ${String(streamErr)}`;
-        throw new Error(`Stream error (no message): ${detail}`);
+        throw new Error(`[${this.providerType}] Stream error (no message): ${detail}`);
       }
-      throw streamErr;
+      throw new Error(`[${this.providerType}] ${msg}`);
     }
   }
 
