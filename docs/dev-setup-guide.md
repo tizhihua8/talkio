@@ -120,11 +120,13 @@ addProviderWithTest: async (data) => {
 **原因**：
 1. 缺少 `android.permission.INTERNET` 权限
 2. 生产版缺少 `android:usesCleartextTraffic="true"`（Android 9+ 默认禁止明文 HTTP）
+3. `expo-network` 的 `getIpAddressAsync()` 在 Android 12+ 需要位置权限+GPS 才能获取 WiFi IP，返回 `0.0.0.0`
 
 **修复**：
-1. `app.json` 的 `android.permissions` 中添加 `"android.permission.INTERNET"`
+1. `app.json` 添加 `INTERNET`、`ACCESS_WIFI_STATE`、`ACCESS_NETWORK_STATE` 权限
 2. 创建 Expo 配置插件 `plugins/withCleartextTraffic.js`，自动添加 `usesCleartextTraffic`
-3. 手动在 `AndroidManifest.xml` 的 `<application>` 标签添加 `android:usesCleartextTraffic="true"`
+3. 创建本地原生模块 `modules/expo-ip`，用 Java `NetworkInterface` 获取 WiFi IP（无需位置权限）
+4. `startConfigServer` 启动前强制 `server.stop()` 防止热重载后端口冲突
 
 **使用方式**：手机和电脑需在同一 WiFi 下，访问手机上显示的地址（如 `http://手机IP:19280`）
 

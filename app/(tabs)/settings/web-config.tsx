@@ -85,6 +85,11 @@ export default function WebConfigScreen() {
             <Text className="mt-2 text-center text-lg font-bold text-primary">
               {serverUrl}
             </Text>
+            {serverUrl.includes("0.0.0.0") && (
+              <Text className="mt-2 text-center text-xs text-amber-600">
+                {t("webConfig.ipNotDetected")}
+              </Text>
+            )}
           </View>
         )}
 

@@ -33,6 +33,8 @@
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "INTERNET",
+        "ACCESS_WIFI_STATE",
+        "ACCESS_NETWORK_STATE",
         "READ_CALENDAR",
         "WRITE_CALENDAR",
         "ACCESS_COARSE_LOCATION",

@@ -1,6 +1,5 @@
 import * as server from "expo-http-server";
-import { Platform } from "react-native";
-import * as Network from "expo-network";
+import { getWifiIP } from "../../modules/expo-ip";
 import { logger } from "./logger";
 
 const log = logger.withContext("ConfigServer");
@@ -225,10 +224,9 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
 export async function startConfigServer(
   callback: (config: ProviderConfig) => void,
 ): Promise<string> {
-  if (isRunning) {
-    const ip = await getLocalIP();
-    return `http://${ip}:${PORT}`;
-  }
+  // Force stop any leftover native server (e.g. after hot reload)
+  try { server.stop(); } catch {}
+  isRunning = false;
 
   onConfigReceived = callback;
 
@@ -342,8 +340,7 @@ export async function startConfigServer(
 }
 
 export function stopConfigServer() {
-  if (!isRunning) return;
-  server.stop();
+  try { server.stop(); } catch {}
   isRunning = false;
   onConfigReceived = null;
   log.info("Config server stopped");
@@ -351,9 +348,10 @@ export function stopConfigServer() {
 
 async function getLocalIP(): Promise<string> {
   try {
-    const ip = await Network.getIpAddressAsync();
-    return ip;
-  } catch {
-    return "localhost";
+    const ip = getWifiIP();
+    if (ip && ip !== "0.0.0.0") return ip;
+  } catch (e) {
+    log.warn(`Failed to get WiFi IP: ${e}`);
   }
+  return "0.0.0.0";
 }
