@@ -13,7 +13,7 @@ export default function ProviderEditScreen() {
   const { id: editId } = useLocalSearchParams<{ id?: string }>();
   const isEditing = !!editId;
 
-  const addProvider = useProviderStore((s) => s.addProvider);
+  const addProviderWithTest = useProviderStore((s) => s.addProviderWithTest);
   const updateProvider = useProviderStore((s) => s.updateProvider);
   const getProviderById = useProviderStore((s) => s.getProviderById);
   const getModelsByProvider = useProviderStore((s) => s.getModelsByProvider);
@@ -105,22 +105,29 @@ export default function ProviderEditScreen() {
     };
 
     let providerId = savedProviderId;
+    let ok = false;
+
     if (isEditing && providerId) {
+      // For editing, update then test
       updateProvider(providerId, providerData);
+      ok = await testConnection(providerId);
     } else {
-      const provider = addProvider(providerData);
-      providerId = provider.id;
-      setSavedProviderId(providerId);
+      // For new provider, test before saving
+      const result = await addProviderWithTest(providerData);
+      ok = result.success;
+      if (result.provider) {
+        providerId = result.provider.id;
+        setSavedProviderId(providerId);
+      }
     }
 
-    const ok = await testConnection(providerId!);
     setConnected(ok);
 
-    if (ok) {
+    if (ok && providerId) {
       // Auto-fetch models after successful connection
       setPulling(true);
       try {
-        const models = await fetchModels(providerId!);
+        const models = await fetchModels(providerId);
         setPulledModels(models);
       } catch { /* ignore fetch errors */ }
       setPulling(false);

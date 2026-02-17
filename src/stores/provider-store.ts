@@ -11,6 +11,7 @@ interface ProviderState {
   models: Model[];
   loadProviders: () => void;
   addProvider: (data: Omit<Provider, "id" | "status" | "createdAt" | "enabled" | "customHeaders"> & Partial<Pick<Provider, "enabled" | "customHeaders">>) => Provider;
+  addProviderWithTest: (data: Omit<Provider, "id" | "status" | "createdAt" | "enabled" | "customHeaders"> & Partial<Pick<Provider, "enabled" | "customHeaders">>) => Promise<{ success: boolean; provider: Provider | null }>;
   updateProvider: (id: string, updates: Partial<Provider>) => void;
   removeProvider: (id: string) => void;
   testConnection: (id: string) => Promise<boolean>;
@@ -49,6 +50,30 @@ export const useProviderStore = create<ProviderState>((set, get) => ({
     set({ providers });
     setItem(STORAGE_KEYS.PROVIDERS, providers);
     return provider;
+  },
+
+  addProviderWithTest: async (data) => {
+    const tempProvider: Provider = {
+      ...data,
+      id: generateId(),
+      enabled: data.enabled ?? true,
+      customHeaders: data.customHeaders ?? [],
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+
+    const client = new ApiClient(tempProvider);
+    const connected = await client.testConnection();
+    
+    if (!connected) {
+      return { success: false, provider: null };
+    }
+
+    tempProvider.status = "connected";
+    const providers = [...get().providers, tempProvider];
+    set({ providers });
+    setItem(STORAGE_KEYS.PROVIDERS, providers);
+    return { success: true, provider: tempProvider };
   },
 
   updateProvider: (id, updates) => {

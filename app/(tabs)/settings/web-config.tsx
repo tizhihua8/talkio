@@ -11,8 +11,7 @@ import {
 
 export default function WebConfigScreen() {
   const { t } = useTranslation();
-  const addProvider = useProviderStore((s) => s.addProvider);
-  const testConnection = useProviderStore((s) => s.testConnection);
+  const addProviderWithTest = useProviderStore((s) => s.addProviderWithTest);
 
   const [serverUrl, setServerUrl] = useState<string | null>(null);
   const [receivedCount, setReceivedCount] = useState(0);
@@ -25,18 +24,25 @@ export default function WebConfigScreen() {
     }
 
     const onConfig = async (config: ProviderConfig) => {
-      const provider = addProvider({
+      const result = await addProviderWithTest({
         name: config.name,
         type: "openai",
         baseUrl: config.baseUrl,
         apiKey: config.apiKey,
       });
-      await testConnection(provider.id);
-      setReceivedCount((c) => c + 1);
-      Alert.alert(
-        t("webConfig.providerAdded"),
-        t("webConfig.providerAddedDetail", { name: config.name }),
-      );
+      
+      if (result.success) {
+        setReceivedCount((c) => c + 1);
+        Alert.alert(
+          t("webConfig.providerAdded"),
+          t("webConfig.providerAddedDetail", { name: config.name }),
+        );
+      } else {
+        Alert.alert(
+          t("common.error"),
+          t("providerEdit.connectionFailed"),
+        );
+      }
     };
 
     try {

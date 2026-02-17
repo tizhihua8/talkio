@@ -30,12 +30,15 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.avatar.app",
-      "softwareKeyboardLayoutMode": "adjustResize",
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
+        "INTERNET",
         "READ_CALENDAR",
         "WRITE_CALENDAR",
+        "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
         "READ_CONTACTS"
       ]
     },
@@ -55,7 +58,16 @@
         {
           "microphonePermission": "Allow Avatar to access your microphone for voice input."
         }
-      ]
-    ]
+      ],
+      "expo-font",
+      "expo-asset",
+      "./plugins/withCleartextTraffic.js"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "74bb5aa8-128f-44cd-abae-be1cef3f946b"
+      }
+    }
   }
 }
