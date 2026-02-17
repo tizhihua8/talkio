@@ -64,7 +64,8 @@
       "expo-font",
       "expo-asset",
       "./plugins/withCleartextTraffic.js",
-      "./plugins/withDevSuffix.js"
+      "./plugins/withDevSuffix.js",
+      "./plugins/withReleaseSigning.js"
     ],
     "extra": {
       "router": {},
