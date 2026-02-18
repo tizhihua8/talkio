@@ -5,6 +5,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSettingsStore } from "../../../src/stores/settings-store";
 import { ApiClient } from "../../../src/services/api-client";
 
+const STT_PRESETS = [
+  { label: "Groq", baseUrl: "https://api.groq.com/openai/v1" },
+  { label: "OpenAI", baseUrl: "https://api.openai.com/v1" },
+];
+
 export default function SttSettingsScreen() {
   const { t } = useTranslation();
   const settings = useSettingsStore((s) => s.settings);
@@ -85,6 +90,23 @@ export default function SttSettingsScreen() {
   return (
     <ScrollView className="flex-1 bg-bg-secondary" contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="px-4 pt-4 gap-3">
+        {/* Presets */}
+        <View className="flex-row gap-2">
+          {STT_PRESETS.map((preset) => (
+            <Pressable
+              key={preset.label}
+              onPress={() => { setBaseUrl(preset.baseUrl); setConnected(null); setFetchedModels([]); }}
+              className={`flex-1 items-center rounded-xl border py-2.5 ${
+                baseUrl === preset.baseUrl ? "border-primary bg-primary/5" : "border-slate-200 bg-white"
+              }`}
+            >
+              <Text className={`text-[13px] font-semibold ${
+                baseUrl === preset.baseUrl ? "text-primary" : "text-slate-500"
+              }`}>{preset.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
         {/* Base URL */}
         <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
           <View className="flex-row items-center px-4 py-3.5">
