@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Modal, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Modal, ScrollView, ActivityIndicator, InteractionManager } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Sharing from "expo-sharing";
 import { captureRef } from "react-native-view-shot";
@@ -62,8 +62,14 @@ export default function ChatDetailScreen() {
     : null;
 
   useEffect(() => {
-    if (id) setCurrentConversation(id);
-    return () => setCurrentConversation(null);
+    // Delay data loading until navigation animation completes to avoid jank
+    const task = InteractionManager.runAfterInteractions(() => {
+      if (id) setCurrentConversation(id);
+    });
+    return () => {
+      task.cancel();
+      setCurrentConversation(null);
+    };
   }, [id]);
 
   const clearConversationMessages = useChatStore((s) => s.clearConversationMessages);
