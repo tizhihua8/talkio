@@ -12,138 +12,204 @@ export default function SttSettingsScreen() {
 
   const [baseUrl, setBaseUrl] = useState(settings.sttBaseUrl);
   const [apiKey, setApiKey] = useState(settings.sttApiKey);
+  const [showApiKey, setShowApiKey] = useState(false);
   const [model, setModel] = useState(settings.sttModel);
+  const [modelSearch, setModelSearch] = useState("");
   const [fetchedModels, setFetchedModels] = useState<string[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
+  const [connected, setConnected] = useState<boolean | null>(settings.sttApiKey ? true : null);
+  const [testing, setTesting] = useState(false);
+  const [pulling, setPulling] = useState(false);
 
-  const handleFetchModels = async () => {
+  const makeClient = () =>
+    new ApiClient({
+      id: "stt-probe",
+      name: "STT",
+      type: "openai",
+      baseUrl: baseUrl.trim(),
+      apiKey: apiKey.trim(),
+      enabled: true,
+      status: "connected",
+      createdAt: "",
+      customHeaders: [],
+    });
+
+  const doFetchModels = async () => {
+    setPulling(true);
+    try {
+      const raw = await makeClient().listModels();
+      const ids = raw.map((m) => m.id).sort();
+      setFetchedModels(ids);
+      if (ids.length > 0 && !ids.includes(model)) setModel(ids[0]);
+    } catch (err) {
+      Alert.alert(t("common.error"), err instanceof Error ? err.message : t("providerEdit.fetchFailed"));
+    } finally {
+      setPulling(false);
+    }
+  };
+
+  const handleConnect = async () => {
     if (!baseUrl.trim() || !apiKey.trim()) {
       Alert.alert(t("common.error"), t("settings.sttFetchRequiresFields"));
       return;
     }
-    setIsFetching(true);
+    setTesting(true);
+    setConnected(null);
     try {
-      const client = new ApiClient({
-        id: "stt-probe",
-        name: "STT",
-        type: "openai",
-        baseUrl: baseUrl.trim(),
-        apiKey: apiKey.trim(),
-        enabled: true,
-        status: "connected",
-        createdAt: "",
-        customHeaders: [],
-      });
-      const raw = await client.listModels();
-      const ids = raw.map((m) => m.id).sort();
-      setFetchedModels(ids);
-      if (ids.length > 0 && !ids.includes(model)) {
-        setModel(ids[0]);
+      const ok = await makeClient().testConnection();
+      setConnected(ok);
+      if (ok) {
+        await doFetchModels();
+      } else {
+        Alert.alert(t("providerEdit.connectionFailed"), t("providerEdit.connectionFailedHint"));
       }
-    } catch (err) {
-      Alert.alert(t("common.error"), err instanceof Error ? err.message : t("providerEdit.fetchFailed"));
+    } catch {
+      setConnected(false);
+      Alert.alert(t("providerEdit.connectionFailed"), t("providerEdit.connectionFailedHint"));
     } finally {
-      setIsFetching(false);
+      setTesting(false);
     }
   };
 
-  const handleSave = () => {
-    if (!apiKey.trim()) {
-      Alert.alert(t("common.error"), t("settings.sttApiKeyRequired"));
-      return;
-    }
-    updateSettings({ sttBaseUrl: baseUrl.trim(), sttApiKey: apiKey.trim(), sttModel: model });
-    Alert.alert(t("common.success"), t("settings.sttSaved"));
-  };
+  const filteredModels = fetchedModels.filter((id) =>
+    id.toLowerCase().includes(modelSearch.toLowerCase()),
+  );
 
-  const modelList = fetchedModels.length > 0 ? fetchedModels : (settings.sttModel ? [settings.sttModel] : []);
+  const displayModels = filteredModels.length > 0 || modelSearch
+    ? filteredModels
+    : fetchedModels.length > 0
+      ? fetchedModels
+      : settings.sttModel
+        ? [settings.sttModel]
+        : [];
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary" contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Base URL */}
-      <View className="px-5 pt-4 mb-4">
-        <Text className="mb-1.5 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          Base URL
-        </Text>
-        <View className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-          <TextInput
-            value={baseUrl}
-            onChangeText={(v) => { setBaseUrl(v); setFetchedModels([]); }}
-            placeholder="https://api.groq.com/openai/v1"
-            placeholderTextColor="#cbd5e1"
-            autoCapitalize="none"
-            autoCorrect={false}
-            className="text-[15px] text-text-main"
-          />
+      <View className="px-4 pt-4 gap-3">
+        {/* Base URL */}
+        <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <View className="flex-row items-center px-4 py-3.5">
+            <Ionicons name="link-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+            <TextInput
+              className="flex-1 bg-transparent text-[16px] text-slate-600"
+              value={baseUrl}
+              onChangeText={(v) => { setBaseUrl(v); setConnected(null); setFetchedModels([]); }}
+              placeholder="https://api.groq.com/openai/v1"
+              placeholderTextColor="#cbd5e1"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
         </View>
-      </View>
 
-      {/* API Key */}
-      <View className="px-5 mb-4">
-        <Text className="mb-1.5 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-          API Key
-        </Text>
-        <View className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-          <TextInput
-            value={apiKey}
-            onChangeText={(v) => { setApiKey(v); setFetchedModels([]); }}
-            placeholder={t("settings.sttApiKeyPlaceholder")}
-            placeholderTextColor="#cbd5e1"
-            autoCapitalize="none"
-            autoCorrect={false}
-            secureTextEntry
-            className="text-[15px] text-text-main"
-          />
+        {/* API Key */}
+        <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <View className="flex-row items-center px-4 py-3.5">
+            <Ionicons name="key-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+            <TextInput
+              className="flex-1 bg-transparent text-[16px] text-slate-600"
+              value={apiKey}
+              onChangeText={(v) => { setApiKey(v); setConnected(null); setFetchedModels([]); }}
+              placeholder="API Key"
+              placeholderTextColor="#cbd5e1"
+              secureTextEntry={!showApiKey}
+              autoCapitalize="none"
+            />
+            <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
+              <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
+            </Pressable>
+          </View>
         </View>
-      </View>
 
-      {/* Fetch Models Button */}
-      <View className="px-5 mb-4">
+        {/* Connect Button */}
         <Pressable
-          onPress={handleFetchModels}
-          disabled={isFetching}
-          className="flex-row items-center justify-center rounded-xl border border-primary py-3"
+          onPress={handleConnect}
+          disabled={testing || pulling}
+          className={`mt-1 flex-row items-center justify-center rounded-xl py-3.5 ${
+            testing || pulling
+              ? "bg-slate-300"
+              : connected === true
+                ? "bg-accent-green"
+                : connected === false
+                  ? "bg-error"
+                  : "bg-primary"
+          }`}
         >
-          {isFetching ? (
-            <ActivityIndicator size="small" color="#007AFF" />
-          ) : (
+          {testing || pulling ? (
             <>
-              <Ionicons name="refresh-outline" size={16} color="#007AFF" />
-              <Text className="ml-2 text-[15px] font-medium text-primary">{t("settings.sttFetchModels")}</Text>
+              <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+              <Text className="text-base font-semibold text-white">
+                {pulling ? t("providerEdit.fetchingModels") : t("providerEdit.connecting")}
+              </Text>
             </>
+          ) : connected === true ? (
+            <>
+              <Ionicons name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
+              <Text className="text-base font-semibold text-white">{t("providerEdit.connectionSuccessful")}</Text>
+            </>
+          ) : connected === false ? (
+            <Text className="text-base font-semibold text-white">{t("providerEdit.retryConnection")}</Text>
+          ) : (
+            <Text className="text-base font-semibold text-white">{t("providerEdit.connectAndFetch")}</Text>
           )}
         </Pressable>
       </View>
 
       {/* Model List */}
-      {modelList.length > 0 && (
-        <View className="px-5 mb-6">
-          <Text className="mb-1.5 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {t("settings.sttModelLabel")}
-          </Text>
-          <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-            {modelList.map((id, idx) => (
+      {(connected || displayModels.length > 0) && (
+        <View className="px-4 pt-6">
+          <View className="flex-row items-center justify-between px-1 mb-3">
+            <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
+              {t("settings.sttModelLabel")}
+            </Text>
+            <Pressable onPress={doFetchModels} disabled={pulling} className="flex-row items-center">
+              {pulling ? (
+                <ActivityIndicator size="small" color="#007AFF" />
+              ) : (
+                <>
+                  <Ionicons name="refresh" size={14} color="#007AFF" />
+                  <Text className="ml-1 text-[13px] font-medium text-primary">{t("providerEdit.refresh")}</Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+
+          {/* Search */}
+          {fetchedModels.length > 0 && (
+            <View className="mb-3 flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
+              <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 8 }} />
+              <TextInput
+                className="flex-1 text-[14px] text-slate-700"
+                value={modelSearch}
+                onChangeText={setModelSearch}
+                placeholder={t("providerEdit.searchModels")}
+                placeholderTextColor="#cbd5e1"
+                autoCapitalize="none"
+              />
+              {modelSearch ? (
+                <Pressable onPress={() => setModelSearch("")}>
+                  <Ionicons name="close-circle" size={16} color="#94a3b8" />
+                </Pressable>
+              ) : null}
+            </View>
+          )}
+
+          <View className="gap-2">
+            {displayModels.map((id) => (
               <Pressable
                 key={id}
-                onPress={() => setModel(id)}
-                className={`flex-row items-center justify-between px-4 py-3 ${
-                  idx < modelList.length - 1 ? "border-b border-slate-50" : ""
-                }`}
+                onPress={() => {
+                  setModel(id);
+                  updateSettings({ sttBaseUrl: baseUrl.trim(), sttApiKey: apiKey.trim(), sttModel: id });
+                }}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex-row items-center justify-between"
               >
-                <Text className="flex-1 text-[15px] text-text-main" numberOfLines={1}>{id}</Text>
-                {model === id && <Ionicons name="checkmark" size={18} color="#007AFF" />}
+                <Text className="flex-1 text-[15px] text-slate-900" numberOfLines={1}>{id}</Text>
+                {model === id && <Ionicons name="checkmark-circle" size={20} color="#007AFF" />}
               </Pressable>
             ))}
           </View>
         </View>
       )}
-
-      {/* Save */}
-      <View className="px-5">
-        <Pressable onPress={handleSave} className="items-center rounded-xl bg-primary py-3.5">
-          <Text className="text-base font-semibold text-white">{t("common.save")}</Text>
-        </Pressable>
-      </View>
     </ScrollView>
   );
 }
