@@ -24,6 +24,7 @@ interface ChatState {
   conversations: Conversation[];
   currentConversationId: string | null;
   messages: Message[];
+  streamingMessage: Message | null;
   isGenerating: boolean;
   activeBranchId: string | null;
 
@@ -42,6 +43,7 @@ interface ChatState {
     identityId: string | null,
   ) => Promise<void>;
 
+  commitStreamingMessage: () => void;
   sendMessage: (text: string, mentionedModelIds?: string[], images?: string[]) => Promise<void>;
   stopGeneration: () => void;
   regenerateMessage: (messageId: string) => Promise<void>;
@@ -59,6 +61,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   conversations: [],
   currentConversationId: null,
   messages: [],
+  streamingMessage: null,
   isGenerating: false,
   activeBranchId: null,
 
@@ -105,8 +108,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setCurrentConversation: (id) => {
-    set({ currentConversationId: id, messages: [], activeBranchId: null });
+    set({ currentConversationId: id, messages: [], streamingMessage: null, activeBranchId: null });
     if (id) get().loadMessages(id);
+  },
+
+  commitStreamingMessage: () => {
+    const sm = get().streamingMessage;
+    if (!sm) return;
+    set((s) => ({
+      messages: [...s.messages, sm],
+      streamingMessage: null,
+    }));
   },
 
   loadMessages: async (conversationId) => {

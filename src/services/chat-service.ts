@@ -88,9 +88,7 @@ export async function generateResponse(
   };
 
   await insertMessage(assistantMsg);
-  useChatStore.setState((s) => ({
-    messages: [...s.messages, assistantMsg],
-  }));
+  useChatStore.setState({ streamingMessage: assistantMsg });
 
   // Discover tools AFTER showing loading animation
   log.info(`[generateResponse] Building tools for ${model.displayName}...`);
@@ -118,14 +116,11 @@ export async function generateResponse(
     } catch (e) {
       log.error(`DB update failed: ${e}`);
     }
-    useChatStore.setState((s) => {
-      const msgs = [...s.messages];
-      const idx = msgs.length - 1;
-      if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
-        msgs[idx] = { ...msgs[idx], content: finalContent, isStreaming: false };
-      }
-      return { messages: msgs };
-    });
+    const finalMsg = { ...assistantMsg, content: finalContent, isStreaming: false };
+    useChatStore.setState((s) => ({
+      messages: [...s.messages, finalMsg],
+      streamingMessage: null,
+    }));
   };
 
   try {
@@ -217,23 +212,18 @@ export async function generateResponse(
     const flushUI = () => {
       flushTimer = null;
       uiDirty = false;
-      useChatStore.setState((s) => {
-        const msgs = [...s.messages];
-        const idx = msgs.length - 1;
-        if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
-          msgs[idx] = {
-            ...msgs[idx],
-            content,
-            generatedImages: [...generatedImages],
-            reasoningContent: reasoningContent || null,
-            toolCalls: pendingToolCalls.map((tc) => ({
-              id: tc.id,
-              name: tc.name,
-              arguments: tc.arguments,
-            })),
-          };
-        }
-        return { messages: msgs };
+      useChatStore.setState({
+        streamingMessage: {
+          ...assistantMsg,
+          content,
+          generatedImages: [...generatedImages],
+          reasoningContent: reasoningContent || null,
+          toolCalls: pendingToolCalls.map((tc) => ({
+            id: tc.id,
+            name: tc.name,
+            arguments: tc.arguments,
+          })),
+        },
       });
     };
 
@@ -310,14 +300,11 @@ export async function generateResponse(
 
     if (pendingToolCalls.length > 0) {
       toolResults = await executeToolCalls(pendingToolCalls);
-      useChatStore.setState((s) => {
-        const msgs = [...s.messages];
-        const idx = msgs.length - 1;
-        if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
-          msgs[idx] = { ...msgs[idx], toolResults };
-        }
-        return { messages: msgs };
-      });
+      useChatStore.setState((s) => ({
+        streamingMessage: s.streamingMessage && s.streamingMessage.id === assistantMsg.id
+          ? { ...s.streamingMessage, toolResults }
+          : s.streamingMessage,
+      }));
 
       const assistantApiMsg: ChatApiMessage = {
         role: "assistant",
@@ -359,14 +346,11 @@ export async function generateResponse(
       const flushFollowUp = () => {
         fuTimer = null;
         fuDirty = false;
-        useChatStore.setState((s) => {
-          const msgs = [...s.messages];
-          const idx = msgs.length - 1;
-          if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
-            msgs[idx] = { ...msgs[idx], content: followUpContent || content };
-          }
-          return { messages: msgs };
-        });
+        useChatStore.setState((s) => ({
+          streamingMessage: s.streamingMessage && s.streamingMessage.id === assistantMsg.id
+            ? { ...s.streamingMessage, content: followUpContent || content }
+            : s.streamingMessage,
+        }));
       };
       for await (const delta of followUpStream) {
         if (delta.content) {
@@ -392,14 +376,20 @@ export async function generateResponse(
       isStreaming: false,
     });
 
-    useChatStore.setState((s) => {
-      const msgs = [...s.messages];
-      const idx = msgs.length - 1;
-      if (idx >= 0 && msgs[idx].id === assistantMsg.id) {
-        msgs[idx] = { ...msgs[idx], content, generatedImages: [...generatedImages], isStreaming: false };
-      }
-      return { messages: msgs };
-    });
+    // Commit: move streaming message into settled messages array
+    const finalMsg: Message = {
+      ...assistantMsg,
+      content,
+      generatedImages: [...generatedImages],
+      reasoningContent: reasoningContent || null,
+      toolCalls: toolCallsSnapshot,
+      toolResults,
+      isStreaming: false,
+    };
+    useChatStore.setState((s) => ({
+      messages: [...s.messages, finalMsg],
+      streamingMessage: null,
+    }));
 
     const now = new Date().toISOString();
     await dbUpdateConversation(conversationId, {

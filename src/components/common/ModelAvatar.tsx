@@ -1,3 +1,4 @@
+import React from "react";
 import { View, Text } from "react-native";
 
 interface ModelAvatarProps {
@@ -45,7 +46,7 @@ function getInitials(name: string): string {
   return name.slice(0, 2).toUpperCase();
 }
 
-export function ModelAvatar({ name, size = "md", online }: ModelAvatarProps) {
+export const ModelAvatar = React.memo(function ModelAvatar({ name, size = "md", online }: ModelAvatarProps) {
   const bgColor = getColorForName(name);
   const initials = getInitials(name);
 
@@ -67,4 +68,4 @@ export function ModelAvatar({ name, size = "md", online }: ModelAvatarProps) {
       )}
     </View>
   );
-}
+});

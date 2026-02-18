@@ -33,7 +33,15 @@ export default function ChatDetailScreen() {
     useCallback((s) => s.conversations.find((c) => c.id === id), [id]),
   );
   const messages = useChatStore((s) => s.messages);
+  const streamingMessage = useChatStore((s) => s.streamingMessage);
   const isGenerating = useChatStore((s) => s.isGenerating);
+
+  // Combine settled messages + streaming message for display
+  const displayMessages = useMemo(
+    () => streamingMessage ? [...messages, streamingMessage] : messages,
+    [messages, streamingMessage],
+  );
+  const hasMessages = displayMessages.length > 0;
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const updateParticipantIdentity = useChatStore((s) => s.updateParticipantIdentity);
@@ -72,6 +80,7 @@ export default function ChatDetailScreen() {
     ]);
   }, [id, clearConversationMessages]);
 
+  // P5: Split navigation header into two effects to reduce unnecessary updates
   useEffect(() => {
     const title = isGroup
       ? conv?.title ?? t("chat.group")
@@ -103,9 +112,14 @@ export default function ChatDetailScreen() {
           )}
         </Pressable>
       ),
+    });
+  }, [conv, model, activeIdentity, isGroup, showParticipants]);
+
+  useEffect(() => {
+    navigation.setOptions({
       headerRight: () => (
         <View className="flex-row items-center gap-1">
-          {messages.length > 0 && (
+          {hasMessages && (
             <Pressable onPress={() => setShowExport(true)} className="px-2">
               <Ionicons name="image-outline" size={20} color="#007AFF" />
             </Pressable>
@@ -116,14 +130,13 @@ export default function ChatDetailScreen() {
         </View>
       ),
     });
-  }, [conv, model, activeIdentity, isGroup, showParticipants, clearHistory, messages.length]);
+  }, [hasMessages, clearHistory]);
 
-  const lastMsg = messages[messages.length - 1];
-  const lastMsgContent = lastMsg?.content;
+  const streamingContent = streamingMessage?.content;
   const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (messages.length === 0 || userScrolledAway.current) return;
+    if (displayMessages.length === 0 || userScrolledAway.current) return;
     // Throttle: only scroll once per 400ms during streaming
     if (scrollThrottleRef.current) return;
     scrollThrottleRef.current = setTimeout(() => {
@@ -132,7 +145,7 @@ export default function ChatDetailScreen() {
         listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
       }
     }, 400);
-  }, [messages.length, lastMsgContent]);
+  }, [displayMessages.length, streamingContent]);
 
   const handleScroll = useCallback((e: any) => {
     // Only update flag during user drag, ignore programmatic/content-growth scrolls
@@ -250,11 +263,12 @@ export default function ChatDetailScreen() {
   }, [copyMessage, handleDeleteMessage, regenerateMessage, handleSend]);
 
   const lastAssistantId = useMemo(() => {
+    if (streamingMessage?.role === "assistant") return streamingMessage.id;
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") return messages[i].id;
     }
     return null;
-  }, [messages]);
+  }, [messages, streamingMessage]);
 
   const lastAssistantIdRef = useRef(lastAssistantId);
   lastAssistantIdRef.current = lastAssistantId;
@@ -386,7 +400,7 @@ export default function ChatDetailScreen() {
 
       <LegendList
         ref={listRef}
-        data={messages}
+        data={displayMessages}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingTop: 12, paddingBottom: 8 }}

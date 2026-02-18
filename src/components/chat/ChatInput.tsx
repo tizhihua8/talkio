@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { View, TextInput, Pressable, Text, Alert, Platform, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -21,7 +21,7 @@ interface ChatInputProps {
   participants?: ConversationParticipant[];
 }
 
-export function ChatInput({
+export const ChatInput = React.memo(function ChatInput({
   onSend,
   isGenerating,
   isGroup = false,
@@ -355,4 +355,4 @@ export function ChatInput({
       </View>
     </View>
   );
-}
+});

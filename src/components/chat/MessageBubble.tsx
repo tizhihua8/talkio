@@ -30,12 +30,15 @@ export const MessageBubble = React.memo(function MessageBubble({
 
   const markdownContent = isUser ? message.content : message.content.trimEnd();
 
+  // P3: Skip entrance animation for settled (non-streaming) messages
+  const Wrapper = message.isStreaming ? MotiView : View;
+  const wrapperAnimProps = message.isStreaming
+    ? { from: { opacity: 0, translateY: 8 }, animate: { opacity: 1, translateY: 0 }, transition: { type: "timing" as const, duration: 250 } }
+    : {};
+
   if (isUser) {
     return (
-      <MotiView
-        from={{ opacity: 0, translateY: 8 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "timing", duration: 250 }}
+      <View
         className="mb-6 flex-row-reverse items-start gap-3 px-4"
       >
         <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
@@ -70,15 +73,13 @@ export const MessageBubble = React.memo(function MessageBubble({
             </Text>
           </Pressable>
         </View>
-      </MotiView>
+      </View>
     );
   }
 
   return (
-    <MotiView
-      from={{ opacity: 0, translateY: 8 }}
-      animate={{ opacity: 1, translateY: 0 }}
-      transition={{ type: "timing", duration: 250 }}
+    <Wrapper
+      {...wrapperAnimProps}
       className="mb-6 flex-row items-start gap-3 px-4"
     >
       <View className="h-9 w-9 overflow-hidden rounded-full">
@@ -148,7 +149,12 @@ export const MessageBubble = React.memo(function MessageBubble({
             </View>
           ) : (
             <>
-              {markdownContent ? <MarkdownRenderer content={markdownContent} /> : null}
+              {markdownContent ? (
+                // P2: Use plain Text during streaming, switch to Markdown after done
+                message.isStreaming
+                  ? <Text className="text-[15px] leading-relaxed text-gray-800">{markdownContent}</Text>
+                  : <MarkdownRenderer content={markdownContent} />
+              ) : null}
               {message.generatedImages && message.generatedImages.length > 0 && (
                 <View className={`flex-row flex-wrap gap-2 ${markdownContent ? "mt-3" : ""}`}>
                   {message.generatedImages.map((uri, idx) => (
@@ -238,7 +244,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           </View>
         )}
       </View>
-    </MotiView>
+    </Wrapper>
   );
 }, (prev: MessageBubbleProps, next: MessageBubbleProps) => {
   // Only re-render when these change
