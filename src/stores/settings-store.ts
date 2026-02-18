@@ -10,7 +10,9 @@ interface AppSettings {
   hapticFeedback: boolean;
   quickPromptEnabled: boolean;
   voiceAutoTranscribe: boolean;
-  sttProviderId: string | null;
+  sttBaseUrl: string;
+  sttApiKey: string;
+  sttModel: string;
 }
 
 interface SettingsState {
@@ -25,7 +27,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   hapticFeedback: true,
   quickPromptEnabled: true,
   voiceAutoTranscribe: true,
-  sttProviderId: null,
+  sttBaseUrl: "https://api.groq.com/openai/v1",
+  sttApiKey: "",
+  sttModel: "whisper-large-v3-turbo",
 };
 
 function applyLanguage(lang: AppSettings["language"]) {

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { View, TextInput, Pressable, Text, Alert, Platform, Image, ScrollView, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -37,7 +37,9 @@ export function ChatInput({
   const getModelById = useProviderStore((s) => s.getModelById);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const handleMicPressRef = useRef<(() => void) | null>(null);
 
   // Check if any participant model supports vision
   const supportsVision = participants.length > 0
@@ -116,19 +118,24 @@ export function ChatInput({
 
       setIsTranscribing(true);
       try {
-        // Find a provider that supports transcription (OpenAI-compatible)
-        const providers = useProviderStore.getState().providers;
-        const sttId = useSettingsStore.getState().settings.sttProviderId;
-        const sttProvider = sttId
-          ? providers.find((p) => p.id === sttId && p.enabled)
-          : providers.find((p) => p.enabled && (p.type === "openai" || p.type === "azure-openai"));
-        if (!sttProvider) {
+        const { sttBaseUrl, sttApiKey, sttModel } = useSettingsStore.getState().settings;
+        if (!sttApiKey) {
           Alert.alert(t("common.error"), t("chat.noSttProvider"));
           return;
         }
 
-        const client = new ApiClient(sttProvider);
-        const transcribedText = await client.transcribeAudio(uri);
+        const client = new ApiClient({
+          id: "stt",
+          name: "STT",
+          type: "openai",
+          baseUrl: sttBaseUrl,
+          apiKey: sttApiKey,
+          enabled: true,
+          status: "connected",
+          createdAt: "",
+          customHeaders: [],
+        });
+        const transcribedText = await client.transcribeAudio(uri, undefined, sttModel);
         if (transcribedText) {
           setText((prev) => (prev ? `${prev} ${transcribedText}` : transcribedText));
           inputRef.current?.focus();
@@ -150,6 +157,26 @@ export function ChatInput({
       setIsRecording(true);
     }
   }, [isRecording, isTranscribing, recorder, t]);
+
+  handleMicPressRef.current = handleMicPress;
+
+  // Recording timer + 60s auto-stop
+  useEffect(() => {
+    if (!isRecording) {
+      setRecordingDuration(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setRecordingDuration((d) => {
+        if (d >= 59) {
+          handleMicPressRef.current?.();
+          return 0;
+        }
+        return d + 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRecording]);
 
   const quickPromptEnabled = useSettingsStore((s) => s.settings.quickPromptEnabled);
   const hasMessages = useChatStore((s) => s.messages.length > 0);
@@ -270,18 +297,28 @@ export function ChatInput({
           </Pressable>
         )}
 
-        <View className="flex-1 flex-row items-center rounded-3xl border border-slate-200/50 bg-[#F2F2F7] px-4 py-1.5">
-          <TextInput
-            ref={inputRef}
-            className="max-h-24 min-h-[36px] flex-1 text-[16px] text-text-main"
-            placeholder={isGroup ? t("chat.messageGroup") : t("chat.message")}
-            placeholderTextColor="#8E8E93"
-            value={text}
-            onChangeText={handleTextChange}
-            multiline
-            editable={!isGenerating}
-          />
-        </View>
+        {isRecording ? (
+          <View className="flex-1 flex-row items-center justify-center rounded-3xl border border-red-200 bg-red-50 px-4 py-1.5 min-h-[36px]">
+            <View className="mr-2 h-2 w-2 rounded-full bg-red-500" />
+            <Text className="text-base font-semibold text-red-600">
+              {`${Math.floor(recordingDuration / 60).toString().padStart(2, "0")}:${(recordingDuration % 60).toString().padStart(2, "0")}`}
+            </Text>
+            <Text className="ml-2 text-xs text-red-400">/01:00</Text>
+          </View>
+        ) : (
+          <View className="flex-1 flex-row items-center rounded-3xl border border-slate-200/50 bg-[#F2F2F7] px-4 py-1.5">
+            <TextInput
+              ref={inputRef}
+              className="max-h-24 min-h-[36px] flex-1 text-[16px] text-text-main"
+              placeholder={isGroup ? t("chat.messageGroup") : t("chat.message")}
+              placeholderTextColor="#8E8E93"
+              value={text}
+              onChangeText={handleTextChange}
+              multiline
+              editable={!isGenerating}
+            />
+          </View>
+        )}
 
         {isGenerating ? (
           <Pressable
