@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
+import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, Modal, ScrollView, ActivityIndicator } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import * as Sharing from "expo-sharing";
+import { captureRef } from "react-native-view-shot";
 import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
 import { useTranslation } from "react-i18next";
 import { LegendList } from "@legendapp/list";
@@ -23,6 +25,9 @@ export default function ChatDetailScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const listRef = useRef<LegendListRef>(null);
+  const exportRef = useRef<View>(null);
+  const [showExport, setShowExport] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const conv = useChatStore(
     useCallback((s) => s.conversations.find((c) => c.id === id), [id]),
@@ -99,12 +104,19 @@ export default function ChatDetailScreen() {
         </Pressable>
       ),
       headerRight: () => (
-        <Pressable onPress={clearHistory} className="px-2">
-          <Ionicons name="create-outline" size={20} color="#007AFF" />
-        </Pressable>
+        <View className="flex-row items-center gap-1">
+          {messages.length > 0 && (
+            <Pressable onPress={() => setShowExport(true)} className="px-2">
+              <Ionicons name="image-outline" size={20} color="#007AFF" />
+            </Pressable>
+          )}
+          <Pressable onPress={clearHistory} className="px-2">
+            <Ionicons name="create-outline" size={20} color="#007AFF" />
+          </Pressable>
+        </View>
       ),
     });
-  }, [conv, model, activeIdentity, isGroup, showParticipants, clearHistory]);
+  }, [conv, model, activeIdentity, isGroup, showParticipants, clearHistory, messages.length]);
 
   const lastMsg = messages[messages.length - 1];
   const lastMsgContent = lastMsg?.content;
@@ -259,6 +271,25 @@ export default function ChatDetailScreen() {
     [isGroup, handleLongPress],
   );
 
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      // Wait for render
+      await new Promise((r) => setTimeout(r, 500));
+      const uri = await captureRef(exportRef, {
+        format: "png",
+        quality: 1,
+        snapshotContentContainer: true,
+      });
+      setShowExport(false);
+      await Sharing.shareAsync(uri, { mimeType: "image/png" });
+    } catch (err) {
+      Alert.alert(t("common.error"), err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [t]);
+
   if (!conv) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -269,6 +300,38 @@ export default function ChatDetailScreen() {
 
   return (
     <View className="flex-1 bg-bg-chat">
+    {/* Export modal */}
+    <Modal visible={showExport} animationType="slide" presentationStyle="pageSheet">
+      <View className="flex-1 bg-white">
+        <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3 pt-14">
+          <Pressable onPress={() => setShowExport(false)}>
+            <Text className="text-base text-primary">{t("common.cancel")}</Text>
+          </Pressable>
+          <Text className="text-base font-semibold">{t("chat.export")}</Text>
+          <Pressable onPress={handleExport} disabled={isExporting}>
+            {isExporting ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : (
+              <Text className="text-base font-semibold text-primary">{t("common.save")}</Text>
+            )}
+          </Pressable>
+        </View>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingVertical: 16 }}>
+          <View ref={exportRef} collapsable={false} className="bg-white pb-6">
+            <View className="items-center py-4 mb-2">
+              <Text className="text-lg font-bold text-slate-800">{conv.title || t("chat.chatTitle")}</Text>
+              <Text className="text-xs text-slate-400 mt-1">{new Date(conv.createdAt).toLocaleDateString()}</Text>
+            </View>
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} isGroup={isGroup} />
+            ))}
+            <View className="items-center mt-4 pt-4 border-t border-slate-100 mx-8">
+              <Text className="text-[10px] text-slate-300">Avatar AI · {new Date().toLocaleDateString()}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    </Modal>
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
