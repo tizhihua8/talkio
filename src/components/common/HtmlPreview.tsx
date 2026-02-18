@@ -17,7 +17,6 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"preview" | "code">("code");
   const [debouncedCode, setDebouncedCode] = useState(code);
-  const [webViewHeight, setWebViewHeight] = useState(300);
   const [fullscreen, setFullscreen] = useState(false);
   const [userSwitched, setUserSwitched] = useState(false);
   const [codeStable, setCodeStable] = useState(false);
@@ -31,13 +30,13 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
     const debounceTimer = setTimeout(() => {
       setDebouncedCode(code);
     }, 120);
-    // Auto-switch to Preview once code stabilizes (2s without changes)
+    // Auto-switch to Preview once code stabilizes
     const stableTimer = setTimeout(() => {
       setCodeStable(true);
       if (!userSwitchedRef.current) {
         setActiveTab("preview");
       }
-    }, 2000);
+    }, 500);
     return () => {
       clearTimeout(debounceTimer);
       clearTimeout(stableTimer);
@@ -57,38 +56,19 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
   <style>
     html, body { overflow-x: hidden; max-width: 100vw; overscroll-behavior: none; }
     body { background-color: #fff; color: #121212; margin: 0; padding: 12px; font-family: system-ui, sans-serif; box-sizing: border-box; word-break: break-word; }
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
   </style>
-  <script>
-    function sendHeight() {
-      const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, 100);
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'height', value: h }));
-    }
-    window.addEventListener('load', sendHeight);
-    new MutationObserver(sendHeight).observe(document.body, { childList: true, subtree: true });
-  <\/script>
 </head>
 <body>${debouncedCode}</body>
 </html>`;
 
   const webViewSource = useMemo(() => ({ html: wrappedHtml }), [wrappedHtml]);
 
-  const handleMessage = (event: any) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
-      if (data.type === "height" && data.value > 0) {
-        setWebViewHeight(Math.min(Math.max(data.value + 24, 150), 500));
-      }
-    } catch {}
-  };
-
   const handleCopy = () => {
     Clipboard.setStringAsync(code);
   };
 
-  // During streaming: show compact placeholder
-  if (!codeStable) {
+  // During streaming: show compact placeholder (skip if user manually switched tab)
+  if (!codeStable && !userSwitched) {
     return (
       <View className="mt-1 overflow-hidden rounded-xl border border-border-light bg-white">
         <View className="flex-row items-center gap-3 px-4 py-4">
@@ -171,18 +151,19 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
         </Pressable>
       </View>
 
-      {/* Content: both tabs stay mounted, toggle display to avoid expensive re-renders */}
-      <View style={{ display: activeTab === "preview" ? "flex" : "none" }}>
-        <WebView
-          source={webViewSource}
-          style={{ height: webViewHeight }}
-          originWhitelist={["https://"]}
-          javaScriptEnabled
-          scrollEnabled={false}
-          onMessage={handleMessage}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
+      {/* Content: WebView lazy loaded only when Preview tab is active */}
+      {activeTab === "preview" && (
+        <View style={{ height: 400 }}>
+          <WebView
+            source={webViewSource}
+            style={{ flex: 1 }}
+            originWhitelist={["https://"]}
+            javaScriptEnabled
+            scrollEnabled
+            showsVerticalScrollIndicator
+          />
+        </View>
+      )}
       <View style={{ display: activeTab === "code" ? "flex" : "none" }}>
         <MarkdownCodeBlock content={code} language={language} />
       </View>
