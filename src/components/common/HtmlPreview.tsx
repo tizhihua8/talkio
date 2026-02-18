@@ -54,7 +54,6 @@ export function HtmlPreview({ code, language = "html" }: HtmlPreviewProps) {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <script src="https://cdn.tailwindcss.com"><\/script>
   <style>
     html, body { overflow-x: hidden; max-width: 100vw; overscroll-behavior: none; }
     body { background-color: #fff; color: #121212; margin: 0; padding: 12px; font-family: system-ui, sans-serif; box-sizing: border-box; word-break: break-word; }
@@ -201,7 +200,6 @@ function FullscreenPreview({ code, onClose }: { code: string; onClose: () => voi
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"><\/script>
   <style>
     body { background-color: #fff; color: #121212; margin: 0; padding: 16px; font-family: system-ui, sans-serif; box-sizing: border-box; word-break: break-word; }
   </style>
