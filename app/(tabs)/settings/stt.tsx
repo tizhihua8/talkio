@@ -75,17 +75,9 @@ export default function SttSettingsScreen() {
     }
   };
 
-  const filteredModels = fetchedModels.filter((id) =>
-    id.toLowerCase().includes(modelSearch.toLowerCase()),
-  );
-
-  const displayModels = filteredModels.length > 0 || modelSearch
-    ? filteredModels
-    : fetchedModels.length > 0
-      ? fetchedModels
-      : settings.sttModel
-        ? [settings.sttModel]
-        : [];
+  const displayModels = modelSearch
+    ? fetchedModels.filter((id) => id.toLowerCase().includes(modelSearch.toLowerCase()))
+    : fetchedModels;
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary" contentContainerStyle={{ paddingBottom: 40 }}>
