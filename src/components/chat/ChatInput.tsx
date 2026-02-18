@@ -233,6 +233,7 @@ export const ChatInput = React.memo(function ChatInput({
               <Pressable
                 onPress={() => removeImage(idx)}
                 className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-black/60"
+                hitSlop={12}
               >
                 <Ionicons name="close" size={12} color="#fff" />
               </Pressable>
@@ -288,12 +289,12 @@ export const ChatInput = React.memo(function ChatInput({
 
       <View className="flex-row items-center gap-3 px-4 py-2.5">
         {supportsVision && (
-          <Pressable onPress={handleAttach} className="text-primary p-1">
+          <Pressable onPress={handleAttach} className="text-primary p-2">
             <Ionicons name="image-outline" size={22} color="#007AFF" />
           </Pressable>
         )}
         {isGroup && (
-          <Pressable onPress={toggleMentionPicker} className="p-1">
+          <Pressable onPress={toggleMentionPicker} className="p-2">
             <Ionicons name="at" size={22} color={showMentionPicker ? "#007AFF" : "#8E8E93"} />
           </Pressable>
         )}
@@ -324,25 +325,25 @@ export const ChatInput = React.memo(function ChatInput({
         {isGenerating ? (
           <Pressable
             onPress={() => useChatStore.getState().stopGeneration()}
-            className="h-8 w-8 items-center justify-center rounded-full bg-red-500"
+            className="h-10 w-10 items-center justify-center rounded-full bg-red-500"
           >
             <Ionicons name="stop" size={16} color="#fff" />
           </Pressable>
         ) : isTranscribing ? (
-          <View className="h-8 w-8 items-center justify-center">
+          <View className="h-10 w-10 items-center justify-center">
             <ActivityIndicator size="small" color="#007AFF" />
           </View>
         ) : text.trim() || attachedImages.length > 0 ? (
           <Pressable
             onPress={handleSend}
-            className="h-8 w-8 items-center justify-center rounded-full bg-primary"
+            className="h-10 w-10 items-center justify-center rounded-full bg-primary"
           >
             <Ionicons name="arrow-up" size={18} color="#fff" />
           </Pressable>
         ) : (
           <Pressable
             onPress={handleMicPress}
-            className={`h-8 w-8 items-center justify-center rounded-full ${
+            className={`h-10 w-10 items-center justify-center rounded-full ${
               isRecording ? "bg-red-500" : "bg-slate-200"
             }`}
           >

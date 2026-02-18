@@ -32,13 +32,13 @@ export default function ChatsScreen() {
         <View className="flex-row items-center gap-2">
           <Pressable
             onPress={() => setShowSearch((v) => !v)}
-            className="p-1"
+            className="p-2"
           >
             <Ionicons name="search" size={22} color="#007AFF" />
           </Pressable>
           <Pressable
             onPress={() => router.push("/(tabs)/experts")}
-            className="p-1"
+            className="p-2"
           >
             <Ionicons name="create-outline" size={22} color="#007AFF" />
           </Pressable>
@@ -154,7 +154,7 @@ export default function ChatsScreen() {
               autoFocus
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
+              <Pressable onPress={() => setSearchQuery("")} hitSlop={10}>
                 <Ionicons name="close-circle" size={18} color="#94a3b8" />
               </Pressable>
             )}

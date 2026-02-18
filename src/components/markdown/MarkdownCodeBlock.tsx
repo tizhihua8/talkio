@@ -35,7 +35,7 @@ export const MarkdownCodeBlock = memo(function MarkdownCodeBlock({ content, lang
         <Text className="text-[10px] font-mono font-bold text-text-muted uppercase">
           {lang}
         </Text>
-        <Pressable onPress={handleCopy} className="flex-row items-center gap-1 px-2 py-0.5 rounded active:bg-slate-200">
+        <Pressable onPress={handleCopy} hitSlop={8} className="flex-row items-center gap-1 px-2 py-1.5 rounded active:bg-slate-200">
           <Ionicons name="copy-outline" size={12} color="#6b7280" />
         </Pressable>
       </View>

@@ -227,18 +227,18 @@ export const MessageBubble = React.memo(function MessageBubble({
               onPress={() => {
                 useChatStore.getState().regenerateMessage(message.id);
               }}
-              className="self-start rounded-md p-1.5"
-              hitSlop={8}
+              className="self-start rounded-md p-2"
+              hitSlop={10}
             >
-              <Ionicons name="refresh-outline" size={14} color="#9ca3af" />
+              <Ionicons name="refresh-outline" size={16} color="#9ca3af" />
             </Pressable>
             {onBranch && (
               <Pressable
                 onPress={() => onBranch(message.id)}
-                className="self-start p-1.5"
-                hitSlop={8}
+                className="self-start p-2"
+                hitSlop={10}
               >
-                <Ionicons name="git-branch-outline" size={14} color="#9ca3af" />
+                <Ionicons name="git-branch-outline" size={16} color="#9ca3af" />
               </Pressable>
             )}
           </View>

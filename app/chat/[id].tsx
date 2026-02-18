@@ -126,11 +126,11 @@ export default function ChatDetailScreen() {
       headerRight: () => (
         <View className="flex-row items-center gap-1">
           {hasMessages && (
-            <Pressable onPress={() => setShowExport(true)} className="px-2">
+            <Pressable onPress={() => setShowExport(true)} className="p-2" hitSlop={4}>
               <Ionicons name="image-outline" size={20} color="#007AFF" />
             </Pressable>
           )}
-          <Pressable onPress={clearHistory} className="px-2">
+          <Pressable onPress={clearHistory} className="p-2" hitSlop={4}>
             <Ionicons name="create-outline" size={20} color="#007AFF" />
           </Pressable>
         </View>
