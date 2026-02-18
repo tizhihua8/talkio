@@ -24,7 +24,6 @@ export default function SttSettingsScreen() {
   const [connected, setConnected] = useState<boolean | null>(settings.sttApiKey ? true : null);
   const [testing, setTesting] = useState(false);
   const [pulling, setPulling] = useState(false);
-  const [showAllModels, setShowAllModels] = useState(false);
 
   const makeClient = () =>
     new ApiClient({
@@ -76,11 +75,9 @@ export default function SttSettingsScreen() {
     }
   };
 
-  const audioModels = fetchedModels.filter((id) => /whisper|audio|speech|tts/i.test(id));
-  const baseList = showAllModels || audioModels.length === 0 ? fetchedModels : audioModels;
   const displayModels = modelSearch
-    ? baseList.filter((id) => id.toLowerCase().includes(modelSearch.toLowerCase()))
-    : baseList;
+    ? fetchedModels.filter((id) => id.toLowerCase().includes(modelSearch.toLowerCase()))
+    : fetchedModels;
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -178,14 +175,6 @@ export default function SttSettingsScreen() {
             <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
               {t("settings.sttModelLabel")} ({displayModels.length})
             </Text>
-            <View className="flex-row items-center gap-4">
-            {audioModels.length > 0 && audioModels.length < fetchedModels.length && (
-              <Pressable onPress={() => setShowAllModels(!showAllModels)}>
-                <Text className="text-[13px] font-medium text-primary">
-                  {showAllModels ? t("settings.sttShowAudio") : t("settings.sttShowAll")}
-                </Text>
-              </Pressable>
-            )}
             <Pressable onPress={doFetchModels} disabled={pulling} className="flex-row items-center">
               {pulling ? (
                 <ActivityIndicator size="small" color="#007AFF" />
@@ -196,7 +185,6 @@ export default function SttSettingsScreen() {
                 </>
               )}
             </Pressable>
-            </View>
           </View>
 
           {/* Search */}
