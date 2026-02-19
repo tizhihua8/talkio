@@ -215,6 +215,8 @@ export async function generateResponse(
     let lastFlushedReasoningLength = 0;
     let lastFlushedToolCallsLength = 0;
     let lastFlushedImagesLength = 0;
+    let cachedToolCalls: Array<{ id: string; name: string; arguments: string }> = [];
+    let cachedImages: string[] = [];
 
     const shouldFlush = () => {
       const now = Date.now();
@@ -242,17 +244,24 @@ export async function generateResponse(
       lastFlushedReasoningLength = reasoningContent.length;
       lastFlushedToolCallsLength = pendingToolCalls.length;
       lastFlushedImagesLength = generatedImages.length;
+      // Only rebuild arrays when they actually changed
+      if (pendingToolCalls.length !== cachedToolCalls.length) {
+        cachedToolCalls = pendingToolCalls.map((tc) => ({
+          id: tc.id,
+          name: tc.name,
+          arguments: tc.arguments,
+        }));
+      }
+      if (generatedImages.length !== cachedImages.length) {
+        cachedImages = [...generatedImages];
+      }
       useChatStore.setState({
         streamingMessage: {
           ...assistantMsg,
           content,
-          generatedImages: [...generatedImages],
+          generatedImages: cachedImages,
           reasoningContent: reasoningContent || null,
-          toolCalls: pendingToolCalls.map((tc) => ({
-            id: tc.id,
-            name: tc.name,
-            arguments: tc.arguments,
-          })),
+          toolCalls: cachedToolCalls,
         },
       });
     };
