@@ -16,6 +16,7 @@ export default function TabLayout() {
         },
         headerStyle: { backgroundColor: "#ffffff" },
         headerTitleStyle: { fontWeight: "600", fontSize: 18 },
+        freezeOnBlur: true,
       }}
     >
       <Tabs.Screen

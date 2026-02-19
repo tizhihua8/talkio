@@ -33,14 +33,14 @@ export default function ModelsScreen() {
       ),
     });
   }, [navigation]);
-  const filtered = enabledModels.filter((m) =>
+  const filtered = useMemo(() => enabledModels.filter((m) =>
     searchQuery
       ? m.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         m.modelId.toLowerCase().includes(searchQuery.toLowerCase())
       : true,
-  );
+  ), [enabledModels, searchQuery]);
 
-  const sections = groupByProvider(filtered, getProviderById);
+  const sections = useMemo(() => groupByProvider(filtered, getProviderById), [filtered, getProviderById]);
 
   const handleStartChat = useCallback(
     async (model: Model) => {
