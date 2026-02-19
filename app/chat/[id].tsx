@@ -394,44 +394,46 @@ export default function ChatDetailScreen() {
 
   return (
     <View className="flex-1 bg-bg-chat">
-    {/* Export modal */}
-    <Modal visible={showExport} animationType="slide" presentationStyle="pageSheet">
-      <View className="flex-1 bg-white">
-        <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3 pt-14">
-          <Pressable onPress={() => setShowExport(false)}>
-            <Text className="text-base text-primary">{t("common.cancel")}</Text>
-          </Pressable>
-          <Text className="text-base font-semibold">{t("chat.export")}</Text>
-          <Pressable onPress={handleExport} disabled={isExporting}>
-            {isExporting ? (
-              <ActivityIndicator size="small" color="#007AFF" />
-            ) : (
-              <Text className="text-base font-semibold text-primary">{t("common.save")}</Text>
-            )}
-          </Pressable>
-        </View>
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingVertical: 16 }}>
-          <View ref={exportRef} collapsable={false} className="bg-white pb-6">
-            <View className="items-center py-4 mb-2">
-              <Text className="text-lg font-bold text-slate-800">{conv.title || t("chat.chatTitle")}</Text>
-              <Text className="text-xs text-slate-400 mt-1">{new Date(conv.createdAt).toLocaleDateString()}</Text>
-            </View>
-            {messages.map((msg) => (
-              <MessageBubble
-                key={msg.id}
-                message={msg}
-                isGroup={isGroup}
-                labelYou={t("chat.you")}
-                labelThoughtProcess={t("chat.thoughtProcess")}
-              />
-            ))}
-            <View className="items-center mt-4 pt-4 border-t border-slate-100 mx-8">
-              <Text className="text-[10px] text-slate-300">Avatar AI · {new Date().toLocaleDateString()}</Text>
-            </View>
+    {/* Export modal - only render content when visible */}
+    {showExport && (
+      <Modal visible animationType="slide" presentationStyle="pageSheet">
+        <View className="flex-1 bg-white">
+          <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3 pt-14">
+            <Pressable onPress={() => setShowExport(false)}>
+              <Text className="text-base text-primary">{t("common.cancel")}</Text>
+            </Pressable>
+            <Text className="text-base font-semibold">{t("chat.export")}</Text>
+            <Pressable onPress={handleExport} disabled={isExporting}>
+              {isExporting ? (
+                <ActivityIndicator size="small" color="#007AFF" />
+              ) : (
+                <Text className="text-base font-semibold text-primary">{t("common.save")}</Text>
+              )}
+            </Pressable>
           </View>
-        </ScrollView>
-      </View>
-    </Modal>
+          <ScrollView className="flex-1" contentContainerStyle={{ paddingVertical: 16 }}>
+            <View ref={exportRef} collapsable={false} className="bg-white pb-6">
+              <View className="items-center py-4 mb-2">
+                <Text className="text-lg font-bold text-slate-800">{conv.title || t("chat.chatTitle")}</Text>
+                <Text className="text-xs text-slate-400 mt-1">{new Date(conv.createdAt).toLocaleDateString()}</Text>
+              </View>
+              {messages.map((msg) => (
+                <MessageBubble
+                  key={msg.id}
+                  message={msg}
+                  isGroup={isGroup}
+                  labelYou={t("chat.you")}
+                  labelThoughtProcess={t("chat.thoughtProcess")}
+                />
+              ))}
+              <View className="items-center mt-4 pt-4 border-t border-slate-100 mx-8">
+                <Text className="text-[10px] text-slate-300">Avatar AI · {new Date().toLocaleDateString()}</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+    )}
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
