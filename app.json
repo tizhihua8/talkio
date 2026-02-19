@@ -47,6 +47,7 @@
       "typedRoutes": true
     },
     "plugins": [
+      "expo-dev-client",
       "expo-router",
       "expo-sqlite",
       "expo-calendar",
@@ -54,7 +55,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow Avatar to access your microphone for voice input."
+          "microphonePermission": "Allow Talkio to access your microphone for voice input."
         }
       ],
       "expo-font",
