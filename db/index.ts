@@ -2,7 +2,7 @@ import { drizzle } from "drizzle-orm/expo-sqlite";
 import * as SQLite from "expo-sqlite";
 import * as schema from "./schema";
 
-export const DATABASE_NAME = "avatar.db";
+export const DATABASE_NAME = "talkio.db";
 
 let _expoDb: SQLite.SQLiteDatabase | null = null;
 let _db: ReturnType<typeof drizzle> | null = null;

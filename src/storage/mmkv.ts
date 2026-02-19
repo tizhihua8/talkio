@@ -2,8 +2,8 @@ import { MMKV } from "react-native-mmkv";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 
-const AS_PREFIX = "@avatar:";
-const ENCRYPTION_KEY_ID = "avatar-encryption-key";
+const AS_PREFIX = "@talkio:";
+const ENCRYPTION_KEY_ID = "talkio-encryption-key";
 
 // Sync in-memory cache backed by AsyncStorage for persistence in Expo Go
 const cache = new Map<string, string>();
@@ -25,7 +25,7 @@ let useAsyncFallback = false;
  * that only holds this single value.
  */
 function getOrCreateEncryptionKey(): string {
-  const keyStore = new MMKV({ id: "avatar-keychain" });
+  const keyStore = new MMKV({ id: "talkio-keychain" });
   let key = keyStore.getString(ENCRYPTION_KEY_ID);
   if (!key) {
     key = Crypto.randomUUID();
@@ -36,12 +36,12 @@ function getOrCreateEncryptionKey(): string {
 
 try {
   const encryptionKey = getOrCreateEncryptionKey();
-  const encrypted = new MMKV({ id: "avatar-storage-v2", encryptionKey });
+  const encrypted = new MMKV({ id: "talkio-storage-v2", encryptionKey });
 
   // One-time migration: copy data from old unencrypted instance
   if (encrypted.getAllKeys().length === 0) {
     try {
-      const legacy = new MMKV({ id: "avatar-storage" });
+      const legacy = new MMKV({ id: "talkio-storage" });
       const legacyKeys = legacy.getAllKeys();
       if (legacyKeys.length > 0) {
         for (const k of legacyKeys) {

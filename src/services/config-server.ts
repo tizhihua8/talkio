@@ -61,7 +61,7 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Avatar — Provider Setup</title>
+  <title>Talkio — Provider Setup</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -102,7 +102,7 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
 <body>
   <button class="lang-switch" onclick="toggleLang()" id="langBtn">中文</button>
   <div class="card">
-    <h1>🤖 Avatar</h1>
+    <h1>🤖 Talkio</h1>
     <p class="subtitle" data-i18n="subtitle">Configure your AI provider from the comfort of your keyboard.</p>
 
     <label data-i18n="quickSelect">Quick Select</label>

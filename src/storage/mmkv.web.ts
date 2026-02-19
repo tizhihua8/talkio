@@ -1,6 +1,6 @@
 // Web platform: localStorage fallback for MMKV
 
-const PREFIX = "avatar-storage:";
+const PREFIX = "talkio-storage:";
 
 export const storage = {
   getString(key: string): string | undefined {

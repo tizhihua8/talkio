@@ -1,8 +1,8 @@
 import type { Message, Conversation } from "../types";
 
 // Web platform: localStorage-backed storage (no SQLite)
-const CONV_KEY = "@avatar:web:conversations";
-const MSG_KEY = "@avatar:web:messages";
+const CONV_KEY = "@talkio:web:conversations";
+const MSG_KEY = "@talkio:web:messages";
 
 let memConversations: Conversation[] = [];
 let memMessages: Message[] = [];

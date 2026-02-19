@@ -26,7 +26,7 @@ export async function createBackup(): Promise<string> {
     messages: allMessages,
   };
 
-  const fileName = `avatar-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+  const fileName = `talkio-backup-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
   const cacheDir = FileSystem.cacheDirectory;
   if (!cacheDir) throw new Error("Cache directory not available");
   const fileUri = `${cacheDir}${fileName}`;
@@ -42,7 +42,7 @@ export async function shareBackup(): Promise<void> {
   if (isAvailable) {
     await Sharing.shareAsync(uri, {
       mimeType: "application/json",
-      dialogTitle: "Export Avatar Backup",
+      dialogTitle: "Export Talkio Backup",
     });
   } else {
     throw new Error("Sharing is not available on this platform");

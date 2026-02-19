@@ -1,4 +1,4 @@
-# Avatar
+# Talkio
 
 一款本地优先的 AI 聊天助手，支持多模型、多身份、MCP 工具调用，数据完全存储在设备上。
 
@@ -68,7 +68,7 @@ eas build --platform android --profile production
 ## 项目结构
 
 ```
-avatar/
+talkio/
 ├── app/                    # 页面（expo-router 文件系统路由）
 │   ├── (tabs)/
 │   │   ├── chats/          # 对话列表 + 聊天页
@@ -92,7 +92,7 @@ avatar/
 ## 数据与隐私
 
 - **本地优先**：所有对话、设置、API Key 存储在设备本地（SQLite + MMKV 加密存储）
-- **无服务器**：Avatar 不运行任何云端服务，不收集用户数据
+- **无服务器**：Talkio 不运行任何云端服务，不收集用户数据
 - **AI 请求**：聊天消息会发送到你配置的 AI Provider（OpenAI / Anthropic 等），这是 AI 功能正常运行的必要条件
 - **局域网配置**：网页配置服务仅在本地网络运行，使用一次性配对码认证，关闭页面后服务自动停止
 

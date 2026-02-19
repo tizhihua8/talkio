@@ -74,7 +74,7 @@ async function createMcpClient(
     requestInit: buildRequestInit(customHeaders),
   });
   const client = new Client(
-    { name: "avatar-app", version: "1.0.0" },
+    { name: "talkio-app", version: "1.0.0" },
     { capabilities: {} },
   );
   await client.connect(transport);

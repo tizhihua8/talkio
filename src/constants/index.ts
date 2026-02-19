@@ -1,4 +1,4 @@
-export const APP_NAME = "Avatar";
+export const APP_NAME = "Talkio";
 
 export const DEFAULT_IDENTITY_PARAMS = {
   temperature: 0.7,

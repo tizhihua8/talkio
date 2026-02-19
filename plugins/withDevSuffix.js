@@ -18,7 +18,7 @@ function withDevSuffix(config) {
     return cfg;
   });
 
-  // 2. Override app_name in debug resources so launcher shows "Avatar Dev"
+  // 2. Override app_name in debug resources so launcher shows "Talkio Dev"
   config = withDangerousMod(config, [
     "android",
     (cfg) => {
@@ -29,7 +29,7 @@ function withDevSuffix(config) {
       fs.mkdirSync(debugResDir, { recursive: true });
       fs.writeFileSync(
         path.join(debugResDir, "strings.xml"),
-        `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">Avatar Dev</string>\n</resources>\n`
+        `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">Talkio Dev</string>\n</resources>\n`
       );
       return cfg;
     },

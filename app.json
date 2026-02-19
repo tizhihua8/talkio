@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Avatar",
-    "slug": "avatar",
+    "name": "Talkio",
+    "slug": "talkio",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "avatar",
+    "scheme": "talkio",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.avatar.app",
+      "bundleIdentifier": "com.talkio.app",
       "infoPlist": {
         "NSCalendarsUsageDescription": "Access calendar to manage events with AI",
         "NSRemindersUsageDescription": "Create reminders through AI assistant",
@@ -28,7 +28,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.avatar.app",
+      "package": "com.talkio.app",
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "INTERNET",

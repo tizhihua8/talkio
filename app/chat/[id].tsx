@@ -429,7 +429,7 @@ export default function ChatDetailScreen() {
                 />
               ))}
               <View className="items-center mt-4 pt-4 border-t border-slate-100 mx-8">
-                <Text className="text-[10px] text-slate-300">Avatar AI · {new Date().toLocaleDateString()}</Text>
+                <Text className="text-[10px] text-slate-300">Talkio · {new Date().toLocaleDateString()}</Text>
               </View>
             </View>
           </ScrollView>

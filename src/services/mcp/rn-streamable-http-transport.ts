@@ -1,7 +1,7 @@
 /**
  * React Native compatible StreamableHTTP transport for MCP SDK.
  * Based on @cherrystudio/react-native-streamable-http (MIT License).
- * Adapted for Avatar app - uses fetch (Hermes compatible).
+ * Adapted for Talkio app - uses fetch (Hermes compatible).
  */
 
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
