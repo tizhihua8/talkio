@@ -39,6 +39,8 @@ export async function initDatabase(): Promise<void> {
     );
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversationId);
     CREATE INDEX IF NOT EXISTS idx_messages_branch ON messages(branchId);
+    CREATE INDEX IF NOT EXISTS idx_messages_conv_created ON messages(conversationId, createdAt);
+    CREATE INDEX IF NOT EXISTS idx_messages_conv_branch_created ON messages(conversationId, branchId, createdAt);
   `);
 
   // Migration: add missing columns
@@ -56,8 +58,11 @@ export async function initDatabase(): Promise<void> {
   }
 }
 
+const EMPTY_ARRAY: readonly never[] = [];
+
 function safeJsonParse<T>(value: unknown, fallback: T): T {
   if (typeof value !== "string" || !value) return fallback;
+  if (value === "[]") return EMPTY_ARRAY as unknown as T;
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -89,12 +94,12 @@ function rowToMessage(row: typeof messages.$inferSelect): Message {
     senderName: row.senderName ?? null,
     identityId: row.identityId ?? null,
     content: row.content || "",
-    images: JSON.parse(row.images || "[]"),
-    generatedImages: safeJsonParse(row.generatedImages, []),
+    images: safeJsonParse<string[]>(row.images, []),
+    generatedImages: safeJsonParse<string[]>(row.generatedImages, []),
     reasoningContent: row.reasoningContent ?? null,
     reasoningDuration: row.reasoningDuration ?? null,
-    toolCalls: JSON.parse(row.toolCalls || "[]"),
-    toolResults: JSON.parse(row.toolResults || "[]"),
+    toolCalls: safeJsonParse(row.toolCalls, []),
+    toolResults: safeJsonParse(row.toolResults, []),
     branchId: row.branchId ?? null,
     parentMessageId: row.parentMessageId ?? null,
     isStreaming: row.isStreaming === 1,
