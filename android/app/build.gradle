@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.avatar.app'
+    namespace 'com.talkio.app'
     defaultConfig {
-        applicationId 'com.avatar.app'
+        applicationId 'com.talkio.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -104,15 +104,27 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            def props = new Properties()
+            def propsFile = rootProject.file("local.properties")
+            if (propsFile.exists()) props.load(new FileInputStream(propsFile))
+            storeFile file(props.getProperty("RELEASE_STORE_FILE", "../../release-key.jks"))
+            storePassword props.getProperty("RELEASE_STORE_PASSWORD", "")
+            keyAlias props.getProperty("RELEASE_KEY_ALIAS", "release-key")
+            keyPassword props.getProperty("RELEASE_KEY_PASSWORD", "")
+        }
     }
     buildTypes {
+        debug {
+            applicationIdSuffix ".dev"
+        }
         debug {
             signingConfig signingConfigs.debug
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

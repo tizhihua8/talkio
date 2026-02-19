@@ -137,7 +137,7 @@
     "restoreDetail": "已恢复 {{conversations}} 个会话和 {{messages}} 条消息。",
     "webConfig": "网页配置",
     "securityTip": "安全提示：API 密钥仅存储在本设备上，直接发送到您的供应商。",
-    "appName": "Avatar AI 客户端",
+    "appName": "Talkio AI 客户端",
     "addProvider": "添加供应商",
     "editProvider": "编辑供应商",
     "apiKey": "API 密钥",
@@ -253,7 +253,7 @@
   },
   "privacy": {
     "privacyFirst": "隐私优先",
-    "privacyDesc": "Avatar 以隐私为核心设计，您的数据始终保留在设备上。",
+    "privacyDesc": "Talkio 以隐私为核心设计，您的数据始终保留在设备上。",
     "dataStorage": "数据存储",
     "localOnly": "仅本地存储",
     "localOnlyDesc": "所有对话、设置和 API 密钥均保存在本设备上（MMKV + SQLite），不会发送到第三方服务器。",

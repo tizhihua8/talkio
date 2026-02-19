@@ -137,7 +137,7 @@
     "restoreDetail": "Restored {{conversations}} conversations and {{messages}} messages.",
     "webConfig": "Web Setup",
     "securityTip": "Security Tip: API Keys are stored only on this device and sent directly to your provider.",
-    "appName": "Avatar AI Client",
+    "appName": "Talkio AI Client",
     "addProvider": "Add Provider",
     "editProvider": "Edit Provider",
     "apiKey": "API Key",
@@ -253,7 +253,7 @@
   },
   "privacy": {
     "privacyFirst": "Privacy First",
-    "privacyDesc": "Avatar is designed with privacy at its core. Your data stays on your device.",
+    "privacyDesc": "Talkio is designed with privacy at its core. Your data stays on your device.",
     "dataStorage": "Data Storage",
     "localOnly": "Local Storage Only",
     "localOnlyDesc": "All conversations, settings, and API keys are stored locally on your device (MMKV + SQLite). No data is sent to third-party servers.",
