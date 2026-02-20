@@ -15,6 +15,7 @@ import { useIdentityStore } from "../../src/stores/identity-store";
 import { MessageBubble } from "../../src/components/chat/MessageBubble";
 import { ChatInput } from "../../src/components/chat/ChatInput";
 import { IdentitySlider } from "../../src/components/chat/IdentitySlider";
+import { ModelPickerModal } from "../../src/components/chat/ModelPickerModal";
 import type { Message } from "../../src/types";
 
 KeyboardController.preload();
@@ -50,6 +51,8 @@ export default function ChatDetailScreen() {
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const updateParticipantIdentity = useChatStore((s) => s.updateParticipantIdentity);
+  const addParticipant = useChatStore((s) => s.addParticipant);
+  const removeParticipant = useChatStore((s) => s.removeParticipant);
   const getModelById = useProviderStore((s) => s.getModelById);
   const getIdentityById = useIdentityStore((s) => s.getIdentityById);
   const isGroup = conv?.type === "group";
@@ -70,6 +73,7 @@ export default function ChatDetailScreen() {
   const [showIdentitySlider, setShowIdentitySlider] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [editingParticipantModelId, setEditingParticipantModelId] = useState<string | null>(null);
+  const [showModelPicker, setShowModelPicker] = useState(false);
   const userScrolledAway = useRef(false);
   const isDragging = useRef(false);
   const loadMoreCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -237,6 +241,22 @@ export default function ChatDetailScreen() {
     setEditingParticipantModelId(modelId);
     setShowIdentitySlider(true);
   }, []);
+
+  const handleAddParticipant = useCallback((modelId: string) => {
+    if (id) addParticipant(id, modelId);
+  }, [id, addParticipant]);
+
+  const handleRemoveParticipant = useCallback((modelId: string, displayName: string) => {
+    if (!id) return;
+    Alert.alert(displayName, t("chat.removeMemberConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("chat.removeMember"),
+        style: "destructive",
+        onPress: () => removeParticipant(id, modelId),
+      },
+    ]);
+  }, [id, removeParticipant, t]);
 
   const copyMessage = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
@@ -447,27 +467,52 @@ export default function ChatDetailScreen() {
                       {(pModel?.displayName ?? "?").slice(0, 2).toUpperCase()}
                     </Text>
                   </View>
-                  <View className="flex-1">
+                  <View className="flex-1 mr-2">
                     <Text className="text-[14px] font-semibold text-slate-900" numberOfLines={1}>
                       {pModel?.displayName ?? p.modelId}
                     </Text>
                   </View>
                 </View>
-                <Pressable
-                  onPress={() => handleEditParticipantIdentity(p.modelId)}
-                  className="flex-row items-center rounded-full bg-slate-100 px-3 py-1.5"
-                >
-                  <Ionicons name="person-outline" size={12} color="#64748b" style={{ marginRight: 4 }} />
-                  <Text className="text-[12px] text-slate-600">
-                    {pIdentity ? pIdentity.name : t("chat.noIdentity")}
-                  </Text>
-                  <Ionicons name="chevron-forward" size={12} color="#94a3b8" style={{ marginLeft: 2 }} />
-                </Pressable>
+                <View className="flex-row items-center gap-2">
+                  <Pressable
+                    onPress={() => handleEditParticipantIdentity(p.modelId)}
+                    className="flex-row items-center rounded-full bg-slate-100 px-2.5 py-1.5"
+                  >
+                    <Ionicons name="person-outline" size={12} color="#64748b" style={{ marginRight: 3 }} />
+                    <Text className="text-[11px] text-slate-600" numberOfLines={1}>
+                      {pIdentity ? pIdentity.name : t("chat.noIdentity")}
+                    </Text>
+                  </Pressable>
+                  {conv.participants.length > 1 && (
+                    <Pressable
+                      onPress={() => handleRemoveParticipant(p.modelId, pModel?.displayName ?? p.modelId)}
+                      hitSlop={6}
+                      className="items-center justify-center rounded-full bg-red-50 p-1.5"
+                    >
+                      <Ionicons name="close" size={14} color="#ef4444" />
+                    </Pressable>
+                  )}
+                </View>
               </View>
             );
           })}
+          <Pressable
+            onPress={() => setShowModelPicker(true)}
+            className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 mt-1 mb-1"
+          >
+            <Ionicons name="add-circle-outline" size={18} color="#007AFF" />
+            <Text className="text-[13px] font-medium text-primary">{t("chat.addMember")}</Text>
+          </Pressable>
         </View>
       )}
+
+      {/* Model picker for adding group members */}
+      <ModelPickerModal
+        visible={showModelPicker}
+        excludeModelIds={conv?.participants.map((p) => p.modelId) ?? []}
+        onSelect={handleAddParticipant}
+        onClose={() => setShowModelPicker(false)}
+      />
 
       {/* Identity slider */}
       <IdentitySlider

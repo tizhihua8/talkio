@@ -75,7 +75,12 @@
     "noSttProvider": "未配置支持语音转文字的 OpenAI 兼容供应商。请添加支持 Whisper API 的供应商。",
     "rewrite": "重写",
     "translate": "翻译",
-    "summarize": "总结"
+    "summarize": "总结",
+    "addMember": "添加成员",
+    "removeMember": "移除",
+    "removeMemberConfirm": "确定将此模型移出群聊？",
+    "noAvailableModels": "没有可添加的模型",
+    "cannotRemoveLast": "无法移除最后一个成员"
   },
   "models": {
     "title": "模型",

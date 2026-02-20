@@ -53,6 +53,8 @@ interface ChatState {
     modelId: string,
     identityId: string | null,
   ) => Promise<void>;
+  addParticipant: (conversationId: string, modelId: string) => Promise<void>;
+  removeParticipant: (conversationId: string, modelId: string) => Promise<void>;
 
   commitStreamingMessage: () => void;
   sendMessage: (text: string, mentionedModelIds?: string[], images?: string[]) => Promise<void>;
@@ -228,6 +230,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
       c.id === conversationId ? { ...c, participants } : c,
     );
     set({ conversations });
+  },
+
+  addParticipant: async (conversationId, modelId) => {
+    const conv = get().conversations.find((c) => c.id === conversationId);
+    if (!conv) return;
+    if (conv.participants.some((p) => p.modelId === modelId)) return;
+
+    const participants = [...conv.participants, { modelId, identityId: null }];
+    await dbUpdateConversation(conversationId, { participants });
+
+    set({
+      conversations: get().conversations.map((c) =>
+        c.id === conversationId ? { ...c, participants } : c,
+      ),
+    });
+  },
+
+  removeParticipant: async (conversationId, modelId) => {
+    const conv = get().conversations.find((c) => c.id === conversationId);
+    if (!conv) return;
+    if (conv.participants.length <= 1) return;
+
+    const participants = conv.participants.filter((p) => p.modelId !== modelId);
+    await dbUpdateConversation(conversationId, { participants });
+
+    set({
+      conversations: get().conversations.map((c) =>
+        c.id === conversationId ? { ...c, participants } : c,
+      ),
+    });
   },
 
   sendMessage: async (text, mentionedModelIds, images) => {
