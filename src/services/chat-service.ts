@@ -417,7 +417,7 @@ export async function generateResponse(
         fuDirty = false;
         useChatStore.setState((s) => ({
           streamingMessage: s.streamingMessage && s.streamingMessage.id === assistantMsg.id
-            ? { ...s.streamingMessage, content: followUpContent || contentChunks.join("") }
+            ? { ...s.streamingMessage, content: followUpContent || content }
             : s.streamingMessage,
         }));
       };
