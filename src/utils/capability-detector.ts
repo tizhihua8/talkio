@@ -47,6 +47,8 @@ const KNOWN_MODELS: [string, ModelCapabilities, number][] = [
   ["claude-3-haiku",    { vision: true, reasoning: false, toolCall: true, streaming: true }, 200000],
 
   // ── Google Gemini (current: 3.x, 2.5) ──
+  ["gemini-3.1-pro",      { vision: true, reasoning: true,  toolCall: true, streaming: true }, 1000000],
+  ["gemini-3.1-flash",    { vision: true, reasoning: true,  toolCall: true, streaming: true }, 1000000],
   ["gemini-3-pro",        { vision: true, reasoning: true,  toolCall: true, streaming: true }, 1000000],
   ["gemini-3-flash",      { vision: true, reasoning: true,  toolCall: true, streaming: true }, 1000000],
   ["gemini-2.5-pro",      { vision: true, reasoning: true,  toolCall: true, streaming: true }, 1000000],

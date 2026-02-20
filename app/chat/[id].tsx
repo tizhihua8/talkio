@@ -9,7 +9,6 @@ import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useChatStore } from "../../src/stores/chat-store";
 import { useProviderStore } from "../../src/stores/provider-store";
 import { useIdentityStore } from "../../src/stores/identity-store";
@@ -56,7 +55,6 @@ export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
-  const headerHeight = useHeaderHeight();
   const listRef = useRef<LegendListRef>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -508,17 +506,13 @@ export default function ChatDetailScreen() {
     );
   }
 
-  // Android uses softwareKeyboardLayoutMode:"resize" (app.json) which handles
-  // keyboard avoidance natively. KAV with behavior="padding" is redundant on
-  // Android and its keyboardVerticalOffset can break layout before messages load.
-  const Container = Platform.OS === "ios" ? KeyboardAvoidingView : View;
-  const containerProps = Platform.OS === "ios"
-    ? { style: { flex: 1 }, behavior: "padding" as const, keyboardVerticalOffset: headerHeight }
-    : { style: { flex: 1 } };
-
   return (
     <View className="flex-1 bg-bg-chat">
-    <Container {...containerProps}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior="padding"
+      keyboardVerticalOffset={50}
+    >
       {/* Group participant panel */}
       {isGroup && showParticipants && conv && (
         <View className="border-b border-slate-100 bg-white px-4 py-2">
@@ -591,19 +585,26 @@ export default function ChatDetailScreen() {
         onSelect={handleIdentitySelect}
       />
 
-      <View className="flex-1">
-        <LegendList
-          ref={listRef}
-          data={messages}
-          renderItem={renderItem}
-          keyExtractor={messageKeyExtractor}
-          ListFooterComponent={streamingId ? <StreamingFooter {...streamingFooterProps} /> : null}
-          {...legendListProps}
-          onScroll={handleScroll}
-          onScrollBeginDrag={handleScrollBeginDrag}
-          onScrollEndDrag={handleScrollEndDrag}
-        />
-      </View>
+      {/* When list is empty (before messages load), LegendList may not fill flex
+         space properly, pushing ChatInput behind the system nav bar. Use a simple
+         flex-1 spacer in the empty state to guarantee correct layout. */}
+      {messages.length === 0 && !streamingId ? (
+        <View style={{ flex: 1 }} />
+      ) : (
+        <View className="flex-1">
+          <LegendList
+            ref={listRef}
+            data={messages}
+            renderItem={renderItem}
+            keyExtractor={messageKeyExtractor}
+            ListFooterComponent={streamingId ? <StreamingFooter {...streamingFooterProps} /> : null}
+            {...legendListProps}
+            onScroll={handleScroll}
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onScrollEndDrag={handleScrollEndDrag}
+          />
+        </View>
+      )}
 
       {showScrollToBottom && (
         <View className="absolute right-4 z-10" style={{ top: "50%" }}>
@@ -624,7 +625,7 @@ export default function ChatDetailScreen() {
         isGroup={isGroup}
         participants={stableParticipants}
       />
-    </Container>
+    </KeyboardAvoidingView>
     </View>
   );
 }
