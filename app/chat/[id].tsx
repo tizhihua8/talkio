@@ -395,7 +395,6 @@ export default function ChatDetailScreen() {
 
   // P3: 使用 useMemo 缓存列表配置，避免每次渲染重新创建
   const legendListProps = useMemo(() => ({
-    style: { flex: 1 } as const,
     contentContainerStyle: { paddingTop: 12, paddingBottom: 8 },
     recycleItems: true,
     maintainScrollAtEnd: true,
@@ -588,17 +587,19 @@ export default function ChatDetailScreen() {
         onSelect={handleIdentitySelect}
       />
 
-      <LegendList
-        ref={listRef}
-        data={messages}
-        renderItem={renderItem}
-        keyExtractor={messageKeyExtractor}
-        ListFooterComponent={streamingId ? <StreamingFooter {...streamingFooterProps} /> : null}
-        {...legendListProps}
-        onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        onScrollEndDrag={handleScrollEndDrag}
-      />
+      <View className="flex-1">
+        <LegendList
+          ref={listRef}
+          data={messages}
+          renderItem={renderItem}
+          keyExtractor={messageKeyExtractor}
+          ListFooterComponent={streamingId ? <StreamingFooter {...streamingFooterProps} /> : null}
+          {...legendListProps}
+          onScroll={handleScroll}
+          onScrollBeginDrag={handleScrollBeginDrag}
+          onScrollEndDrag={handleScrollEndDrag}
+        />
+      </View>
 
       {showScrollToBottom && (
         <View className="absolute right-4 z-10" style={{ top: "50%" }}>
