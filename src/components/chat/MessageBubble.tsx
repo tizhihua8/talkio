@@ -35,7 +35,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 
   const markdownContent = isUser ? message.content : message.content.trimEnd();
 
-  // Throttle markdown rendering during streaming to ~300ms intervals
+  // Adaptive throttle: longer content → longer interval (AST parse scales with length)
   const [throttledContent, setThrottledContent] = useState(markdownContent);
   const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestContentRef = useRef(markdownContent);
@@ -54,12 +54,14 @@ export const MessageBubble = React.memo(function MessageBubble({
       setThrottledContent(markdownContent);
       return;
     }
-    // During streaming, throttle subsequent updates — do NOT clear timer on each content change
+    // Adaptive interval: 250ms for short, up to 600ms for long content
+    const len = markdownContent.length;
+    const interval = len < 500 ? 250 : len < 2000 ? 350 : len < 5000 ? 450 : 600;
     if (!throttleRef.current) {
       throttleRef.current = setTimeout(() => {
         throttleRef.current = null;
         setThrottledContent(latestContentRef.current);
-      }, 300);
+      }, interval);
     }
     // No cleanup: let the timer fire naturally; latestContentRef ensures latest content is used
   }, [markdownContent, message.isStreaming]);
