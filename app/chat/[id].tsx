@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { View, Text, Pressable, Platform, Alert, ActionSheetIOS, InteractionManager } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Sharing from "expo-sharing";
@@ -9,6 +9,7 @@ import { LegendList } from "@legendapp/list";
 import type { LegendListRef } from "@legendapp/list";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useHeaderHeight } from "@react-navigation/elements";
 import { useChatStore } from "../../src/stores/chat-store";
 import { useProviderStore } from "../../src/stores/provider-store";
 import { useIdentityStore } from "../../src/stores/identity-store";
@@ -55,6 +56,7 @@ export default function ChatDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const navigation = useNavigation();
+  const headerHeight = useHeaderHeight();
   const listRef = useRef<LegendListRef>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -170,7 +172,7 @@ export default function ChatDetailScreen() {
   const modelDisplayName = model?.displayName;
   const identityName = activeIdentity?.name;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const title = isGroup
       ? convTitle ?? t("chat.group")
       : modelDisplayName ?? t("chat.chatTitle");
@@ -477,14 +479,16 @@ export default function ChatDetailScreen() {
     }
   }, [conv, messages, isExporting, t]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View className="flex-row items-center gap-1">
-          {hasMessages && (
+          {hasMessages ? (
             <Pressable onPress={handleExport} disabled={isExporting} className="p-2" hitSlop={4}>
               <Ionicons name="share-outline" size={20} color="#007AFF" />
             </Pressable>
+          ) : (
+            <View style={{ width: 36 }} />
           )}
           <Pressable onPress={clearHistory} className="p-2" hitSlop={4}>
             <Ionicons name="create-outline" size={20} color="#007AFF" />
@@ -507,7 +511,7 @@ export default function ChatDetailScreen() {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior="padding"
-      keyboardVerticalOffset={50}
+      keyboardVerticalOffset={headerHeight}
     >
       {/* Group participant panel */}
       {isGroup && showParticipants && conv && (
