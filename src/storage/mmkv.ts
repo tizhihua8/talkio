@@ -2,6 +2,19 @@ import { MMKV } from "react-native-mmkv";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Crypto from "expo-crypto";
 
+// Lazy-loaded to avoid crash when native module isn't linked (e.g. Expo Go)
+let _secureStore: typeof import("expo-secure-store") | null = null;
+function getSecureStore() {
+  if (_secureStore === null) {
+    try {
+      _secureStore = require("expo-secure-store");
+    } catch {
+      _secureStore = null;
+    }
+  }
+  return _secureStore;
+}
+
 const AS_PREFIX = "@talkio:";
 const ENCRYPTION_KEY_ID = "talkio-encryption-key";
 
@@ -21,16 +34,51 @@ let useAsyncFallback = false;
 
 /**
  * Retrieve or generate a persistent encryption key for MMKV.
- * The key itself is stored in a separate, unencrypted MMKV instance
- * that only holds this single value.
+ * The key is stored in expo-secure-store (iOS Keychain / Android Keystore).
+ * Includes migration from the old unencrypted MMKV keychain instance.
  */
 function getOrCreateEncryptionKey(): string {
-  const keyStore = new MMKV({ id: "talkio-keychain" });
-  let key = keyStore.getString(ENCRYPTION_KEY_ID);
-  if (!key) {
-    key = Crypto.randomUUID();
-    keyStore.set(ENCRYPTION_KEY_ID, key);
+  // Try reading from secure store first
+  let key: string | null = null;
+  try {
+    key = getSecureStore()?.getItem(ENCRYPTION_KEY_ID) ?? null;
+  } catch {
+    // SecureStore not available (e.g. Expo Go) — fall through
   }
+
+  if (!key) {
+    // Migrate from old unencrypted MMKV keychain if it exists
+    try {
+      const legacyKeyStore = new MMKV({ id: "talkio-keychain" });
+      const legacyKey = legacyKeyStore.getString(ENCRYPTION_KEY_ID);
+      if (legacyKey) {
+        key = legacyKey;
+        // Save to secure store and clean up legacy
+        try {
+          getSecureStore()?.setItem(ENCRYPTION_KEY_ID, key);
+          legacyKeyStore.delete(ENCRYPTION_KEY_ID);
+        } catch {
+          // SecureStore write failed — key still works from legacy
+        }
+      }
+    } catch {
+      // Legacy keychain doesn't exist — skip
+    }
+  }
+
+  if (!key) {
+    // Generate a new key
+    key = Crypto.randomUUID();
+    try {
+      getSecureStore()?.setItem(ENCRYPTION_KEY_ID, key);
+    } catch {
+      // SecureStore not available — key lives only in memory this session.
+      // On next launch a new key will be generated, but this only happens
+      // in Expo Go where we fall back to AsyncStorage anyway.
+      console.warn("[mmkv] Could not persist encryption key to SecureStore");
+    }
+  }
+
   return key;
 }
 

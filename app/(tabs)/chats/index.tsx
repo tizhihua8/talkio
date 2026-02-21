@@ -118,11 +118,7 @@ export default function ChatsScreen() {
       </View>
 
       {filtered.length === 0 ? (
-        <EmptyState
-          icon="chatbubbles-outline"
-          title={t("chats.noConversations")}
-          description={t("chats.goToModels")}
-        />
+        <OnboardingOrEmpty />
       ) : (
         <FlashList
           data={filtered}
@@ -130,6 +126,59 @@ export default function ChatsScreen() {
           keyExtractor={(item) => item.id}
         />
       )}
+    </View>
+  );
+}
+
+// ── Onboarding / Empty state ──
+function OnboardingOrEmpty() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const providers = useProviderStore((s) => s.providers);
+  const enabledProviders = providers.filter((p) => p.status === "connected");
+  const hasProviders = enabledProviders.length > 0;
+
+  if (!hasProviders) {
+    return (
+      <View className="flex-1 items-center justify-center px-8">
+        <View className="mb-6 h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+          <Ionicons name="sparkles" size={40} color="#007AFF" />
+        </View>
+        <Text className="text-center text-xl font-bold text-text-main">
+          {t("onboarding.welcome", { defaultValue: "Welcome to Talkio" })}
+        </Text>
+        <Text className="mt-3 text-center text-sm leading-5 text-text-muted">
+          {t("onboarding.setupHint", { defaultValue: "To get started, configure an AI provider in Settings. You can add OpenAI, Anthropic, Gemini, or any compatible API." })}
+        </Text>
+        <Pressable
+          onPress={() => router.push("/(tabs)/settings")}
+          className="mt-6 rounded-xl bg-primary px-8 py-3 active:opacity-80"
+        >
+          <Text className="text-base font-semibold text-white">
+            {t("onboarding.goToSettings", { defaultValue: "Set Up Provider" })}
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  return (
+    <View className="flex-1 items-center justify-center px-8">
+      <Ionicons name="chatbubbles-outline" size={48} color="#9ca3af" />
+      <Text className="mt-4 text-center text-lg font-semibold text-text-main">
+        {t("chats.noConversations")}
+      </Text>
+      <Text className="mt-2 text-center text-sm text-text-muted">
+        {t("chats.goToModels")}
+      </Text>
+      <Pressable
+        onPress={() => router.push("/(tabs)/experts")}
+        className="mt-5 rounded-xl bg-primary px-6 py-2.5 active:opacity-80"
+      >
+        <Text className="text-sm font-semibold text-white">
+          {t("chats.startChat", { defaultValue: "Start a Chat" })}
+        </Text>
+      </Pressable>
     </View>
   );
 }

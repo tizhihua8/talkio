@@ -7,6 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useAudioRecorder, RecordingPresets, AudioModule } from "expo-audio";
+import { saveImageToFile, fileToDataUri } from "../../utils/image-storage";
 import { ModelAvatar } from "../common/ModelAvatar";
 import type { ConversationParticipant } from "../../types";
 import { useProviderStore } from "../../stores/provider-store";
@@ -72,7 +73,8 @@ export const ChatInput = React.memo(function ChatInput({
             encoding: FileSystem.EncodingType.Base64,
           });
           const mime = asset.mimeType || "image/jpeg";
-          newImages.push({ uri: asset.uri, base64: `data:${mime};base64,${b64}` });
+          const savedUri = await saveImageToFile(`data:${mime};base64,${b64}`);
+          newImages.push({ uri: asset.uri, base64: savedUri });
         } catch {
           // skip unreadable files
         }
@@ -101,8 +103,9 @@ export const ChatInput = React.memo(function ChatInput({
       if (ids.length > 0) mentionedIds = ids;
     }
 
-    const imageDataUris = hasImages ? attachedImages.map((img) => img.base64) : undefined;
-    onSend(trimmed || "", mentionedIds, imageDataUris);
+    // Images are stored as file URIs; pass them directly (chat-service will convert to data URI for API)
+    const imageUris = hasImages ? attachedImages.map((img) => img.base64) : undefined;
+    onSend(trimmed || "", mentionedIds, imageUris);
     setText("");
     setAttachedImages([]);
     inputRef.current?.focus();

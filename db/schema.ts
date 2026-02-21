@@ -35,6 +35,8 @@ export const messages = sqliteTable(
     generatedImages: text("generatedImages").notNull().default("[]"),
     reasoningDuration: real("reasoningDuration"),
     isStreaming: integer("isStreaming").notNull().default(0),
+    status: text("status").notNull().default("success"),
+    errorMessage: text("errorMessage"),
     createdAt: text("createdAt").notNull(),
   },
   (table) => [

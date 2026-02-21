@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import React, { useState, useCallback } from "react";
+import { View, Text, Pressable, Platform, ActionSheetIOS } from "react-native";
 import { Image } from "expo-image";
 import { MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
@@ -56,6 +56,31 @@ export const MessageBubble = React.memo(function MessageBubble({
   const reasoningContent = thinkingBlock ? thinkingBlock.content : message.reasoningContent;
   const isStreaming = message.status === MessageStatus.STREAMING || message.isStreaming;
 
+  const handleLongPress = useCallback(() => {
+    const actions: { label: string; action: () => void; destructive?: boolean }[] = [];
+    if (onCopy && rawContent) actions.push({ label: "Copy", action: () => onCopy(rawContent) });
+    if (!isUser && onRegenerate) actions.push({ label: "Regenerate", action: () => onRegenerate(message.id) });
+    if (!isUser && onTTS && rawContent) actions.push({ label: "Read Aloud", action: () => onTTS(rawContent) });
+    if (onShare && rawContent) actions.push({ label: "Share", action: () => onShare(rawContent) });
+    if (onDelete) actions.push({ label: "Delete", action: () => onDelete(message.id), destructive: true });
+    if (actions.length === 0) return;
+
+    if (Platform.OS === "ios") {
+      const labels = [...actions.map((a) => a.label), "Cancel"];
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: labels,
+          cancelButtonIndex: labels.length - 1,
+          destructiveButtonIndex: actions.findIndex((a) => a.destructive),
+        },
+        (idx) => { if (idx < actions.length) actions[idx].action(); },
+      );
+    } else {
+      // Android: use first action (copy) as default long-press behavior
+      actions[0]?.action();
+    }
+  }, [isUser, rawContent, message.id, onCopy, onRegenerate, onDelete, onTTS, onShare]);
+
   if (isUser) {
     return (
       <View className="mb-6 flex-row-reverse items-start gap-3 px-4">
@@ -83,14 +108,19 @@ export const MessageBubble = React.memo(function MessageBubble({
               ))}
             </View>
           )}
-          <View
-            className="max-w-[80%] rounded-2xl bg-primary px-4 py-3"
-            style={{ borderTopRightRadius: 0 }}
+          <Pressable
+            onLongPress={handleLongPress}
+            delayLongPress={400}
           >
-            <Text className="text-[15px] leading-relaxed text-white">
-              {markdownContent || (message.images?.length ? "📷" : "")}
-            </Text>
-          </View>
+            <View
+              className="max-w-[80%] rounded-2xl bg-primary px-4 py-3"
+              style={{ borderTopRightRadius: 0 }}
+            >
+              <Text className="text-[15px] leading-relaxed text-white">
+                {markdownContent || (message.images?.length ? "📷" : "")}
+              </Text>
+            </View>
+          </Pressable>
           {/* User action bar */}
           <View className="mr-1 flex-row items-center gap-0.5">
             {onCopy && <ActionButton icon="copy-outline" onPress={() => onCopy(rawContent)} />}
@@ -148,7 +178,9 @@ export const MessageBubble = React.memo(function MessageBubble({
           </View>
         )}
 
-        <View
+        <Pressable
+          onLongPress={handleLongPress}
+          delayLongPress={400}
           className="max-w-[90%] rounded-2xl border border-slate-100 bg-[#F2F2F7] px-4 py-3"
           style={{ borderTopLeftRadius: 0 }}
         >
@@ -193,7 +225,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               )}
             </>
           )}
-        </View>
+        </Pressable>
 
         {message.toolCalls.length > 0 && (
           <View className="max-w-[90%] gap-1.5">

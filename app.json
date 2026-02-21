@@ -68,7 +68,8 @@
       "expo-asset",
       "./plugins/withCleartextTraffic.js",
       "./plugins/withDevSuffix.js",
-      "./plugins/withReleaseSigning.js"
+      "./plugins/withReleaseSigning.js",
+      "expo-secure-store"
     ],
     "extra": {
       "router": {},

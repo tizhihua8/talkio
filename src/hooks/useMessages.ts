@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { eq, asc, and, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { db } from "../../db";
@@ -16,6 +16,11 @@ const EMPTY_QUERY = db
 /**
  * Reactive hook that returns messages for a conversation from SQLite.
  * Uses useLiveQuery so the UI automatically updates when DB changes.
+ *
+ * Performance notes:
+ * - SQLite query is fast even for 1000+ messages (indexed by conversationId + createdAt)
+ * - rowToMessage conversion uses stable references for empty arrays to reduce GC
+ * - LegendList virtualizes rendering so only visible messages are mounted
  */
 export function useMessages(
   conversationId: string | null,
@@ -38,8 +43,14 @@ export function useMessages(
 
   const { data: rawMessages } = useLiveQuery(query, [conversationId, branchId]);
 
-  return useMemo(
-    () => (rawMessages ? rawMessages.map(rowToMessage) : []),
-    [rawMessages],
-  );
+  // Memoize with structural comparison: only re-map when raw data changes
+  const prevRef = useRef<{ raw: typeof rawMessages | null; mapped: Message[] }>({ raw: null, mapped: [] });
+
+  return useMemo(() => {
+    if (!rawMessages || rawMessages.length === 0) return [];
+    if (rawMessages === prevRef.current.raw) return prevRef.current.mapped;
+    const mapped = rawMessages.map(rowToMessage);
+    prevRef.current = { raw: rawMessages, mapped };
+    return mapped;
+  }, [rawMessages]);
 }

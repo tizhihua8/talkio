@@ -4,7 +4,76 @@ import { conversations, messages, messageBlocks } from "../../db/schema";
 import type { Message, Conversation, MessageBlock } from "../types";
 import { MessageStatus, MessageBlockType, MessageBlockStatus } from "../types";
 
-// ─── Init: ensure tables exist (Drizzle push or manual) ───
+// ─── Migration System ───
+
+interface Migration {
+  version: number;
+  sql: string;
+}
+
+// Each migration runs exactly once, tracked by version number in _migrations table.
+// Add new migrations to the END of this array. Never modify or remove existing entries.
+const MIGRATIONS: Migration[] = [
+  {
+    version: 1,
+    sql: `ALTER TABLE messages ADD COLUMN images TEXT NOT NULL DEFAULT '[]'`,
+  },
+  {
+    version: 2,
+    sql: `ALTER TABLE messages ADD COLUMN generatedImages TEXT NOT NULL DEFAULT '[]'`,
+  },
+  {
+    version: 3,
+    sql: `ALTER TABLE messages ADD COLUMN reasoningDuration REAL`,
+  },
+  {
+    version: 4,
+    sql: `ALTER TABLE messages ADD COLUMN status TEXT NOT NULL DEFAULT 'success'`,
+  },
+  {
+    version: 5,
+    sql: `ALTER TABLE messages ADD COLUMN errorMessage TEXT`,
+  },
+];
+
+function getAppliedVersions(): Set<number> {
+  try {
+    const rows = expoDb.getAllSync<{ version: number }>(
+      `SELECT version FROM _migrations`,
+    );
+    return new Set(rows.map((r) => r.version));
+  } catch {
+    return new Set();
+  }
+}
+
+function runMigrations(): void {
+  // Ensure meta table exists
+  expoDb.execSync(
+    `CREATE TABLE IF NOT EXISTS _migrations (
+      version INTEGER PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    )`,
+  );
+
+  const applied = getAppliedVersions();
+
+  for (const migration of MIGRATIONS) {
+    if (applied.has(migration.version)) continue;
+    try {
+      expoDb.execSync(migration.sql);
+    } catch {
+      // Column/index may already exist from before the migration system was introduced.
+      // This is expected for the initial adoption — safe to ignore.
+    }
+    expoDb.runSync(
+      `INSERT OR IGNORE INTO _migrations (version, applied_at) VALUES (?, ?)`,
+      [migration.version, new Date().toISOString()],
+    );
+  }
+}
+
+// ─── Init: ensure tables exist + run migrations ───
 export async function initDatabase(): Promise<void> {
   expoDb.execSync(`
     CREATE TABLE IF NOT EXISTS conversations (
@@ -35,6 +104,8 @@ export async function initDatabase(): Promise<void> {
       generatedImages TEXT NOT NULL DEFAULT '[]',
       reasoningDuration REAL,
       isStreaming INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'success',
+      errorMessage TEXT,
       createdAt TEXT NOT NULL,
       FOREIGN KEY (conversationId) REFERENCES conversations(id) ON DELETE CASCADE
     );
@@ -59,21 +130,8 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_blocks_message_order ON message_blocks(messageId, sortOrder);
   `);
 
-  // Migration: add missing columns
-  const migrations = [
-    `ALTER TABLE messages ADD COLUMN images TEXT NOT NULL DEFAULT '[]'`,
-    `ALTER TABLE messages ADD COLUMN generatedImages TEXT NOT NULL DEFAULT '[]'`,
-    `ALTER TABLE messages ADD COLUMN reasoningDuration REAL`,
-    `ALTER TABLE messages ADD COLUMN status TEXT NOT NULL DEFAULT 'success'`,
-    `ALTER TABLE messages ADD COLUMN errorMessage TEXT`,
-  ];
-  for (const sql of migrations) {
-    try {
-      expoDb.execSync(sql);
-    } catch {
-      // Column already exists
-    }
-  }
+  // Run versioned migrations for existing databases
+  runMigrations();
 }
 
 const EMPTY_ARRAY: readonly never[] = [];
@@ -121,8 +179,8 @@ export function rowToMessage(row: typeof messages.$inferSelect): Message {
     branchId: row.branchId ?? null,
     parentMessageId: row.parentMessageId ?? null,
     isStreaming: row.isStreaming === 1,
-    status: ((row as any).status as MessageStatus) || (row.isStreaming === 1 ? MessageStatus.STREAMING : MessageStatus.SUCCESS),
-    errorMessage: (row as any).errorMessage ?? null,
+    status: (row.status as MessageStatus) || (row.isStreaming === 1 ? MessageStatus.STREAMING : MessageStatus.SUCCESS),
+    errorMessage: row.errorMessage ?? null,
     createdAt: row.createdAt,
   };
 }
@@ -192,15 +250,10 @@ export async function insertMessage(msg: Message): Promise<void> {
     branchId: msg.branchId,
     parentMessageId: msg.parentMessageId,
     isStreaming: msg.isStreaming ? 1 : 0,
+    status: msg.status ?? MessageStatus.SUCCESS,
+    errorMessage: msg.errorMessage ?? null,
     createdAt: msg.createdAt,
   });
-  // Write status + errorMessage via raw SQL since drizzle schema may not have them yet
-  if (msg.status || msg.errorMessage) {
-    expoDb.runSync(
-      `UPDATE messages SET status = ?, errorMessage = ? WHERE id = ?`,
-      [msg.status ?? MessageStatus.SUCCESS, msg.errorMessage ?? null, msg.id],
-    );
-  }
 }
 
 export async function updateMessage(id: string, updates: Partial<Message>): Promise<void> {
@@ -213,8 +266,8 @@ export async function updateMessage(id: string, updates: Partial<Message>): Prom
   if (updates.toolCalls !== undefined) values.toolCalls = JSON.stringify(updates.toolCalls);
   if (updates.toolResults !== undefined) values.toolResults = JSON.stringify(updates.toolResults);
   if (updates.isStreaming !== undefined) values.isStreaming = updates.isStreaming ? 1 : 0;
-  if (updates.status !== undefined) (values as any).status = updates.status;
-  if (updates.errorMessage !== undefined) (values as any).errorMessage = updates.errorMessage;
+  if (updates.status !== undefined) values.status = updates.status;
+  if (updates.errorMessage !== undefined) values.errorMessage = updates.errorMessage;
 
   if (Object.keys(values).length > 0) {
     await db.update(messages).set(values).where(eq(messages.id, id));

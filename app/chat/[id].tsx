@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
 import { View, Text, Pressable, Alert, Share, ToastAndroid, Platform } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
@@ -220,6 +221,8 @@ export default function ChatDetailScreen() {
     await Clipboard.setStringAsync(content);
     if (Platform.OS === "android") {
       ToastAndroid.show(t("common.copied") ?? "Copied", ToastAndroid.SHORT);
+    } else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
   }, [t]);
 

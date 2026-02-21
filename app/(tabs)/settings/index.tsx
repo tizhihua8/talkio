@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { useProviderStore } from "../../../src/stores/provider-store";
+import { useIdentityStore } from "../../../src/stores/identity-store";
 import { useSettingsStore } from "../../../src/stores/settings-store";
 import { shareBackup, restoreBackup } from "../../../src/services/backup-service";
 
@@ -134,7 +135,11 @@ export default function SettingsScreen() {
                 const response = await fetch(uri);
                 const jsonContent = await response.text();
                 const stats = await restoreBackup(jsonContent);
-                // useLiveQuery auto-updates conversation list after DB restore
+                // Reload all stores from MMKV after restore
+                useProviderStore.getState().loadProviders();
+                useIdentityStore.getState().loadIdentities();
+                useIdentityStore.getState().initBuiltInTools();
+                useSettingsStore.getState().loadSettings();
                 Alert.alert(
                   t("settings.restoreSuccess"),
                   t("settings.restoreDetail", { conversations: stats.conversations, messages: stats.messages }),
