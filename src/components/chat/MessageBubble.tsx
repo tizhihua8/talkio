@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { MotiView } from "moti";
@@ -35,48 +35,13 @@ export const MessageBubble = React.memo(function MessageBubble({
 
   const markdownContent = isUser ? message.content : message.content.trimEnd();
 
-  // Adaptive throttle: longer content → longer interval (AST parse scales with length)
-  const [throttledContent, setThrottledContent] = useState(markdownContent);
-  const throttleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestContentRef = useRef(markdownContent);
-  latestContentRef.current = markdownContent;
+  // No component-level throttle — chat-service.ts already throttles streamingMessage
+  // updates at ~120ms intervals. A second throttle here would only cause stale content
+  // and layout jumps when it catches up. (cherry-studio-app also renders directly.)
+  const displayContent = markdownContent;
 
-  useEffect(() => {
-    if (!message.isStreaming) {
-      // When streaming ends, immediately render final content
-      if (throttleRef.current) clearTimeout(throttleRef.current);
-      throttleRef.current = null;
-      setThrottledContent(markdownContent);
-      return;
-    }
-    // First content arrives: show immediately (no blank gap)
-    if (markdownContent && !throttledContent) {
-      setThrottledContent(markdownContent);
-      return;
-    }
-    // Adaptive interval: 250ms for short, up to 600ms for long content
-    const len = markdownContent.length;
-    const interval = len < 500 ? 250 : len < 2000 ? 350 : len < 5000 ? 450 : 600;
-    if (!throttleRef.current) {
-      throttleRef.current = setTimeout(() => {
-        throttleRef.current = null;
-        setThrottledContent(latestContentRef.current);
-      }, interval);
-    }
-    // No cleanup: let the timer fire naturally; latestContentRef ensures latest content is used
-  }, [markdownContent, message.isStreaming]);
-
-  const displayContent = message.isStreaming ? throttledContent : markdownContent;
-
-  // P3: Skip entrance animation for settled (non-streaming) messages
-  // P7: Only animate once on first mount; subsequent content updates skip MotiView overhead
-  const hasAnimatedRef = useRef(false);
-  const shouldAnimate = message.isStreaming && !hasAnimatedRef.current;
-  if (message.isStreaming && displayContent) hasAnimatedRef.current = true;
-  const Wrapper = shouldAnimate ? MotiView : View;
-  const wrapperAnimProps = shouldAnimate
-    ? { from: { opacity: 0, translateY: 8 }, animate: { opacity: 1, translateY: 0 }, transition: { type: "timing" as const, duration: 250 } }
-    : {};
+  // P3/P7: No wrapper animation — avoids layout jumps during streaming→settled transition.
+  // The streaming dots inside the bubble already provide visual feedback for new messages.
 
   if (isUser) {
     return (
@@ -122,8 +87,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   }
 
   return (
-    <Wrapper
-      {...wrapperAnimProps}
+    <View
       className="mb-6 flex-row items-start gap-3 px-4"
     >
       <View className="h-9 w-9 overflow-hidden rounded-full">
@@ -291,7 +255,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           </View>
         )}
       </View>
-    </Wrapper>
+    </View>
   );
 }, (prev: MessageBubbleProps, next: MessageBubbleProps) => {
   // Only re-render when these change

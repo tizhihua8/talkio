@@ -22,34 +22,6 @@ KeyboardController.preload();
 
 const messageKeyExtractor = (item: Message) => item.id;
 
-// Self-contained streaming footer: subscribes to streamingMessage internally
-// so the parent ChatDetailScreen doesn't re-render on every streaming flush
-const StreamingFooter = React.memo(function StreamingFooter({
-  isGroup,
-  labelYou,
-  labelThoughtProcess,
-  onLongPress,
-}: {
-  isGroup: boolean;
-  labelYou: string;
-  labelThoughtProcess: string;
-  onLongPress?: (message: Message) => void;
-}) {
-  const streamingMessage = useChatStore((s) => s.streamingMessage);
-  if (!streamingMessage) return null;
-  return (
-    <MessageBubble
-      message={streamingMessage}
-      isGroup={isGroup}
-      isLastAssistant={false}
-      renderMarkdown
-      labelYou={labelYou}
-      labelThoughtProcess={labelThoughtProcess}
-      onLongPress={onLongPress}
-    />
-  );
-});
-
 export default function ChatDetailScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -76,20 +48,23 @@ export default function ChatDetailScreen() {
     prevConvRef.current = rawConv;
   }
   const conv = prevConvRef.current;
-  const rawMessages = useChatStore((s) => s.messages);
-  // P6: Only subscribe to streamingMessage id at parent level — the footer subscribes to the full object
-  const streamingId = useChatStore((s) => s.streamingMessage?.id ?? null);
-  const messages = useMemo(
-    () => streamingId ? rawMessages.filter((m) => m.id !== streamingId) : rawMessages,
-    [rawMessages, streamingId],
-  );
+  const settledMessages = useChatStore((s) => s.messages);
+  const streamingMessage = useChatStore((s) => s.streamingMessage);
+  // Merge streaming message into data array so LegendList's maintainScrollAtEnd
+  // can track its height changes natively (inspired by cherry-studio-app)
+  const messages = useMemo(() => {
+    if (!streamingMessage) return settledMessages;
+    // Filter out any duplicate (streaming msg may already be in settled during commit)
+    const filtered = settledMessages.filter((m) => m.id !== streamingMessage.id);
+    return [...filtered, streamingMessage];
+  }, [settledMessages, streamingMessage]);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const hasMoreMessages = useChatStore((s) => s.hasMoreMessages);
   const isLoadingMore = useChatStore((s) => s.isLoadingMore);
   const loadMoreMessages = useChatStore((s) => s.loadMoreMessages);
 
-  const hasMessages = messages.length > 0 || !!streamingId;
-  const messageCount = messages.length + (streamingId ? 1 : 0);
+  const hasMessages = messages.length > 0;
+  const messageCount = messages.length;
   const setCurrentConversation = useChatStore((s) => s.setCurrentConversation);
   const sendMessage = useChatStore((s) => s.sendMessage);
   const updateParticipantIdentity = useChatStore((s) => s.updateParticipantIdentity);
@@ -116,9 +91,7 @@ export default function ChatDetailScreen() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [editingParticipantModelId, setEditingParticipantModelId] = useState<string | null>(null);
   const [showModelPicker, setShowModelPicker] = useState(false);
-  const userScrolledAway = useRef(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
-  const isDragging = useRef(false);
   const loadMoreCooldownRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // For single chat, use the first participant
@@ -204,46 +177,16 @@ export default function ChatDetailScreen() {
     });
   }, [convTitle, modelDisplayName, identityName, participantCount, isGroup, showParticipants]);
 
-  // P6: Track streaming content changes via store subscription instead of re-rendering parent
-  const scrollThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevStreamingContentRef = useRef<string | undefined>(undefined);
-  useEffect(() => {
-    return useChatStore.subscribe((state) => {
-      const content = state.streamingMessage?.content;
-      if (!content || content === prevStreamingContentRef.current) return;
-      prevStreamingContentRef.current = content;
-      if (userScrolledAway.current) return;
-      if (scrollThrottleRef.current) return;
-      scrollThrottleRef.current = setTimeout(() => {
-        scrollThrottleRef.current = null;
-        if (!userScrolledAway.current) {
-          listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
-        }
-      }, 400);
-    });
-  }, []);
-
-  // Also scroll when new messages arrive (non-streaming)
-  useEffect(() => {
-    if (messageCount === 0 || userScrolledAway.current) return;
-    listRef.current?.scrollToOffset({ offset: 9999999, animated: false });
-  }, [messageCount]);
-
+  // Scroll management: all content is now in data items (including streaming),
+  // so LegendList's maintainScrollAtEnd handles auto-scrolling natively.
+  // We only track distance from bottom for the "scroll to bottom" button.
   const handleScroll = useCallback((e: any) => {
-    // Only update flag during user drag, ignore programmatic/content-growth scrolls
-    if (!isDragging.current) return;
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
     const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
     const distanceFromTop = contentOffset.y;
-    if (distanceFromBottom > 120) {
-      // User scrolled away from bottom
-      userScrolledAway.current = true;
-      setShowScrollToBottom(true);
-    } else if (distanceFromBottom < 80) {
-      // User scrolled back to bottom
-      userScrolledAway.current = false;
-      setShowScrollToBottom(false);
-    }
+    // Show/hide scroll-to-bottom button
+    setShowScrollToBottom(distanceFromBottom > 100);
+    // Load more when near top
     if (distanceFromTop < 120 && hasMoreMessages && !isLoadingMore) {
       if (!loadMoreCooldownRef.current) {
         loadMoreMessages();
@@ -254,19 +197,8 @@ export default function ChatDetailScreen() {
     }
   }, [hasMoreMessages, isLoadingMore, loadMoreMessages]);
 
-  const handleScrollBeginDrag = useCallback(() => {
-    isDragging.current = true;
-    userScrolledAway.current = true;
-    setShowScrollToBottom(true);
-  }, []);
-
-  const handleScrollEndDrag = useCallback(() => {
-    isDragging.current = false;
-  }, []);
-
   const handleSend = useCallback(
     (text: string, mentionedModelIds?: string[], images?: string[]) => {
-      userScrolledAway.current = false;
       setShowScrollToBottom(false);
       sendMessage(text, mentionedModelIds, images);
     },
@@ -274,7 +206,6 @@ export default function ChatDetailScreen() {
   );
 
   const scrollToBottom = useCallback(() => {
-    userScrolledAway.current = false;
     setShowScrollToBottom(false);
     listRef.current?.scrollToOffset({ offset: 9999999, animated: true });
   }, []);
@@ -380,13 +311,11 @@ export default function ChatDetailScreen() {
   }, [copyMessage, handleDeleteMessage, regenerateMessage, handleSend]);
 
   const lastAssistantId = useMemo(() => {
-    // During streaming, the streaming message is always the latest assistant
-    if (streamingId) return streamingId;
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") return messages[i].id;
     }
     return null;
-  }, [messages, streamingId]);
+  }, [messages]);
 
   const lastAssistantIdRef = useRef(lastAssistantId);
   lastAssistantIdRef.current = lastAssistantId;
@@ -395,8 +324,9 @@ export default function ChatDetailScreen() {
   const legendListProps = useMemo(() => ({
     contentContainerStyle: { paddingTop: 12, paddingBottom: 8 },
     recycleItems: true,
-    maintainScrollAtEnd: true,
-    maintainScrollAtEndThreshold: 0.1,
+    alignItemsAtEnd: true,
+    maintainScrollAtEnd: { onLayout: true, onItemLayout: true, onDataChange: true },
+    maintainScrollAtEndThreshold: 0.2,
     estimatedItemSize: 120,
     drawDistance: 200,
     waitForInitialLayout: true,
@@ -407,7 +337,7 @@ export default function ChatDetailScreen() {
       if (item.reasoningContent) return "assistant-reasoning";
       return "assistant";
     },
-    scrollEventThrottle: 100,
+    scrollEventThrottle: 16,
     keyboardDismissMode: "on-drag" as const,
     keyboardShouldPersistTaps: "handled" as const,
     showsVerticalScrollIndicator: false,
@@ -434,13 +364,6 @@ export default function ChatDetailScreen() {
     },
     [isGroup, handleLongPress, t],
   );
-
-  const streamingFooterProps = useMemo(() => ({
-    isGroup,
-    labelYou: t("chat.you"),
-    labelThoughtProcess: t("chat.thoughtProcess"),
-    onLongPress: handleLongPress,
-  }), [isGroup, handleLongPress, t]);
 
   const handleExport = useCallback(async () => {
     if (!conv || isExporting) return;
@@ -590,11 +513,8 @@ export default function ChatDetailScreen() {
         data={messages}
         renderItem={renderItem}
         keyExtractor={messageKeyExtractor}
-        ListFooterComponent={streamingId ? <StreamingFooter {...streamingFooterProps} /> : null}
         {...legendListProps}
         onScroll={handleScroll}
-        onScrollBeginDrag={handleScrollBeginDrag}
-        onScrollEndDrag={handleScrollEndDrag}
       />
 
       {showScrollToBottom && (
