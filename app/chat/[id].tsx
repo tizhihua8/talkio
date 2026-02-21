@@ -156,6 +156,10 @@ export default function ChatDetailScreen() {
     (text: string, mentionedModelIds?: string[], images?: string[]) => {
       setShowScrollToBottom(false);
       sendMessage(text, mentionedModelIds, images);
+      // DB write → useLiveQuery has a micro-delay; nudge scroll after data arrives
+      setTimeout(() => {
+        listRef.current?.scrollToOffset({ offset: 9999999, animated: true });
+      }, 150);
     },
     [sendMessage],
   );
