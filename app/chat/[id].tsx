@@ -353,6 +353,13 @@ export default function ChatDetailScreen() {
       headerRight: () => (
         <View className="flex-row items-center gap-1">
           <Pressable
+            onPress={() => setShowModelPicker(true)}
+            className="p-2 active:opacity-60"
+            hitSlop={4}
+          >
+            <Ionicons name="person-add-outline" size={19} color="#007AFF" />
+          </Pressable>
+          <Pressable
             onPress={handleExport}
             disabled={isExporting || !hasMessages}
             className="p-2 active:opacity-60"

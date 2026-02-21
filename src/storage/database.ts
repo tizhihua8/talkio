@@ -203,6 +203,7 @@ export async function insertConversation(conv: Conversation): Promise<void> {
 
 export async function updateConversation(id: string, updates: Partial<Conversation>): Promise<void> {
   const values: Record<string, unknown> = { updatedAt: new Date().toISOString() };
+  if (updates.type !== undefined) values.type = updates.type;
   if (updates.title !== undefined) values.title = updates.title;
   if (updates.participants !== undefined) values.participants = JSON.stringify(updates.participants);
   if (updates.lastMessage !== undefined) values.lastMessage = updates.lastMessage;

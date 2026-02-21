@@ -115,10 +115,23 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!conv) return;
     if (conv.participants.some((p) => p.modelId === modelId)) return;
     const participants = [...conv.participants, { modelId, identityId: null }];
-    const titleUpdate = /^Model Group \(\d+\)$/.test(conv.title)
+
+    // Auto-upgrade single → group when adding a second participant
+    const providerStore = useProviderStore.getState();
+    const typeUpdate = conv.type === "single" && participants.length >= 2
+      ? { type: "group" as const }
+      : {};
+
+    // Auto-update title: if it's a default single-chat title (model name) or group pattern
+    const firstModelName = providerStore.getModelById(conv.participants[0]?.modelId)?.displayName;
+    const isDefaultTitle =
+      /^Model Group \(\d+\)$/.test(conv.title) ||
+      (conv.type === "single" && conv.title === firstModelName);
+    const titleUpdate = isDefaultTitle
       ? { title: `Model Group (${participants.length})` }
       : {};
-    await dbUpdateConversation(conversationId, { participants, ...titleUpdate });
+
+    await dbUpdateConversation(conversationId, { participants, ...typeUpdate, ...titleUpdate });
   },
 
   removeParticipant: async (conversationId, modelId) => {
