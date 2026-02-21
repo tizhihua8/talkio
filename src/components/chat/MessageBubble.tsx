@@ -7,30 +7,41 @@ import { ModelAvatar } from "../common/ModelAvatar";
 import { MarkdownRenderer } from "../markdown/MarkdownRenderer";
 import type { Message, MessageBlock } from "../../types";
 import { MessageBlockType, MessageBlockStatus, MessageStatus } from "../../types";
-import { useChatStore } from "../../stores/chat-store";
 
 interface MessageBubbleProps {
   message: Message;
   blocks?: MessageBlock[];
   isGroup?: boolean;
-  isLastAssistant?: boolean;
   renderMarkdown?: boolean;
   labelYou?: string;
   labelThoughtProcess?: string;
-  onLongPress?: (message: Message) => void;
-  onBranch?: (messageId: string) => void;
+  onCopy?: (content: string) => void;
+  onRegenerate?: (messageId: string) => void;
+  onDelete?: (messageId: string) => void;
+  onTTS?: (content: string) => void;
+  onShare?: (content: string) => void;
+}
+
+function ActionButton({ icon, onPress, color = "#9ca3af" }: { icon: string; onPress: () => void; color?: string }) {
+  return (
+    <Pressable onPress={onPress} className="rounded-md p-1.5" hitSlop={6}>
+      <Ionicons name={icon as any} size={15} color={color} />
+    </Pressable>
+  );
 }
 
 export const MessageBubble = React.memo(function MessageBubble({
   message,
   blocks,
   isGroup = false,
-  isLastAssistant = false,
   renderMarkdown = true,
   labelYou = "You",
   labelThoughtProcess = "Thought Process",
-  onLongPress,
-  onBranch,
+  onCopy,
+  onRegenerate,
+  onDelete,
+  onTTS,
+  onShare,
 }: MessageBubbleProps) {
   const [showReasoning, setShowReasoning] = useState(false);
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
@@ -45,14 +56,9 @@ export const MessageBubble = React.memo(function MessageBubble({
   const reasoningContent = thinkingBlock ? thinkingBlock.content : message.reasoningContent;
   const isStreaming = message.status === MessageStatus.STREAMING || message.isStreaming;
 
-  // P3/P7: No wrapper animation — avoids layout jumps during streaming→settled transition.
-  // The streaming dots inside the bubble already provide visual feedback for new messages.
-
   if (isUser) {
     return (
-      <View
-        className="mb-6 flex-row-reverse items-start gap-3 px-4"
-      >
+      <View className="mb-6 flex-row-reverse items-start gap-3 px-4">
         <View className="h-9 w-9 items-center justify-center rounded-full bg-primary">
           <Ionicons name="person" size={20} color="#fff" />
         </View>
@@ -77,24 +83,26 @@ export const MessageBubble = React.memo(function MessageBubble({
               ))}
             </View>
           )}
-          <Pressable
-            onLongPress={() => onLongPress?.(message)}
+          <View
             className="max-w-[80%] rounded-2xl bg-primary px-4 py-3"
             style={{ borderTopRightRadius: 0 }}
           >
             <Text className="text-[15px] leading-relaxed text-white">
               {markdownContent || (message.images?.length ? "📷" : "")}
             </Text>
-          </Pressable>
+          </View>
+          {/* User action bar */}
+          <View className="mr-1 flex-row items-center gap-0.5">
+            {onCopy && <ActionButton icon="copy-outline" onPress={() => onCopy(rawContent)} />}
+            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color="#ef4444" />}
+          </View>
         </View>
       </View>
     );
   }
 
   return (
-    <View
-      className="mb-6 flex-row items-start gap-3 px-4"
-    >
+    <View className="mb-6 flex-row items-start gap-3 px-4">
       <View className="h-9 w-9 overflow-hidden rounded-full">
         <ModelAvatar name={message.senderName ?? "AI"} size="sm" />
       </View>
@@ -140,8 +148,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           </View>
         )}
 
-        <Pressable
-          onLongPress={() => onLongPress?.(message)}
+        <View
           className="max-w-[90%] rounded-2xl border border-slate-100 bg-[#F2F2F7] px-4 py-3"
           style={{ borderTopLeftRadius: 0 }}
         >
@@ -186,7 +193,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               )}
             </>
           )}
-        </Pressable>
+        </View>
 
         {message.toolCalls.length > 0 && (
           <View className="max-w-[90%] gap-1.5">
@@ -237,33 +244,20 @@ export const MessageBubble = React.memo(function MessageBubble({
           </View>
         )}
 
-        {isLastAssistant && !isStreaming && (
-          <View className="ml-1 flex-row items-center gap-1">
-            <Pressable
-              onPress={() => {
-                useChatStore.getState().regenerateMessage(message.id);
-              }}
-              className="self-start rounded-md p-2"
-              hitSlop={10}
-            >
-              <Ionicons name="refresh-outline" size={16} color="#9ca3af" />
-            </Pressable>
-            {onBranch && (
-              <Pressable
-                onPress={() => onBranch(message.id)}
-                className="self-start p-2"
-                hitSlop={10}
-              >
-                <Ionicons name="git-branch-outline" size={16} color="#9ca3af" />
-              </Pressable>
-            )}
+        {/* Assistant action bar — hidden during streaming */}
+        {!isStreaming && (
+          <View className="ml-1 flex-row items-center gap-0.5">
+            {onCopy && <ActionButton icon="copy-outline" onPress={() => onCopy(rawContent)} />}
+            {onRegenerate && <ActionButton icon="refresh-outline" onPress={() => onRegenerate(message.id)} />}
+            {onTTS && rawContent && <ActionButton icon="volume-medium-outline" onPress={() => onTTS(rawContent)} />}
+            {onShare && rawContent && <ActionButton icon="share-outline" onPress={() => onShare(rawContent)} />}
+            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color="#ef4444" />}
           </View>
         )}
       </View>
     </View>
   );
 }, (prev: MessageBubbleProps, next: MessageBubbleProps) => {
-  // Only re-render when these change
   if (prev.message.id !== next.message.id) return false;
   if (prev.message.content !== next.message.content) return false;
   if (prev.message.status !== next.message.status) return false;
@@ -272,7 +266,6 @@ export const MessageBubble = React.memo(function MessageBubble({
   if (prev.message.toolCalls.length !== next.message.toolCalls.length) return false;
   if (prev.message.generatedImages?.length !== next.message.generatedImages?.length) return false;
   if (prev.blocks !== next.blocks) return false;
-  if (prev.isLastAssistant !== next.isLastAssistant) return false;
   if (prev.isGroup !== next.isGroup) return false;
   if (prev.renderMarkdown !== next.renderMarkdown) return false;
   if (prev.labelYou !== next.labelYou) return false;

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Platform, Alert, ActionSheetIOS } from "react-native";
+import { View, Text, Pressable, Alert, Share } from "react-native";
 import * as Clipboard from "expo-clipboard";
+import * as Speech from "expo-speech";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
 import { KeyboardAvoidingView, KeyboardController } from "react-native-keyboard-controller";
@@ -228,58 +229,23 @@ export default function ChatDetailScreen() {
 
   const regenerateMessage = useChatStore((s) => s.regenerateMessage);
 
-  const handleLongPress = useCallback((message: Message) => {
-    const isAssistant = message.role === "assistant";
-
-    if (Platform.OS === "ios") {
-      const options = isAssistant
-        ? [t("common.cancel"), t("common.copy"), t("chat.rewrite"), t("chat.translate"), t("chat.summarize"), t("common.delete")]
-        : [t("common.cancel"), t("common.copy"), t("common.delete")];
-      const destructiveIndex = isAssistant ? 5 : 2;
-
-      ActionSheetIOS.showActionSheetWithOptions(
-        { options, cancelButtonIndex: 0, destructiveButtonIndex: destructiveIndex },
-        (index) => {
-          if (isAssistant) {
-            if (index === 1) copyMessage(message.content);
-            if (index === 2) regenerateMessage(message.id);
-            if (index === 3) handleSend(`Translate the following to ${t("common.cancel") === "取消" ? "English" : "Chinese"}:\n\n${message.content}`);
-            if (index === 4) handleSend(`Summarize the following concisely:\n\n${message.content}`);
-            if (index === 5) handleDeleteMessage(message.id);
-          } else {
-            if (index === 1) copyMessage(message.content);
-            if (index === 2) handleDeleteMessage(message.id);
-          }
-        },
-      );
-    } else {
-      const buttons: Array<{ text: string; onPress?: () => void; style?: "default" | "cancel" | "destructive" }> = [
-        { text: t("common.copy"), onPress: () => { copyMessage(message.content); } },
-      ];
-      if (isAssistant) {
-        buttons.push(
-          { text: t("chat.rewrite"), onPress: () => { regenerateMessage(message.id); } },
-          { text: t("chat.translate"), onPress: () => { handleSend(`Translate the following to ${t("common.cancel") === "取消" ? "English" : "Chinese"}:\n\n${message.content}`); } },
-          { text: t("chat.summarize"), onPress: () => { handleSend(`Summarize the following concisely:\n\n${message.content}`); } },
-        );
+  const handleTTS = useCallback((content: string) => {
+    Speech.isSpeakingAsync().then((speaking: boolean) => {
+      if (speaking) {
+        Speech.stop();
+      } else {
+        Speech.speak(content, { rate: 0.9 });
       }
-      buttons.push(
-        { text: t("common.delete"), style: "destructive", onPress: () => handleDeleteMessage(message.id) },
-        { text: t("common.cancel"), style: "cancel" },
-      );
-      Alert.alert(t("chat.messageOptions"), undefined, buttons);
-    }
-  }, [copyMessage, handleDeleteMessage, regenerateMessage, handleSend]);
+    });
+  }, []);
 
-  const lastAssistantId = useMemo(() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === "assistant") return messages[i].id;
+  const handleShareMessage = useCallback(async (content: string) => {
+    try {
+      await Share.share({ message: content });
+    } catch {
+      // User cancelled or share failed
     }
-    return null;
-  }, [messages]);
-
-  const lastAssistantIdRef = useRef(lastAssistantId);
-  lastAssistantIdRef.current = lastAssistantId;
+  }, []);
 
   // P3: 使用 useMemo 缓存列表配置，避免每次渲染重新创建
   const legendListProps = useMemo(() => ({
@@ -319,15 +285,18 @@ export default function ChatDetailScreen() {
           message={item}
           blocks={blocksByMessageRef.current[item.id]}
           isGroup={isGroup}
-          isLastAssistant={item.id === lastAssistantIdRef.current}
           renderMarkdown={shouldRenderMarkdown}
           labelYou={t("chat.you")}
           labelThoughtProcess={t("chat.thoughtProcess")}
-          onLongPress={handleLongPress}
+          onCopy={copyMessage}
+          onRegenerate={item.role === "assistant" ? regenerateMessage : undefined}
+          onDelete={handleDeleteMessage}
+          onTTS={item.role === "assistant" ? handleTTS : undefined}
+          onShare={item.role === "assistant" ? handleShareMessage : undefined}
         />
       );
     },
-    [isGroup, handleLongPress, t],
+    [isGroup, copyMessage, regenerateMessage, handleDeleteMessage, handleTTS, handleShareMessage, t],
   );
 
   const handleExport = useCallback(async () => {
