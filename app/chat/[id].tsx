@@ -230,14 +230,20 @@ export default function ChatDetailScreen() {
   const regenerateMessage = useChatStore((s) => s.regenerateMessage);
 
   const handleTTS = useCallback((content: string) => {
-    Speech.isSpeakingAsync().then((speaking: boolean) => {
-      if (speaking) {
-        Speech.stop();
-      } else {
-        Speech.speak(content, { rate: 0.9 });
-      }
-    });
-  }, []);
+    try {
+      Speech.isSpeakingAsync().then((speaking: boolean) => {
+        if (speaking) {
+          Speech.stop();
+        } else {
+          Speech.speak(content, { rate: 0.9 });
+        }
+      }).catch(() => {
+        Alert.alert("TTS", t("chat.ttsUnavailable") ?? "Text-to-speech is not available. Please rebuild the app.");
+      });
+    } catch {
+      Alert.alert("TTS", t("chat.ttsUnavailable") ?? "Text-to-speech is not available. Please rebuild the app.");
+    }
+  }, [t]);
 
   const handleShareMessage = useCallback(async (content: string) => {
     try {
