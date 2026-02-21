@@ -71,7 +71,7 @@ export default function WebConfigScreen() {
       <View className="mx-4 mt-4 rounded-xl bg-white p-4">
         <Pressable
           onPress={handleStart}
-          className={`items-center rounded-lg py-3 ${serverUrl ? "bg-red-500" : "bg-primary"}`}
+          className={`items-center rounded-lg py-3 active:opacity-70 ${serverUrl ? "bg-red-500" : "bg-primary"}`}
         >
           <Text className="text-base font-semibold text-white">
             {serverUrl ? t("webConfig.stopServer") : t("webConfig.startServer")}

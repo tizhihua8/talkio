@@ -88,7 +88,7 @@ export default function SttSettingsScreen() {
             <Pressable
               key={preset.label}
               onPress={() => { setBaseUrl(preset.baseUrl); setConnected(null); setFetchedModels([]); }}
-              className={`flex-1 items-center rounded-xl border py-2.5 ${
+              className={`flex-1 items-center rounded-xl border py-2.5 active:opacity-70 ${
                 baseUrl === preset.baseUrl ? "border-primary bg-primary/5" : "border-slate-200 bg-white"
               }`}
             >
@@ -128,7 +128,7 @@ export default function SttSettingsScreen() {
               secureTextEntry={!showApiKey}
               autoCapitalize="none"
             />
-            <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1">
+            <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1 active:opacity-60">
               <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
             </Pressable>
           </View>
@@ -138,7 +138,7 @@ export default function SttSettingsScreen() {
         <Pressable
           onPress={handleConnect}
           disabled={testing || pulling}
-          className={`mt-1 flex-row items-center justify-center rounded-xl py-3.5 ${
+          className={`mt-1 flex-row items-center justify-center rounded-xl py-3.5 active:opacity-70 ${
             testing || pulling
               ? "bg-slate-300"
               : connected === true
@@ -175,7 +175,7 @@ export default function SttSettingsScreen() {
             <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
               {t("settings.sttModelLabel")} ({displayModels.length})
             </Text>
-            <Pressable onPress={doFetchModels} disabled={pulling} className="flex-row items-center">
+            <Pressable onPress={doFetchModels} disabled={pulling} className="flex-row items-center active:opacity-60">
               {pulling ? (
                 <ActivityIndicator size="small" color="#007AFF" />
               ) : (
@@ -200,7 +200,7 @@ export default function SttSettingsScreen() {
                 autoCapitalize="none"
               />
               {modelSearch ? (
-                <Pressable onPress={() => setModelSearch("")}>
+                <Pressable onPress={() => setModelSearch("")} className="active:opacity-60">
                   <Ionicons name="close-circle" size={16} color="#94a3b8" />
                 </Pressable>
               ) : null}

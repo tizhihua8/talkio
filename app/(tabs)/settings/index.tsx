@@ -115,7 +115,7 @@ export default function SettingsScreen() {
                 Alert.alert(t("common.error"), err instanceof Error ? err.message : "Export failed");
               }
             }}
-            className="flex-row items-center justify-between p-4 border-b border-slate-50"
+            className="flex-row items-center justify-between p-4 border-b border-slate-50 active:bg-slate-50"
           >
             <View className="flex-row items-center">
               <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10">
@@ -143,7 +143,7 @@ export default function SettingsScreen() {
                 Alert.alert(t("common.error"), err instanceof Error ? err.message : "Import failed");
               }
             }}
-            className="flex-row items-center justify-between p-4"
+            className="flex-row items-center justify-between p-4 active:bg-slate-50"
           >
             <View className="flex-row items-center">
               <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
@@ -193,7 +193,7 @@ function SettingsRow({
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center justify-between p-4 ${!isLast ? "border-b border-slate-50" : ""}`}
+      className={`flex-row items-center justify-between p-4 active:bg-slate-50 ${!isLast ? "border-b border-slate-50" : ""}`}
     >
       <View className="flex-row items-center">
         <View className={`mr-3 h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>

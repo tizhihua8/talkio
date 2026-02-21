@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Alert, Share } from "react-native";
+import { View, Text, Pressable, Alert, Share, ToastAndroid, Platform } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Speech from "expo-speech";
 import * as Sharing from "expo-sharing";
@@ -122,7 +122,7 @@ export default function ChatDetailScreen() {
       headerTitle: () => (
         <Pressable
           onPress={handleHeaderPress}
-          className="items-center"
+          className="items-center active:opacity-60"
         >
           <Text className="text-sm font-bold tracking-tight text-text-main">{title}</Text>
           {isGroup ? (
@@ -216,7 +216,10 @@ export default function ChatDetailScreen() {
 
   const copyMessage = useCallback(async (content: string) => {
     await Clipboard.setStringAsync(content);
-  }, []);
+    if (Platform.OS === "android") {
+      ToastAndroid.show(t("common.copied") ?? "Copied", ToastAndroid.SHORT);
+    }
+  }, [t]);
 
   const deleteMessage = useChatStore((s) => s.deleteMessageById);
 
@@ -347,13 +350,13 @@ export default function ChatDetailScreen() {
           <Pressable
             onPress={handleExport}
             disabled={isExporting || !hasMessages}
-            className="p-2"
+            className="p-2 active:opacity-60"
             hitSlop={4}
             style={{ opacity: hasMessages ? 1 : 0 }}
           >
             <Ionicons name="share-outline" size={20} color="#007AFF" />
           </Pressable>
-          <Pressable onPress={clearHistory} className="p-2" hitSlop={4}>
+          <Pressable onPress={clearHistory} className="p-2 active:opacity-60" hitSlop={4}>
             <Ionicons name="create-outline" size={20} color="#007AFF" />
           </Pressable>
         </View>
@@ -399,7 +402,7 @@ export default function ChatDetailScreen() {
                 <View className="flex-row items-center gap-2">
                   <Pressable
                     onPress={() => handleEditParticipantIdentity(p.modelId)}
-                    className="flex-row items-center rounded-full bg-slate-100 px-2.5 py-1.5"
+                    className="flex-row items-center rounded-full bg-slate-100 px-2.5 py-1.5 active:opacity-60"
                   >
                     <Ionicons name="person-outline" size={12} color="#64748b" style={{ marginRight: 3 }} />
                     <Text className="text-[11px] text-slate-600" numberOfLines={1}>
@@ -410,7 +413,7 @@ export default function ChatDetailScreen() {
                     <Pressable
                       onPress={() => handleRemoveParticipant(p.modelId, pModel?.displayName ?? p.modelId)}
                       hitSlop={6}
-                      className="items-center justify-center rounded-full bg-red-50 p-1.5"
+                      className="items-center justify-center rounded-full bg-red-50 p-1.5 active:opacity-60"
                     >
                       <Ionicons name="close" size={14} color="#ef4444" />
                     </Pressable>
@@ -421,7 +424,7 @@ export default function ChatDetailScreen() {
           })}
           <Pressable
             onPress={() => setShowModelPicker(true)}
-            className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 mt-1 mb-1"
+            className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 mt-1 mb-1 active:opacity-60"
           >
             <Ionicons name="add-circle-outline" size={18} color="#007AFF" />
             <Text className="text-[13px] font-medium text-primary">{t("chat.addMember")}</Text>
@@ -461,7 +464,7 @@ export default function ChatDetailScreen() {
         <View className="absolute right-4 z-10" style={{ top: "50%" }}>
           <Pressable
             onPress={scrollToBottom}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white"
+            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-60"
             style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 }}
             hitSlop={8}
           >

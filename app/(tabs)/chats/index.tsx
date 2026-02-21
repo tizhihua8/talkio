@@ -31,13 +31,13 @@ export default function ChatsScreen() {
         <View className="flex-row items-center gap-2">
           <Pressable
             onPress={() => setShowSearch((v) => !v)}
-            className="p-2"
+            className="p-2 active:opacity-60"
           >
             <Ionicons name="search" size={22} color="#007AFF" />
           </Pressable>
           <Pressable
             onPress={() => router.push("/(tabs)/experts")}
-            className="p-2"
+            className="p-2 active:opacity-60"
           >
             <Ionicons name="create-outline" size={22} color="#007AFF" />
           </Pressable>
@@ -87,7 +87,7 @@ export default function ChatsScreen() {
               autoFocus
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")} hitSlop={10}>
+              <Pressable onPress={() => setSearchQuery("")} hitSlop={10} className="active:opacity-60">
                 <Ionicons name="close-circle" size={18} color="#94a3b8" />
               </Pressable>
             )}
@@ -101,7 +101,7 @@ export default function ChatsScreen() {
             <Pressable
               key={f}
               onPress={() => setFilter(f)}
-              className={`rounded-full px-4 py-1.5 ${
+              className={`rounded-full px-4 py-1.5 active:opacity-70 ${
                 filter === f ? "bg-primary" : "bg-divider"
               }`}
             >
@@ -186,7 +186,8 @@ const ConversationItem = React.memo(function ConversationItem({
     >
       <Pressable
         onPress={() => router.push(`/chat/${item.id}`)}
-        className="flex-row items-center gap-4 border-b border-divider bg-white px-4 py-3"
+        android_ripple={{ color: "rgba(0,0,0,0.06)" }}
+        className="flex-row items-center gap-4 border-b border-divider bg-white px-4 py-3 active:bg-slate-50"
       >
         <View className="relative">
           <View className="h-12 w-12 overflow-hidden rounded-full">

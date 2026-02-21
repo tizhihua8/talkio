@@ -178,7 +178,7 @@ export default function ToolEditScreen() {
       </View>
 
       <View className="px-4 pb-8 pt-6 gap-3">
-        <Pressable onPress={handleSave} className="items-center rounded-2xl bg-primary py-4">
+        <Pressable onPress={handleSave} className="items-center rounded-2xl bg-primary py-4 active:opacity-70">
           <Text className="text-base font-semibold text-white">
             {isNew ? t("toolEdit.addTool") : t("toolEdit.saveChanges")}
           </Text>
@@ -195,7 +195,7 @@ export default function ToolEditScreen() {
                 },
               ]);
             }}
-            className="items-center py-2"
+            className="items-center py-2 active:opacity-60"
           >
             <Text className="text-sm text-red-500">{t("common.delete")}</Text>
           </Pressable>

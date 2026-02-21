@@ -233,7 +233,7 @@ export const ChatInput = React.memo(function ChatInput({
               <Image source={{ uri: img.uri }} className="h-16 w-16 rounded-lg" contentFit="cover" transition={150} />
               <Pressable
                 onPress={() => removeImage(idx)}
-                className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-black/60"
+                className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full bg-black/60 active:opacity-60"
                 hitSlop={12}
               >
                 <Ionicons name="close" size={12} color="#fff" />
@@ -254,7 +254,7 @@ export const ChatInput = React.memo(function ChatInput({
             <Pressable
               key={qp.label}
               onPress={() => onSend(qp.prompt)}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5"
+              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 active:bg-slate-50"
             >
               <Text className="text-[13px] font-medium text-slate-600">{qp.label}</Text>
             </Pressable>
@@ -274,7 +274,7 @@ export const ChatInput = React.memo(function ChatInput({
               <Pressable
                 key={p.modelId}
                 onPress={() => insertMention(p.modelId)}
-                className="flex-row items-center gap-3 py-2.5"
+                className="flex-row items-center gap-3 py-2.5 active:opacity-60"
               >
                 <View className="h-8 w-8 overflow-hidden rounded-lg">
                   <ModelAvatar name={model.displayName} size="sm" />
@@ -290,12 +290,12 @@ export const ChatInput = React.memo(function ChatInput({
 
       <View className="flex-row items-center gap-3 px-4 py-2.5">
         {supportsVision && (
-          <Pressable onPress={handleAttach} className="text-primary p-2">
+          <Pressable onPress={handleAttach} className="text-primary p-2 active:opacity-60">
             <Ionicons name="image-outline" size={22} color="#007AFF" />
           </Pressable>
         )}
         {isGroup && (
-          <Pressable onPress={toggleMentionPicker} className="p-2">
+          <Pressable onPress={toggleMentionPicker} className="p-2 active:opacity-60">
             <Ionicons name="at" size={22} color={showMentionPicker ? "#007AFF" : "#8E8E93"} />
           </Pressable>
         )}
@@ -326,7 +326,7 @@ export const ChatInput = React.memo(function ChatInput({
         {isGenerating ? (
           <Pressable
             onPress={() => useChatStore.getState().stopGeneration()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-red-500"
+            className="h-10 w-10 items-center justify-center rounded-full bg-red-500 active:opacity-70"
           >
             <Ionicons name="stop" size={16} color="#fff" />
           </Pressable>
@@ -337,14 +337,14 @@ export const ChatInput = React.memo(function ChatInput({
         ) : text.trim() || attachedImages.length > 0 ? (
           <Pressable
             onPress={handleSend}
-            className="h-10 w-10 items-center justify-center rounded-full bg-primary"
+            className="h-10 w-10 items-center justify-center rounded-full bg-primary active:opacity-70"
           >
             <Ionicons name="arrow-up" size={18} color="#fff" />
           </Pressable>
         ) : (
           <Pressable
             onPress={handleMicPress}
-            className={`h-10 w-10 items-center justify-center rounded-full ${
+            className={`h-10 w-10 items-center justify-center rounded-full active:opacity-70 ${
               isRecording ? "bg-red-500" : "bg-slate-200"
             }`}
           >

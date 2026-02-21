@@ -49,7 +49,7 @@ export const AppBottomSheet = forwardRef<BottomSheetMethods, AppBottomSheetProps
             <View className="flex-row items-center justify-between border-b border-gray-100 px-4 pb-3">
               <Text className="text-lg font-semibold text-gray-900">{title}</Text>
               {onClose && (
-                <Pressable onPress={onClose} hitSlop={8}>
+                <Pressable onPress={onClose} hitSlop={8} className="active:opacity-60">
                   <Ionicons name="close" size={20} color="#9ca3af" />
                 </Pressable>
               )}

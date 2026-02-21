@@ -24,7 +24,7 @@ interface MessageBubbleProps {
 
 function ActionButton({ icon, onPress, color = "#9ca3af" }: { icon: string; onPress: () => void; color?: string }) {
   return (
-    <Pressable onPress={onPress} className="rounded-md p-1.5" hitSlop={6}>
+    <Pressable onPress={onPress} className="rounded-md p-1.5 active:opacity-60" hitSlop={6}>
       <Ionicons name={icon as any} size={15} color={color} />
     </Pressable>
   );
@@ -117,7 +117,7 @@ export const MessageBubble = React.memo(function MessageBubble({
         {reasoningContent && (
           <Pressable
             onPress={() => setShowReasoning(!showReasoning)}
-            className="max-w-[90%] flex-row items-center justify-between rounded-xl bg-slate-200/50 px-3 py-2.5"
+            className="max-w-[90%] flex-row items-center justify-between rounded-xl bg-slate-200/50 px-3 py-2.5 active:opacity-70"
           >
             <View className="flex-row items-center gap-2">
               <Ionicons name="bulb-outline" size={16} color="#6b7280" />
@@ -210,7 +210,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                       return next;
                     });
                   }}
-                  className="rounded-xl border border-slate-200 bg-white overflow-hidden"
+                  className="rounded-xl border border-slate-200 bg-white overflow-hidden active:opacity-70"
                 >
                   <View className="flex-row items-center gap-2 px-3 py-2">
                     <View className={`h-5 w-5 items-center justify-center rounded-md ${result ? "bg-emerald-100" : "bg-amber-100"}`}>

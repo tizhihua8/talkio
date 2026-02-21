@@ -145,7 +145,7 @@ export default function DiscoverScreen() {
             <Pressable
               key={tab}
               onPress={() => setActiveTab(tab)}
-              className={`flex-1 items-center rounded-lg py-1.5 ${
+              className={`flex-1 items-center rounded-lg py-1.5 active:opacity-70 ${
                 activeTab === tab ? "bg-white" : ""
               }`}
             >
@@ -249,7 +249,7 @@ export default function DiscoverScreen() {
         {activeTab === "identities" ? (
           <Pressable
             onPress={() => router.push("/(tabs)/discover/identity-edit")}
-            className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4"
+            className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-4 active:opacity-70"
           >
             <Ionicons name="add-circle" size={22} color="#fff" />
             <Text className="text-base font-semibold text-white">{t("personas.createIdentity")}</Text>
@@ -258,14 +258,14 @@ export default function DiscoverScreen() {
           <View className="flex-row gap-3">
             <Pressable
               onPress={() => setShowImportModal(true)}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white py-3.5"
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white py-3.5 active:opacity-70"
             >
               <Ionicons name="code-slash-outline" size={18} color="#007AFF" />
               <Text className="text-[15px] font-semibold text-primary">{t("personas.importJson")}</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push("/(tabs)/discover/tool-edit")}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5"
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5 active:opacity-70"
             >
               <Ionicons name="add-circle" size={18} color="#fff" />
               <Text className="text-[15px] font-semibold text-white">{t("personas.addTool")}</Text>
@@ -278,11 +278,11 @@ export default function DiscoverScreen() {
       <Modal visible={showImportModal} animationType="slide" presentationStyle="pageSheet">
         <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
           <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3">
-            <Pressable onPress={() => { if (!isImporting) { setShowImportModal(false); setImportJson(""); } }}>
+            <Pressable onPress={() => { if (!isImporting) { setShowImportModal(false); setImportJson(""); } }} className="active:opacity-60">
               <Text className="text-[16px] text-slate-500">{t("common.cancel")}</Text>
             </Pressable>
             <Text className="text-[16px] font-bold text-slate-900">{t("personas.importJson")}</Text>
-            <Pressable onPress={handleImportJson} disabled={isImporting || !importJson.trim()}>
+            <Pressable onPress={handleImportJson} disabled={isImporting || !importJson.trim()} className="active:opacity-60">
               <Text className={`text-[16px] font-semibold ${isImporting ? "text-slate-400" : "text-primary"}`}>
                 {isImporting ? t("common.loading") : t("personas.import")}
               </Text>
@@ -326,8 +326,7 @@ function IdentityCard({
   return (
     <Pressable
       onPress={onEdit}
-      onLongPress={onDelete}
-      className="rounded-xl border border-slate-100 bg-white p-4"
+      className="rounded-xl border border-slate-100 bg-white p-4 active:bg-slate-50"
     >
       <View className="flex-row items-start gap-4">
         <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
@@ -338,7 +337,12 @@ function IdentityCard({
             <Text className="text-lg font-bold text-text-main" numberOfLines={1}>
               {identity.name}
             </Text>
-            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            <View className="flex-row items-center gap-2">
+              <Pressable onPress={onDelete} hitSlop={8} className="active:opacity-60">
+                <Ionicons name="trash-outline" size={16} color="#ef4444" />
+              </Pressable>
+              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+            </View>
           </View>
           <View className="mb-3 flex-row gap-2">
             <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
@@ -375,8 +379,7 @@ function ServerCard({
   return (
     <Pressable
       onPress={onEdit}
-      onLongPress={onDelete}
-      className="rounded-xl border border-slate-100 bg-white p-4"
+      className="rounded-xl border border-slate-100 bg-white p-4 active:bg-slate-50"
     >
       <View className="flex-row items-center gap-3">
         <View className="h-10 w-10 items-center justify-center rounded-lg bg-blue-50">

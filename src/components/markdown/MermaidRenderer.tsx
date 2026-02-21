@@ -31,7 +31,7 @@ export function MermaidRenderer({ code }: MermaidRendererProps) {
     return (
       <Pressable
         onPress={() => setActive(true)}
-        className="my-1 overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+        className="my-1 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 active:bg-slate-100"
       >
         <View className="px-4 py-3">
           <Text className="text-sm font-semibold text-slate-700">Mermaid Diagram</Text>

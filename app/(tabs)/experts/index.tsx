@@ -26,7 +26,7 @@ export default function ModelsScreen() {
       headerRight: () => (
         <Pressable
           onPress={() => setShowSearch((v) => !v)}
-          className="p-1"
+          className="p-1 active:opacity-60"
         >
           <Ionicons name="search" size={22} color="#007AFF" />
         </Pressable>
@@ -90,7 +90,7 @@ export default function ModelsScreen() {
               autoFocus
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery("")}>
+              <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
                 <Ionicons name="close-circle" size={18} color="#94a3b8" />
               </Pressable>
             )}
@@ -105,7 +105,7 @@ export default function ModelsScreen() {
           <Text className="mt-1 text-center text-sm text-slate-400">{t("models.configureHint")}</Text>
           <Pressable
             onPress={() => router.push("/(tabs)/settings/providers")}
-            className="mt-6 rounded-lg bg-primary px-6 py-2.5"
+            className="mt-6 rounded-lg bg-primary px-6 py-2.5 active:opacity-70"
           >
             <Text className="text-[15px] font-semibold text-white">{t("models.configureProvider")}</Text>
           </Pressable>
@@ -129,7 +129,8 @@ export default function ModelsScreen() {
             return (
               <Pressable
                 onPress={() => handleStartChat(item)}
-                className={`flex-row items-center bg-white px-5 py-3 ${isSelected ? "bg-blue-50/50" : ""}`}
+                android_ripple={{ color: "rgba(0,0,0,0.06)" }}
+                className={`flex-row items-center bg-white px-5 py-3 active:bg-slate-50 ${isSelected ? "bg-blue-50/50" : ""}`}
               >
                 <View className="h-10 w-10 overflow-hidden rounded-lg">
                   <ModelAvatar name={item.displayName} size="sm" />
@@ -164,7 +165,7 @@ export default function ModelsScreen() {
               setGroupMode(true);
               setSelectedForGroup([]);
             }}
-            className="h-12 w-12 items-center justify-center rounded-full bg-primary"
+            className="h-12 w-12 items-center justify-center rounded-full bg-primary active:opacity-70"
           >
             <Ionicons name="chatbubbles" size={22} color="#fff" />
           </Pressable>
@@ -176,7 +177,7 @@ export default function ModelsScreen() {
           {selectedForGroup.length >= 2 ? (
             <Pressable
               onPress={handleCreateGroup}
-              className="items-center rounded-xl bg-primary py-3.5"
+              className="items-center rounded-xl bg-primary py-3.5 active:opacity-70"
             >
               <Text className="text-base font-semibold text-white">
                 {t("models.createGroup", { count: selectedForGroup.length })}
@@ -188,7 +189,7 @@ export default function ModelsScreen() {
                 setGroupMode(false);
                 setSelectedForGroup([]);
               }}
-              className="items-center rounded-xl bg-slate-200 py-3.5"
+              className="items-center rounded-xl bg-slate-200 py-3.5 active:opacity-70"
             >
               <Text className="text-base font-medium text-slate-600">{t("common.cancel")}</Text>
             </Pressable>

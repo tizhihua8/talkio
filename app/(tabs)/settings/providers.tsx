@@ -29,7 +29,7 @@ export default function ProvidersScreen() {
           <Pressable
             key={p.id}
             onPress={() => router.push({ pathname: "/(tabs)/settings/provider-edit", params: { id: p.id } })}
-            onLongPress={() => handleDelete(p.id, p.name)}
+            android_ripple={{ color: "rgba(0,0,0,0.06)" }}
             className={`mx-4 mt-3 rounded-xl bg-white p-4 ${p.enabled === false ? "opacity-50" : ""}`}
           >
             <View className="flex-row items-center justify-between">
@@ -65,7 +65,7 @@ export default function ProvidersScreen() {
 
       <Pressable
         onPress={() => router.push("/(tabs)/settings/provider-edit")}
-        className="mx-4 mt-4 mb-8 items-center rounded-xl border border-dashed border-border-light bg-white py-6"
+        className="mx-4 mt-4 mb-8 items-center rounded-xl border border-dashed border-border-light bg-white py-6 active:opacity-60"
       >
         <Ionicons name="add-circle-outline" size={28} color="#2b2bee" />
         <Text className="mt-1 text-sm font-medium text-primary">{t("providers.addProvider")}</Text>
