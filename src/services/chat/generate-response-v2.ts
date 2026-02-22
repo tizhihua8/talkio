@@ -69,25 +69,10 @@ export async function generateResponseV2(
     ? identityStore.getIdentityById(participant.identityId)
     : undefined;
 
-  // Compute display name for group chat disambiguation
+  // Compute display name: "ModelName（RoleName）" when identity is set, otherwise just model name
   let senderName = model.displayName;
-  if (conv.type === "group" && participant) {
-    if (identity?.name) {
-      // Check if another participant shares the same identity
-      const sameIdentityCount = conv.participants.filter((p) => p.identityId === participant.identityId).length;
-      senderName = sameIdentityCount > 1
-        ? `${identity.name} (${model.displayName})`
-        : identity.name;
-    } else {
-      // No identity: add index suffix if same model appears multiple times
-      const sameModelParticipants = conv.participants.filter((p) => p.modelId === modelId);
-      if (sameModelParticipants.length > 1) {
-        const idx = sameModelParticipants.findIndex((p) => p.id === participant.id);
-        senderName = `${model.displayName} #${idx + 1}`;
-      }
-    }
-  } else if (identity?.name) {
-    senderName = identity.name;
+  if (identity?.name) {
+    senderName = `${model.displayName}（${identity.name}）`;
   }
 
   // Read messages from DB (single source of truth)
