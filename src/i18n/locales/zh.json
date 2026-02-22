@@ -83,7 +83,7 @@
     "removeMemberConfirm": "确定将此模型移出群聊？",
     "noAvailableModels": "没有可添加的模型",
     "cannotRemoveLast": "无法移除最后一个成员",
-    "autoDiscuss": "自动讨论",
+    "autoDiscuss": "托管讨论",
     "autoDiscussHint": "系统将自动代替你发送“继续”来驱动讨论",
     "autoDiscussRounds": "{{count}} 轮",
     "autoDiscussRemaining": "剩余 {{count}} 轮",

@@ -83,7 +83,7 @@
     "removeMemberConfirm": "Remove this model from the group?",
     "noAvailableModels": "No available models to add",
     "cannotRemoveLast": "Cannot remove the last member",
-    "autoDiscuss": "Auto Discuss",
+    "autoDiscuss": "Auto-pilot",
     "autoDiscussHint": "System will auto-send \"Continue\" on your behalf to drive the discussion",
     "autoDiscussRounds": "{{count}} rounds",
     "autoDiscussRemaining": "{{count}} rounds left",
