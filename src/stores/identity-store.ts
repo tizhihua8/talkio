@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Identity, McpTool, McpServer } from "../types";
 import { getItem, setItem } from "../storage/mmkv";
-import { STORAGE_KEYS, DEFAULT_IDENTITY_PARAMS } from "../constants";
+import { STORAGE_KEYS, DEFAULT_IDENTITY_PARAMS, PRESET_IDENTITIES } from "../constants";
 import { generateId } from "../utils/id";
 import { BUILT_IN_TOOLS, registerBuiltInTools } from "../services/built-in-tools";
 
@@ -91,9 +91,23 @@ export const useIdentityStore = create<IdentityState>((set, get) => ({
   },
 
   loadIdentities: () => {
-    const identities = getItem<Identity[]>(STORAGE_KEYS.IDENTITIES) ?? [];
+    let identities = getItem<Identity[]>(STORAGE_KEYS.IDENTITIES) ?? [];
     const mcpTools = getItem<McpTool[]>(STORAGE_KEYS.MCP_TOOLS) ?? [];
     const mcpServers = getItem<McpServer[]>(STORAGE_KEYS.MCP_SERVERS) ?? [];
+
+    // Seed preset identities on first load
+    if (identities.length === 0) {
+      identities = PRESET_IDENTITIES.map((preset) => ({
+        ...preset,
+        id: generateId(),
+        params: { ...DEFAULT_IDENTITY_PARAMS },
+        mcpToolIds: [],
+        mcpServerIds: [],
+        createdAt: new Date().toISOString(),
+      }));
+      setItem(STORAGE_KEYS.IDENTITIES, identities);
+    }
+
     set({ identities, mcpTools, mcpServers });
   },
 

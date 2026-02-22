@@ -111,7 +111,7 @@ export default function IdentityEditScreen() {
         messages: [
           {
             role: "system",
-            content: `You generate identity card configurations for an AI assistant app. Given a description, return ONLY a JSON object with these fields:\n- name: short identity name (2-5 words)\n- icon: one of [${icons}]\n- systemPrompt: a detailed system prompt (200-500 words) that defines this identity's behavior, expertise, communication style, and constraints.\nReturn raw JSON only, no markdown fences.`,
+            content: `You generate identity cards for an AI assistant app. Given a description, return ONLY a JSON object with:\n- name: short name (2-4 words)\n- icon: one of [${icons}]\n- systemPrompt: a concise system prompt (2-4 sentences) defining the role, expertise, and tone.\nReturn raw JSON only, no markdown fences.`,
           },
           { role: "user", content: aiDesc.trim() },
         ],
