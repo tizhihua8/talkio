@@ -1,8 +1,7 @@
 /**
  * generate-response-v2.ts — AI SDK powered response generation.
  *
- * Replaces the manual SSE parsing in generate-response.ts with
- * Vercel AI SDK v6's streamText. Key improvements:
+ * Uses Vercel AI SDK v6's streamText. Key improvements:
  * - No manual SSE line parsing
  * - Reasoning support via raw SSE extraction + <think> tag parsing + native reasoning-delta
  * - Unified provider interface (OpenAI, Anthropic, Gemini, Azure)

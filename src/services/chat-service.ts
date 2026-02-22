@@ -2,14 +2,12 @@
  * chat-service.ts — Re-exports from modular chat/ directory.
  *
  * The actual implementation is split into:
- *   chat/message-builder.ts    — resolveTargetModels, buildApiMessages, autoGenerateTitle
- *   chat/tool-executor.ts      — buildTools, executeToolCalls
- *   chat/generate-response.ts  — generateResponse (legacy, manual SSE)
+ *   chat/message-builder.ts      — resolveTargetModels, buildApiMessages
+ *   chat/tool-executor.ts        — buildTools, executeToolCalls
  *   chat/generate-response-v2.ts — generateResponseV2 (AI SDK streamText)
- *   chat/ai-sdk-converter.ts   — toModelMessages, toAiSdkTools
+ *   chat/ai-sdk-converter.ts     — toModelMessages, toAiSdkTools
  */
 
-export { resolveTargetModels, buildApiMessages, autoGenerateTitle } from "./chat/message-builder";
+export { resolveTargetModels, buildApiMessages } from "./chat/message-builder";
 export { buildTools, executeToolCalls } from "./chat/tool-executor";
-export { generateResponse } from "./chat/generate-response";
 export { generateResponseV2 } from "./chat/generate-response-v2";

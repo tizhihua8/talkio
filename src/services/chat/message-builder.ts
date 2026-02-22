@@ -4,11 +4,6 @@ import type {
   ChatApiMessage,
   Identity,
 } from "../../types";
-import {
-  updateConversation as dbUpdateConversation,
-  getConversation as dbGetConversation,
-} from "../../storage/database";
-import { ApiClient } from "../api-client";
 import { fileToDataUri } from "../../utils/image-storage";
 import { logger } from "../logger";
 
@@ -78,50 +73,3 @@ export async function buildApiMessages(
   return apiMessages;
 }
 
-export async function autoGenerateTitle(
-  conversationId: string,
-  client: ApiClient,
-  model: { modelId: string; displayName: string },
-  previousMessages: Message[],
-  assistantContent: string,
-): Promise<void> {
-  // Only generate title if this is the first assistant message in the conversation
-  const assistantCount = previousMessages.filter((m) => m.role === "assistant").length;
-  if (assistantCount > 0) return; // already has prior responses
-
-  const conv = await dbGetConversation(conversationId);
-  if (!conv) return;
-
-  // Skip if title was manually set (not the default "Model Group" or model name pattern)
-  const isDefaultTitle = conv.title.startsWith("Model Group") || conv.title === model.displayName;
-  if (!isDefaultTitle) return;
-
-  const userMsg = previousMessages.find((m) => m.role === "user");
-  if (!userMsg) return;
-
-  try {
-    const resp = await client.chat({
-      model: model.modelId,
-      messages: [
-        {
-          role: "system",
-          content: "Generate a very short title (3-8 words) for this conversation. Return ONLY the title text, no quotes, no punctuation at the end.",
-        },
-        {
-          role: "user",
-          content: `User: ${userMsg.content.slice(0, 300)}\n\nAssistant: ${assistantContent.slice(0, 300)}\n\nGenerate a short title for this conversation.`,
-        },
-      ],
-      stream: false,
-      temperature: 0.3,
-      max_tokens: 30,
-    });
-
-    const title = (resp.choices?.[0]?.message?.content ?? "").trim().replace(/^["']|["']$/g, "");
-    if (!title || title.length > 60) return;
-
-    await dbUpdateConversation(conversationId, { title });
-  } catch {
-    // Non-critical, silently fail
-  }
-}
