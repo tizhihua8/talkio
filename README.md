@@ -4,6 +4,8 @@
 
 Talkio 是一款本地优先的移动端 AI 聊天应用。它不只是又一个 ChatGPT 客户端——你可以把多个 AI 模型拉进同一个群聊，让它们各自扮演不同角色，围绕同一个话题展开讨论、辩论、接龙。
 
+中文 · [English](README-en.md)
+
 > *A local-first mobile AI chat app. Pull multiple AI models into the same group chat, assign them different personas, and watch them debate, collaborate, or play word games together.*
 
 ---
