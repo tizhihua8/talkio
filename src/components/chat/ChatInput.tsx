@@ -347,48 +347,10 @@ export const ChatInput = React.memo(function ChatInput({
         </View>
       )}
 
-      {/* During auto-discuss: replace input bar with discussion mode */}
-      {isAutoDiscussing ? (
-        <View className="px-4 py-3">
-          <View className="flex-row items-center justify-between rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
-            <View className="flex-row items-center gap-3 flex-1">
-              <MotiView
-                from={{ scale: 0.8, opacity: 0.5 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "timing", duration: 800, loop: true }}
-              >
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-blue-500">
-                  <Ionicons name="chatbubbles" size={16} color="#fff" />
-                </View>
-              </MotiView>
-              <View>
-                <Text className="text-[14px] font-semibold text-blue-800">
-                  {t("chat.autoDiscussRunning")}
-                </Text>
-                <Text className="text-[12px] text-blue-600">
-                  {t("chat.autoDiscussProgress", { current: autoDiscussTotalRounds - autoDiscussRemaining + 1, total: autoDiscussTotalRounds })}
-                </Text>
-              </View>
-            </View>
-            <Pressable
-              onPress={onStopAutoDiscuss}
-              className="flex-row items-center gap-1.5 rounded-full bg-red-500 px-3.5 py-2 active:opacity-70"
-            >
-              <Ionicons name="stop" size={12} color="#fff" />
-              <Text className="text-[12px] font-bold text-white">{t("chat.autoDiscussStop")}</Text>
-            </Pressable>
-          </View>
-        </View>
-      ) : (
-      <View className="flex-row items-center gap-3 px-4 py-2.5">
-        {supportsVision && (
-          <Pressable onPress={handleAttach} className="text-primary p-2 active:opacity-60">
-            <Ionicons name="image-outline" size={22} color={colors.accent} />
-          </Pressable>
-        )}
-
+      {/* Row 1: Input area */}
+      <View className="px-4 pt-2.5 pb-1.5">
         {isRecording ? (
-          <View className="flex-1 flex-row items-center justify-center rounded-3xl border border-red-200 bg-red-50 px-4 py-1.5 min-h-[36px]">
+          <View className="flex-row items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 min-h-[44px]">
             <View className="mr-2 h-2 w-2 rounded-full bg-red-500" />
             <Text className="text-base font-semibold text-red-600">
               {`${Math.floor(recordingDuration / 60).toString().padStart(2, "0")}:${(recordingDuration % 60).toString().padStart(2, "0")}`}
@@ -396,54 +358,104 @@ export const ChatInput = React.memo(function ChatInput({
             <Text className="ml-2 text-xs text-red-400">/01:00</Text>
           </View>
         ) : (
-          <View className="flex-1 flex-row items-center rounded-3xl border border-border-light/50 bg-bg-input px-4 py-1.5">
+          <View className="flex-row items-end rounded-2xl border border-border-light/50 bg-bg-input px-3">
             <TextInput
               ref={inputRef}
-              className="max-h-24 min-h-[36px] flex-1 text-[16px] text-text-main"
+              className="max-h-24 min-h-[44px] flex-1 text-[16px] text-text-main py-2.5"
               placeholder={isGroup ? t("chat.messageGroup") : t("chat.message")}
               placeholderTextColor={colors.textHint}
               value={text}
               onChangeText={handleTextChange}
               multiline
-              editable={!isGenerating}
+              editable={!isGenerating && !isAutoDiscussing}
             />
+            {(text.trim() || attachedImages.length > 0) && !isGenerating && (
+              <Pressable
+                onPress={handleSend}
+                className="mb-1.5 ml-1 h-8 w-8 items-center justify-center rounded-full bg-primary active:opacity-70"
+              >
+                <Ionicons name="arrow-up" size={16} color="#fff" />
+              </Pressable>
+            )}
           </View>
         )}
+      </View>
 
-        {isGenerating ? (
+      {/* Row 2: Action bar */}
+      <View className="flex-row items-center px-4 pb-1.5 gap-1">
+        {/* Image attach */}
+        {supportsVision && (
+          <Pressable onPress={handleAttach} className="p-2 active:opacity-60" disabled={isGenerating || isAutoDiscussing}>
+            <Ionicons name="image-outline" size={20} color={isGenerating || isAutoDiscussing ? colors.textHint : colors.textSecondary} />
+          </Pressable>
+        )}
+
+        {/* Hosting / Auto-discuss button (group only) */}
+        {isGroup && (
+          isAutoDiscussing ? (
+            <Pressable
+              onPress={onStopAutoDiscuss}
+              className="flex-row items-center gap-1.5 rounded-full border border-blue-300 bg-blue-50 px-3 py-1.5 active:opacity-70"
+            >
+              <MotiView
+                from={{ opacity: 0.4 }}
+                animate={{ opacity: 1 }}
+                transition={{ type: "timing", duration: 800, loop: true }}
+              >
+                <Ionicons name="chatbubbles" size={14} color="#2563eb" />
+              </MotiView>
+              <Text className="text-[12px] font-semibold text-blue-700">
+                {t("chat.autoDiscussRunning")} {t("chat.autoDiscussProgress", { current: autoDiscussTotalRounds - autoDiscussRemaining + 1, total: autoDiscussTotalRounds })}
+              </Text>
+              <View className="ml-0.5 h-4 w-4 items-center justify-center rounded-full bg-red-500">
+                <Ionicons name="stop" size={8} color="#fff" />
+              </View>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => setShowRoundPicker((v) => !v)}
+              className={`flex-row items-center gap-1 rounded-full border px-3 py-1.5 active:opacity-70 ${
+                showRoundPicker ? "border-blue-300 bg-blue-50" : "border-transparent"
+              }`}
+              disabled={isGenerating}
+            >
+              <Ionicons name="chatbubbles-outline" size={16} color={showRoundPicker ? "#2563eb" : colors.textSecondary} />
+              <Text className={`text-[12px] font-medium ${showRoundPicker ? "text-blue-600" : "text-text-muted"}`}>
+                {t("chat.autoDiscuss")}
+              </Text>
+            </Pressable>
+          )
+        )}
+
+        <View className="flex-1" />
+
+        {/* Voice / Stop / Transcribing */}
+        {isGenerating || isAutoDiscussing ? (
           <Pressable
-            onPress={() => useChatStore.getState().stopGeneration()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-red-500 active:opacity-70"
+            onPress={() => isAutoDiscussing ? onStopAutoDiscuss?.() : useChatStore.getState().stopGeneration()}
+            className="h-8 w-8 items-center justify-center rounded-full bg-red-500 active:opacity-70"
           >
-            <Ionicons name="stop" size={16} color="#fff" />
+            <Ionicons name="stop" size={12} color="#fff" />
           </Pressable>
         ) : isTranscribing ? (
-          <View className="h-10 w-10 items-center justify-center">
+          <View className="h-8 w-8 items-center justify-center">
             <ActivityIndicator size="small" color={colors.accent} />
           </View>
-        ) : text.trim() || attachedImages.length > 0 ? (
-          <Pressable
-            onPress={handleSend}
-            className="h-10 w-10 items-center justify-center rounded-full bg-primary active:opacity-70"
-          >
-            <Ionicons name="arrow-up" size={18} color="#fff" />
-          </Pressable>
         ) : (
           <Pressable
             onPress={handleMicPress}
-            className={`h-10 w-10 items-center justify-center rounded-full active:opacity-70 ${
-              isRecording ? "bg-red-500" : "bg-bg-input"
+            className={`h-8 w-8 items-center justify-center rounded-full active:opacity-70 ${
+              isRecording ? "bg-red-500" : ""
             }`}
           >
             <Ionicons
-              name={isRecording ? "stop" : "mic"}
-              size={isRecording ? 14 : 18}
-              color={isRecording ? "#fff" : colors.sectionHeader}
+              name={isRecording ? "stop" : "mic-outline"}
+              size={isRecording ? 12 : 20}
+              color={isRecording ? "#fff" : colors.textSecondary}
             />
           </Pressable>
         )}
       </View>
-      )}
     </View>
   );
 });
