@@ -105,21 +105,45 @@ export function toModelMessages(messages: ChatApiMessage[]): ModelMessage[] {
 }
 
 /**
+ * Executor function type for tool calls.
+ * Maps tool name + args to a string result.
+ */
+export type ToolExecutorFn = (
+  toolName: string,
+  args: Record<string, unknown>,
+) => Promise<string>;
+
+/**
  * Convert Talkio ChatApiToolDef[] to AI SDK ToolSet.
  *
  * Uses AI SDK's jsonSchema() to pass through JSON Schema directly,
  * avoiding the need for Zod conversion.
- * No execute function — we handle execution manually after streamText.
+ *
+ * If an executor is provided, each tool gets an `execute` function so
+ * AI SDK's multi-step (stepCountIs) can automatically run tool calls.
  */
-export function toAiSdkTools(toolDefs: ChatApiToolDef[]): ToolSet {
+export function toAiSdkTools(
+  toolDefs: ChatApiToolDef[],
+  executor?: ToolExecutorFn,
+): ToolSet {
   const tools: ToolSet = {};
 
   for (const def of toolDefs) {
     const { name, description, parameters } = def.function;
-    tools[name] = tool({
-      description,
-      inputSchema: jsonSchema(parameters),
-    });
+    if (executor) {
+      tools[name] = tool({
+        description,
+        inputSchema: jsonSchema(parameters) as any,
+        execute: async (input: Record<string, unknown>) => {
+          return executor(name, input);
+        },
+      });
+    } else {
+      tools[name] = tool({
+        description,
+        inputSchema: jsonSchema(parameters),
+      });
+    }
   }
 
   return tools;

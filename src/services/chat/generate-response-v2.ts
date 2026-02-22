@@ -34,7 +34,7 @@ import { useChatStore } from "../../stores/chat-store";
 import { logger } from "../logger";
 import { createLanguageModel } from "../ai-provider";
 import { buildApiMessages } from "./message-builder";
-import { buildTools } from "./tool-executor";
+import { buildTools, executeToolCalls } from "./tool-executor";
 import { toModelMessages, toAiSdkTools } from "./ai-sdk-converter";
 
 const log = logger.withContext("ChatServiceV2");
@@ -135,7 +135,15 @@ export async function generateResponseV2(
 
     // Convert messages and tools to AI SDK format
     const sdkMessages = toModelMessages(apiMessages);
-    const sdkTools = toolDefs.length > 0 ? toAiSdkTools(toolDefs) : undefined;
+    // Create executor that bridges AI SDK tool calls to our existing infrastructure
+    const toolExecutor = async (toolName: string, args: Record<string, unknown>): Promise<string> => {
+      log.info(`[v2] Executing tool: ${toolName}`);
+      const results = await executeToolCalls([
+        { id: generateId(), name: toolName, arguments: JSON.stringify(args) },
+      ]);
+      return results[0]?.content ?? "No result";
+    };
+    const sdkTools = toolDefs.length > 0 ? toAiSdkTools(toolDefs, toolExecutor) : undefined;
 
     // Build provider-specific options
     const effort = identity?.params.reasoningEffort ?? "auto";
@@ -201,6 +209,8 @@ export async function generateResponseV2(
     let uiDirty = false;
     let flushTimer: ReturnType<typeof setTimeout> | null = null;
     const UI_THROTTLE_MS = 120;
+    const pendingToolCalls: Array<{ id: string; name: string; arguments: string }> = [];
+    const pendingToolResults: Array<{ toolCallId: string; content: string }> = [];
 
     const flushUI = () => {
       flushTimer = null;
@@ -213,6 +223,8 @@ export async function generateResponseV2(
       batchUpdateMessage(assistantMsg.id, {
         content: joinedContent,
         reasoningContent: joinedReasoning || null,
+        toolCalls: pendingToolCalls.length > 0 ? [...pendingToolCalls] : [],
+        toolResults: pendingToolResults.length > 0 ? [...pendingToolResults] : [],
       });
 
       batchUpdateBlock(mainTextBlockId, {
@@ -299,11 +311,24 @@ export async function generateResponseV2(
           break;
         }
         case "tool-call": {
-          log.info(`[v2] Tool call: ${part.toolName}`);
+          log.info(`[v2] Tool call: ${part.toolName} (id: ${(part as any).toolCallId})`);
+          pendingToolCalls.push({
+            id: (part as any).toolCallId ?? generateId(),
+            name: part.toolName,
+            arguments: JSON.stringify((part as any).input ?? {}),
+          });
+          scheduleFlush();
           break;
         }
         case "tool-result": {
-          log.info(`[v2] Tool result for: ${part.toolName}`);
+          const output = (part as any).output;
+          const resultStr = typeof output === "string" ? output : JSON.stringify(output ?? "");
+          log.info(`[v2] Tool result for: ${part.toolName} (${resultStr.length} chars)`);
+          pendingToolResults.push({
+            toolCallId: (part as any).toolCallId ?? "",
+            content: resultStr,
+          });
+          scheduleFlush();
           break;
         }
         case "raw": {
@@ -348,29 +373,18 @@ export async function generateResponseV2(
     const content = contentChunks.join("") || await result.text;
     const reasoningContent = collectedReasoning || nativeReasoningText || null;
 
-    // Get tool calls and results from the final result
-    const finalToolCalls = (await result.toolCalls).map((tc: any) => ({
-      id: tc.toolCallId,
-      name: tc.toolName,
-      arguments: JSON.stringify(tc.input),
-    }));
-    const finalToolResults = (await result.toolResults).map((tr: any) => ({
-      toolCallId: tr.toolCallId,
-      content: typeof tr.output === "string" ? tr.output : JSON.stringify(tr.output),
-    }));
-
     // Flush pending batched updates
     await flushBatchUpdates([assistantMsg.id]);
     const blockIdsToFlush = [mainTextBlockId];
     if (thinkingBlockId) blockIdsToFlush.push(thinkingBlockId);
     await flushBlockBatchUpdates(blockIdsToFlush);
 
-    // Final DB commit
+    // Final DB commit — use our collected tool data (already in correct format)
     await dbUpdateMessage(assistantMsg.id, {
       content,
       reasoningContent,
-      toolCalls: finalToolCalls,
-      toolResults: finalToolResults,
+      toolCalls: pendingToolCalls,
+      toolResults: pendingToolResults,
       isStreaming: false,
       status: MessageStatus.SUCCESS,
     });
