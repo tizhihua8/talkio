@@ -54,7 +54,7 @@ interface ChatState {
   removeParticipant: (conversationId: string, participantId: string) => Promise<void>;
   sendMessage: (text: string, mentionedModelIds?: string[], images?: string[]) => Promise<void>;
   stopGeneration: () => void;
-  startAutoDiscuss: (rounds: number) => Promise<void>;
+  startAutoDiscuss: (rounds: number, topicText?: string) => Promise<void>;
   stopAutoDiscuss: () => void;
   regenerateMessage: (messageId: string) => Promise<void>;
   branchFromMessage: (messageId: string, messages: Message[]) => Promise<string>;
@@ -219,7 +219,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  startAutoDiscuss: async (rounds: number) => {
+  startAutoDiscuss: async (rounds: number, topicText?: string) => {
     const convId = get().currentConversationId;
     if (!convId || get().isGenerating) return;
 
@@ -232,6 +232,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ _abortController: abortController });
 
     try {
+      // If a topic text is provided, send it as a user message first
+      if (topicText) {
+        const userMsg: Message = {
+          id: generateId(),
+          conversationId: convId,
+          role: "user",
+          senderModelId: null,
+          senderName: "You",
+          identityId: null,
+          participantId: null,
+          content: topicText,
+          images: [],
+          generatedImages: [],
+          reasoningContent: null,
+          reasoningDuration: null,
+          toolCalls: [],
+          toolResults: [],
+          branchId: get().activeBranchId,
+          parentMessageId: null,
+          isStreaming: false,
+          status: MessageStatus.SUCCESS,
+          errorMessage: null,
+          tokenUsage: null,
+          createdAt: new Date().toISOString(),
+        };
+        await insertMessage(userMsg);
+        dbUpdateConversation(convId, {
+          lastMessage: topicText,
+          lastMessageAt: userMsg.createdAt,
+        }).catch(() => {});
+      }
+
       for (let round = 0; round < rounds; round++) {
         if (abortController.signal.aborted) break;
 

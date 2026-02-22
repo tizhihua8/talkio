@@ -23,7 +23,7 @@ interface ChatInputProps {
   isGroup?: boolean;
   participants?: ConversationParticipant[];
   hasMessages?: boolean;
-  onStartAutoDiscuss?: (rounds: number) => void;
+  onStartAutoDiscuss?: (rounds: number, topicText?: string) => void;
   onStopAutoDiscuss?: () => void;
   autoDiscussRemaining?: number;
 }
@@ -288,10 +288,16 @@ export const ChatInput = React.memo(function ChatInput({
                 onPress={() => {
                   setShowRoundPicker(false);
                   if (!hasMessages) {
-                    Alert.alert(t("common.error"), t("chat.autoDiscussNeedMessage"));
-                    return;
+                    const trimmed = text.trim();
+                    if (!trimmed) {
+                      inputRef.current?.focus();
+                      return;
+                    }
+                    setText("");
+                    onStartAutoDiscuss?.(n, trimmed);
+                  } else {
+                    onStartAutoDiscuss?.(n);
                   }
-                  onStartAutoDiscuss?.(n);
                 }}
                 className="flex-1 items-center rounded-xl border border-border-light bg-bg-card py-2.5 active:bg-bg-hover"
               >
