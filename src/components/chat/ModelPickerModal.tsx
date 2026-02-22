@@ -96,7 +96,7 @@ export const ModelPickerModal = React.memo(function ModelPickerModal({
                       {provider?.name ?? item.providerId}
                     </Text>
                   </View>
-                  <Ionicons name="add-circle-outline" size={22} color="#007AFF" />
+                  <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
                 </Pressable>
               );
             }}

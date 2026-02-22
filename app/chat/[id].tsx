@@ -196,24 +196,26 @@ export default function ChatDetailScreen() {
     }
   }, [isGroup]);
 
-  const handleEditParticipantIdentity = useCallback((participantId: string) => {
-    setEditingParticipantId(participantId);
-    setShowIdentitySlider(true);
-  }, []);
-
   const handleAddParticipant = useCallback((modelId: string) => {
     if (id) addParticipant(id, modelId);
   }, [id, addParticipant]);
 
-  const handleRemoveParticipant = useCallback((participantId: string, displayName: string) => {
+  const handleParticipantPress = useCallback((participantId: string, displayName: string) => {
     if (!id) return;
-    Alert.alert(displayName, t("chat.removeMemberConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
+    Alert.alert(displayName, undefined, [
+      {
+        text: t("chat.editIdentity"),
+        onPress: () => {
+          setEditingParticipantId(participantId);
+          setShowIdentitySlider(true);
+        },
+      },
       {
         text: t("chat.removeMember"),
         style: "destructive",
         onPress: () => removeParticipant(id, participantId),
       },
+      { text: t("common.cancel"), style: "cancel" },
     ]);
   }, [id, removeParticipant, t]);
 
@@ -402,40 +404,26 @@ export default function ChatDetailScreen() {
             const pModel = getModelById(p.modelId);
             const pIdentity = p.identityId ? getIdentityById(p.identityId) : null;
             return (
-              <View key={p.id} className="flex-row items-center justify-between py-2">
-                <View className="flex-row items-center flex-1">
-                  <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10 mr-3">
-                    <Text className="text-xs font-bold text-primary">
-                      {(pModel?.displayName ?? "?").slice(0, 2).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View className="flex-1 mr-2">
-                    <Text className="text-[14px] font-semibold text-slate-900" numberOfLines={1}>
-                      {pModel?.displayName ?? p.modelId}
-                    </Text>
-                  </View>
+              <Pressable
+                key={p.id}
+                onPress={() => handleParticipantPress(p.id, pModel?.displayName ?? p.modelId)}
+                className="flex-row items-center gap-3 py-2.5 active:bg-slate-50"
+              >
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <Text className="text-xs font-bold text-primary">
+                    {(pModel?.displayName ?? "?").slice(0, 2).toUpperCase()}
+                  </Text>
                 </View>
-                <View className="flex-row items-center gap-2">
-                  <Pressable
-                    onPress={() => handleEditParticipantIdentity(p.id)}
-                    className="flex-row items-center rounded-full bg-slate-100 px-2.5 py-1.5 active:opacity-60"
-                  >
-                    <Ionicons name="person-outline" size={12} color="#64748b" style={{ marginRight: 3 }} />
-                    <Text className="text-[11px] text-slate-600" numberOfLines={1}>
-                      {pIdentity ? pIdentity.name : t("chat.noIdentity")}
-                    </Text>
-                  </Pressable>
-                  {conv.participants.length > 1 && (
-                    <Pressable
-                      onPress={() => handleRemoveParticipant(p.id, pModel?.displayName ?? p.modelId)}
-                      hitSlop={6}
-                      className="items-center justify-center rounded-full bg-red-50 p-1.5 active:opacity-60"
-                    >
-                      <Ionicons name="close" size={14} color="#ef4444" />
-                    </Pressable>
-                  )}
+                <View className="flex-1">
+                  <Text className="text-[14px] font-medium text-slate-900" numberOfLines={1}>
+                    {pModel?.displayName ?? p.modelId}
+                  </Text>
+                  <Text className="text-[12px] text-slate-400" numberOfLines={1}>
+                    {pIdentity ? pIdentity.name : t("chat.noIdentity")}
+                  </Text>
                 </View>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+              </Pressable>
             );
           })}
           <Pressable
