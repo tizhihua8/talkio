@@ -154,36 +154,19 @@ export default function ChatDetailScreen() {
     });
   }, [convTitle, modelDisplayName, identityName, participantCount, isGroup, showParticipants]);
 
-  // ── Scroll management ──
-  // We fully own scrolling: LegendList's maintainScrollAtEnd is disabled.
-  // onContentSizeChange fires when streaming content grows; we scroll if
-  // the user hasn't deliberately scrolled away.
-  const layoutHeightRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const userScrolledAwayRef = useRef(false);
-
+  // ── Scroll management (follows Cherry Studio App pattern) ──
+  // LegendList's maintainScrollAtEnd handles auto-scroll during streaming.
+  // We only track distance-from-bottom for the scroll-to-bottom button.
   const handleScroll = useCallback((e: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    layoutHeightRef.current = layoutMeasurement.height;
-    contentHeightRef.current = contentSize.height;
     const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
-    const isAway = distanceFromBottom > 150;
-    userScrolledAwayRef.current = isAway;
+    const isAway = distanceFromBottom > 100;
     showScrollToBottomRef.current = isAway;
     setShowScrollToBottom(isAway);
   }, []);
 
-  const handleContentSizeChange = useCallback((_w: number, h: number) => {
-    contentHeightRef.current = h;
-    // Auto-scroll only when user is near bottom
-    if (!userScrolledAwayRef.current && layoutHeightRef.current > 0) {
-      listRef.current?.scrollToEnd({ animated: false });
-    }
-  }, []);
-
   const handleSend = useCallback(
     (text: string, mentionedModelIds?: string[], images?: string[]) => {
-      userScrolledAwayRef.current = false;
       showScrollToBottomRef.current = false;
       setShowScrollToBottom(false);
       sendMessage(text, mentionedModelIds, images);
@@ -192,10 +175,9 @@ export default function ChatDetailScreen() {
   );
 
   const scrollToBottom = useCallback(() => {
-    userScrolledAwayRef.current = false;
     showScrollToBottomRef.current = false;
     setShowScrollToBottom(false);
-    listRef.current?.scrollToEnd({ animated: true });
+    listRef.current?.scrollToOffset({ offset: 9999999, animated: true });
   }, []);
 
   const handleIdentitySelect = useCallback(
@@ -288,13 +270,12 @@ export default function ChatDetailScreen() {
 
   // P3: 使用 useMemo 缓存列表配置，避免每次渲染重新创建
   const legendListProps = useMemo(() => ({
-    contentContainerStyle: { paddingTop: 12, paddingBottom: 8 },
-    recycleItems: false,
-    alignItemsAtEnd: false,
-    maintainScrollAtEnd: false,
+    contentContainerStyle: { flexGrow: 1, paddingTop: 12, paddingBottom: 8 },
+    recycleItems: true,
+    maintainScrollAtEnd: true,
+    maintainScrollAtEndThreshold: 0.1,
     estimatedItemSize: 120,
-    drawDistance: 200,
-    waitForInitialLayout: true,
+    drawDistance: 250,
     getItemType: (item: Message) => {
       if (item.role === "user") return "user";
       if (item.generatedImages?.length) return "assistant-image";
@@ -304,7 +285,7 @@ export default function ChatDetailScreen() {
     },
     scrollEventThrottle: 16,
     keyboardDismissMode: "on-drag" as const,
-    keyboardShouldPersistTaps: "handled" as const,
+    keyboardShouldPersistTaps: "never" as const,
     showsVerticalScrollIndicator: false,
   }), []);
 
@@ -504,7 +485,6 @@ export default function ChatDetailScreen() {
         keyExtractor={messageKeyExtractor}
         {...legendListProps}
         onScroll={handleScroll}
-        onContentSizeChange={handleContentSizeChange}
       />
 
       {showScrollToBottom && (
