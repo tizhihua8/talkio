@@ -5,6 +5,7 @@ import type { CustomHeader } from "../../../src/types";
 import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useIdentityStore } from "../../../src/stores/identity-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { listRemoteTools } from "../../../src/services/mcp-client";
 // MCP Server editor
 
@@ -19,6 +20,7 @@ export default function ToolEditScreen() {
 
   const existing = id ? getMcpServerById(id) : undefined;
   const isNew = !existing;
+  const colors = useThemeColors();
 
   const [name, setName] = useState(existing?.name ?? "");
   const [url, setUrl] = useState(existing?.url ?? "");
@@ -53,7 +55,7 @@ export default function ToolEditScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
+    <ScrollView className="flex-1 bg-bg-light" keyboardShouldPersistTaps="handled">
       <View className="px-4 pt-4">
         <Text className="mb-1 text-sm font-medium text-text-muted">{t("toolEdit.name")}</Text>
         <TextInput
@@ -61,7 +63,7 @@ export default function ToolEditScreen() {
           value={name}
           onChangeText={setName}
           placeholder={t("toolEdit.namePlaceholder")}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.searchIcon}
         />
       </View>
 
@@ -72,7 +74,7 @@ export default function ToolEditScreen() {
           value={url}
           onChangeText={setUrl}
           placeholder="https://mcp.example.com/mcp"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.searchIcon}
           autoCapitalize="none"
           keyboardType="url"
         />
@@ -86,7 +88,7 @@ export default function ToolEditScreen() {
             hitSlop={8}
             className="active:opacity-60"
           >
-            <Ionicons name="add-circle-outline" size={22} color="#007AFF" />
+            <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
           </Pressable>
         </View>
         {headers.map((h, i) => (
@@ -100,7 +102,7 @@ export default function ToolEditScreen() {
                 setHeaders(next);
               }}
               placeholder="Header name"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.searchIcon}
               autoCapitalize="none"
             />
             <TextInput
@@ -112,7 +114,7 @@ export default function ToolEditScreen() {
                 setHeaders(next);
               }}
               placeholder="Value"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={colors.searchIcon}
               autoCapitalize="none"
               secureTextEntry={h.name.toLowerCase().includes("auth") || h.name.toLowerCase().includes("key")}
             />
@@ -121,12 +123,12 @@ export default function ToolEditScreen() {
               hitSlop={8}
               className="active:opacity-60"
             >
-              <Ionicons name="close-circle" size={20} color="#ef4444" />
+              <Ionicons name="close-circle" size={20} color={colors.danger} />
             </Pressable>
           </View>
         ))}
         {headers.length === 0 && (
-          <Text className="text-xs text-slate-400">{t("toolEdit.headersHint")}</Text>
+          <Text className="text-xs text-text-hint">{t("toolEdit.headersHint")}</Text>
         )}
       </View>
 
@@ -164,9 +166,9 @@ export default function ToolEditScreen() {
           className="flex-row items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 active:opacity-70"
         >
           {testing ? (
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={colors.accent} />
           ) : (
-            <Ionicons name="flash-outline" size={18} color="#007AFF" />
+            <Ionicons name="flash-outline" size={18} color={colors.accent} />
           )}
           <Text className="text-sm font-medium text-primary">
             {testing ? t("toolEdit.testing") : t("toolEdit.testConnection")}
@@ -176,7 +178,7 @@ export default function ToolEditScreen() {
 
       <View className="mx-4 mt-4 flex-row items-center justify-between rounded-xl border border-border-light bg-bg-secondary px-4 py-3">
         <Text className="text-sm text-text-main">{t("toolEdit.enabled")}</Text>
-        <Switch value={enabled} onValueChange={setEnabled} trackColor={{ false: "#e5e7eb", true: "#007AFF" }} thumbColor="#fff" ios_backgroundColor="#e5e7eb" />
+        <Switch value={enabled} onValueChange={setEnabled} trackColor={{ false: colors.switchTrack, true: colors.accent }} thumbColor="#fff" ios_backgroundColor={colors.switchTrack} />
       </View>
 
       <View className="px-4 pb-8 pt-6 gap-3">
@@ -199,7 +201,7 @@ export default function ToolEditScreen() {
             }}
             className="items-center py-2 active:opacity-60"
           >
-            <Text className="text-sm text-red-500">{t("common.delete")}</Text>
+            <Text className="text-sm text-error">{t("common.delete")}</Text>
           </Pressable>
         )}
       </View>

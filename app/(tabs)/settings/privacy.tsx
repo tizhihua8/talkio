@@ -6,7 +6,7 @@ export default function PrivacyScreen() {
   const { t } = useTranslation();
   return (
     <ScrollView className="flex-1 bg-bg-secondary">
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 rounded-xl bg-bg-card p-4">
         <View className="flex-row items-center">
           <Ionicons name="shield-checkmark" size={24} color="#2b2bee" />
           <Text className="ml-2 text-base font-semibold text-text-main">{t("privacy.privacyFirst")}</Text>
@@ -16,7 +16,7 @@ export default function PrivacyScreen() {
         </Text>
       </View>
 
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 rounded-xl bg-bg-card p-4">
         <Text className="mb-3 text-sm font-semibold text-text-main">{t("privacy.dataStorage")}</Text>
         <PrivacyItem
           icon="phone-portrait-outline"
@@ -35,7 +35,7 @@ export default function PrivacyScreen() {
         />
       </View>
 
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 rounded-xl bg-bg-card p-4">
         <Text className="mb-3 text-sm font-semibold text-text-main">{t("privacy.permissions")}</Text>
         <PrivacyItem
           icon="mic-outline"
@@ -54,7 +54,7 @@ export default function PrivacyScreen() {
         />
       </View>
 
-      <View className="mx-4 mb-8 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mb-8 mt-4 rounded-xl bg-bg-card p-4">
         <Text className="mb-3 text-sm font-semibold text-text-main">{t("privacy.dataManagement")}</Text>
         <Text className="text-sm leading-5 text-text-muted">
           {t("privacy.dataManagementDesc")}

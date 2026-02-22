@@ -14,6 +14,7 @@ import { useProviderStore } from "../../stores/provider-store";
 import { extractMentionedModelIds } from "../../utils/mention-parser";
 import { useChatStore } from "../../stores/chat-store";
 import { useSettingsStore } from "../../stores/settings-store";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import { ApiClient } from "../../services/api-client";
 
 interface ChatInputProps {
@@ -33,6 +34,7 @@ export const ChatInput = React.memo(function ChatInput({
 }: ChatInputProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const colors = useThemeColors();
   const bottomPad = Platform.OS === "ios" ? insets.bottom : insets.bottom + 10;
   const [text, setText] = useState("");
   const [attachedImages, setAttachedImages] = useState<{ uri: string; base64: string }[]>([]);
@@ -226,7 +228,7 @@ export const ChatInput = React.memo(function ChatInput({
 
   return (
     <View
-      className="border-t border-slate-100 bg-white"
+      className="border-t border-border-light bg-bg-light"
       style={{ paddingBottom: bottomPad }}
     >
       {attachedImages.length > 0 && (
@@ -250,24 +252,24 @@ export const ChatInput = React.memo(function ChatInput({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          className="border-b border-slate-100 bg-slate-50/50 px-3 py-2"
+          className="border-b border-border-light bg-bg-hover px-3 py-2"
           contentContainerStyle={{ gap: 8 }}
         >
           {quickPrompts.map((qp) => (
             <Pressable
               key={qp.label}
               onPress={() => onSend(qp.prompt)}
-              className="rounded-full border border-slate-200 bg-white px-3.5 py-1.5 active:bg-slate-50"
+              className="rounded-full border border-border-light bg-bg-card px-3.5 py-1.5 active:bg-bg-hover"
             >
-              <Text className="text-[13px] font-medium text-slate-600">{qp.label}</Text>
+              <Text className="text-[13px] font-medium text-text-muted">{qp.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
       )}
 
       {showMentionPicker && isGroup && (
-        <View className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-          <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+        <View className="border-b border-border-light bg-bg-hover px-4 py-3">
+          <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-text-hint">
             {t("chat.selectModel")}
           </Text>
           {participants.map((p) => {
@@ -282,7 +284,7 @@ export const ChatInput = React.memo(function ChatInput({
                 <View className="h-8 w-8 overflow-hidden rounded-lg">
                   <ModelAvatar name={model.displayName} size="sm" />
                 </View>
-                <Text className="text-[15px] font-medium text-slate-700">
+                <Text className="text-[15px] font-medium text-text-main">
                   {model.displayName}
                 </Text>
               </Pressable>
@@ -294,12 +296,12 @@ export const ChatInput = React.memo(function ChatInput({
       <View className="flex-row items-center gap-3 px-4 py-2.5">
         {supportsVision && (
           <Pressable onPress={handleAttach} className="text-primary p-2 active:opacity-60">
-            <Ionicons name="image-outline" size={22} color="#007AFF" />
+            <Ionicons name="image-outline" size={22} color={colors.accent} />
           </Pressable>
         )}
         {isGroup && (
           <Pressable onPress={toggleMentionPicker} className="p-2 active:opacity-60">
-            <Ionicons name="at" size={22} color={showMentionPicker ? "#007AFF" : "#8E8E93"} />
+            <Ionicons name="at" size={22} color={showMentionPicker ? colors.accent : colors.textHint} />
           </Pressable>
         )}
 
@@ -312,12 +314,12 @@ export const ChatInput = React.memo(function ChatInput({
             <Text className="ml-2 text-xs text-red-400">/01:00</Text>
           </View>
         ) : (
-          <View className="flex-1 flex-row items-center rounded-3xl border border-slate-200/50 bg-[#F2F2F7] px-4 py-1.5">
+          <View className="flex-1 flex-row items-center rounded-3xl border border-border-light/50 bg-bg-input px-4 py-1.5">
             <TextInput
               ref={inputRef}
               className="max-h-24 min-h-[36px] flex-1 text-[16px] text-text-main"
               placeholder={isGroup ? t("chat.messageGroup") : t("chat.message")}
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={colors.textHint}
               value={text}
               onChangeText={handleTextChange}
               multiline
@@ -335,7 +337,7 @@ export const ChatInput = React.memo(function ChatInput({
           </Pressable>
         ) : isTranscribing ? (
           <View className="h-10 w-10 items-center justify-center">
-            <ActivityIndicator size="small" color="#007AFF" />
+            <ActivityIndicator size="small" color={colors.accent} />
           </View>
         ) : text.trim() || attachedImages.length > 0 ? (
           <Pressable
@@ -348,13 +350,13 @@ export const ChatInput = React.memo(function ChatInput({
           <Pressable
             onPress={handleMicPress}
             className={`h-10 w-10 items-center justify-center rounded-full active:opacity-70 ${
-              isRecording ? "bg-red-500" : "bg-slate-200"
+              isRecording ? "bg-red-500" : "bg-bg-input"
             }`}
           >
             <Ionicons
               name={isRecording ? "stop" : "mic"}
               size={isRecording ? 14 : 18}
-              color={isRecording ? "#fff" : "#64748b"}
+              color={isRecording ? "#fff" : colors.sectionHeader}
             />
           </Pressable>
         )}

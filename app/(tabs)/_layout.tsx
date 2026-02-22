@@ -1,21 +1,23 @@
 import { Tabs } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemeColors } from "../../src/hooks/useThemeColors";
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#007AFF",
-        tabBarInactiveTintColor: "#94a3b8",
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.tabInactive,
         tabBarLabelStyle: { fontSize: 10, fontWeight: "500" },
         tabBarStyle: {
-          borderTopColor: "#e2e8f0",
-          backgroundColor: "rgba(255,255,255,0.95)",
+          borderTopColor: colors.tabBarBorder,
+          backgroundColor: colors.tabBarBg,
         },
-        headerStyle: { backgroundColor: "#ffffff" },
-        headerTitleStyle: { fontWeight: "600", fontSize: 18 },
+        headerStyle: { backgroundColor: colors.bg },
+        headerTitleStyle: { fontWeight: "600", fontSize: 18, color: colors.textPrimary },
         freezeOnBlur: true,
       }}
     >

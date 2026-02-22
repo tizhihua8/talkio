@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useIdentityStore } from "../../../src/stores/identity-store";
 import { useProviderStore } from "../../../src/stores/provider-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import type { McpServer } from "../../../src/types";
 import { ApiClient } from "../../../src/services/api-client";
 import { DEFAULT_IDENTITY_PARAMS, IDENTITY_ICONS } from "../../../src/constants";
@@ -27,6 +28,7 @@ export default function IdentityEditScreen() {
 
   const existing = id ? getIdentityById(id) : undefined;
   const isNew = !existing;
+  const colors = useThemeColors();
 
   const [aiDesc, setAiDesc] = useState("");
   const [aiModelId, setAiModelId] = useState(enabledModels[0]?.id ?? "");
@@ -134,7 +136,7 @@ export default function IdentityEditScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
+    <ScrollView className="flex-1 bg-bg-light" keyboardShouldPersistTaps="handled">
       {isNew && enabledModels.length > 0 && (
         <View className="mx-4 mt-4 rounded-xl border border-purple-200 bg-purple-50 p-4">
           <View className="flex-row items-center gap-2">
@@ -143,23 +145,23 @@ export default function IdentityEditScreen() {
           </View>
 
           <TextInput
-            className="mt-3 rounded-lg border border-purple-200 bg-white px-3 py-2.5 text-sm text-text-main"
+            className="mt-3 rounded-lg border border-border-light bg-bg-secondary px-3 py-2.5 text-sm text-text-main"
             value={aiDesc}
             onChangeText={setAiDesc}
             placeholder={t("identityEdit.aiDescPlaceholder")}
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.searchIcon}
             multiline
           />
 
           <View className="mt-3 flex-row items-center gap-2">
             <Pressable
               onPress={() => setShowModelPicker(true)}
-              className="flex-1 flex-row items-center justify-between rounded-lg border border-purple-200 bg-white px-3 py-2.5 active:opacity-80"
+              className="flex-1 flex-row items-center justify-between rounded-lg border border-purple-200 bg-bg-card px-3 py-2.5 active:opacity-80"
             >
               <Text className="text-xs text-text-muted" numberOfLines={1}>
                 {selectedAiModel?.displayName ?? t("identityEdit.aiSelectModel")}
               </Text>
-              <Ionicons name="chevron-down" size={14} color="#9ca3af" />
+              <Ionicons name="chevron-down" size={14} color={colors.searchIcon} />
             </Pressable>
 
             <Pressable
@@ -182,11 +184,11 @@ export default function IdentityEditScreen() {
 
       <Modal visible={showModelPicker} transparent animationType="slide">
         <Pressable className="flex-1 bg-black/30" onPress={() => setShowModelPicker(false)} />
-        <View className="bg-white rounded-t-2xl max-h-[50%] pb-8">
-          <View className="flex-row items-center justify-between px-4 py-3 border-b border-slate-100">
+        <View className="bg-bg-light rounded-t-2xl max-h-[50%] pb-8">
+          <View className="flex-row items-center justify-between px-4 py-3 border-b border-border-light">
             <Text className="text-base font-semibold text-text-main">{t("identityEdit.selectModel")}</Text>
             <Pressable onPress={() => setShowModelPicker(false)} className="active:opacity-60">
-              <Ionicons name="close" size={22} color="#6b7280" />
+              <Ionicons name="close" size={22} color={colors.textSecondary} />
             </Pressable>
           </View>
           <FlatList
@@ -195,7 +197,7 @@ export default function IdentityEditScreen() {
             renderItem={({ item }) => (
               <Pressable
                 onPress={() => { setAiModelId(item.id); setShowModelPicker(false); }}
-                className={`flex-row items-center px-4 py-3 active:bg-slate-50 ${item.id === aiModelId ? "bg-purple-50" : ""}`}
+                className={`flex-row items-center px-4 py-3 active:bg-bg-hover ${item.id === aiModelId ? "bg-purple-50" : ""}`}
               >
                 <Text className={`flex-1 text-sm ${item.id === aiModelId ? "font-semibold text-purple-700" : "text-text-main"}`}>
                   {item.displayName}
@@ -214,7 +216,7 @@ export default function IdentityEditScreen() {
           value={name}
           onChangeText={setName}
           placeholder={t("identityEdit.namePlaceholder")}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.searchIcon}
         />
       </View>
 
@@ -244,7 +246,7 @@ export default function IdentityEditScreen() {
           value={systemPrompt}
           onChangeText={setSystemPrompt}
           placeholder={t("identityEdit.systemPromptPlaceholder")}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.searchIcon}
           multiline
           textAlignVertical="top"
         />
@@ -269,7 +271,7 @@ export default function IdentityEditScreen() {
               <Ionicons
                 name={selectedToolIds.includes(tool.id) ? "checkbox" : "square-outline"}
                 size={20}
-                color={selectedToolIds.includes(tool.id) ? "#2b2bee" : "#9ca3af"}
+                color={selectedToolIds.includes(tool.id) ? colors.accent : colors.searchIcon}
               />
               <View className="ml-2 flex-1">
                 <Text className="text-sm text-text-main">{tool.name}</Text>
@@ -287,13 +289,13 @@ export default function IdentityEditScreen() {
               <Ionicons
                 name={selectedServerIds.includes(server.id) ? "checkbox" : "square-outline"}
                 size={20}
-                color={selectedServerIds.includes(server.id) ? "#2b2bee" : "#9ca3af"}
+                color={selectedServerIds.includes(server.id) ? colors.accent : colors.searchIcon}
               />
               <View className="ml-2 flex-1">
                 <Text className="text-sm text-text-main">{server.name}</Text>
                 <Text className="text-[11px] text-text-hint" numberOfLines={1}>{server.url}</Text>
               </View>
-              <Ionicons name="cloud-outline" size={14} color="#9ca3af" />
+              <Ionicons name="cloud-outline" size={14} color={colors.searchIcon} />
             </Pressable>
           ))}
         </View>
@@ -356,14 +358,14 @@ function ParamSlider({
         onResponderGrant={(e) => onChange(calcValue(e.nativeEvent.pageX, layoutXRef.current))}
         onResponderMove={(e) => onChange(calcValue(e.nativeEvent.pageX, layoutXRef.current))}
       >
-        <View className="h-1.5 rounded-full bg-gray-200">
+        <View className="h-1.5 rounded-full bg-bg-input">
           <View
             className="h-1.5 rounded-full bg-primary"
             style={{ width: `${((value - min) / (max - min)) * 100}%` }}
           />
         </View>
         <View
-          className="absolute h-5 w-5 rounded-full border-2 border-primary bg-white"
+          className="absolute h-5 w-5 rounded-full border-2 border-primary bg-bg-card"
           style={{ left: `${((value - min) / (max - min)) * 100}%`, marginLeft: -10 }}
           pointerEvents="none"
         />

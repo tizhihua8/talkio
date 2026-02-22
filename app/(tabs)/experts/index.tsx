@@ -5,6 +5,7 @@ import { useRouter, useNavigation } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useChatStore } from "../../../src/stores/chat-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { ModelAvatar } from "../../../src/components/common/ModelAvatar";
 import { generateId } from "../../../src/utils/id";
 import type { Model } from "../../../src/types";
@@ -21,6 +22,7 @@ export default function ModelsScreen() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedForGroup, setSelectedForGroup] = useState<string[]>([]);
   const [groupMode, setGroupMode] = useState(false);
+  const colors = useThemeColors();
 
   useEffect(() => {
     navigation.setOptions({
@@ -29,11 +31,11 @@ export default function ModelsScreen() {
           onPress={() => setShowSearch((v) => !v)}
           className="p-1 active:opacity-60"
         >
-          <Ionicons name="search" size={22} color="#007AFF" />
+          <Ionicons name="search" size={22} color={colors.accent} />
         </Pressable>
       ),
     });
-  }, [navigation]);
+  }, [navigation, colors]);
   const filtered = useMemo(() => enabledModels.filter((m) =>
     searchQuery
       ? m.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -78,22 +80,22 @@ export default function ModelsScreen() {
   }, [selectedForGroup, createConversation, router]);
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-bg-light">
       {showSearch && (
         <View className="px-4 pb-2">
           <View className="flex-row items-center rounded-xl bg-ios-gray px-3 py-2">
-            <Ionicons name="search" size={18} color="#94a3b8" />
+            <Ionicons name="search" size={18} color={colors.searchIcon} />
             <TextInput
               className="ml-2 flex-1 text-[15px] text-text-main"
               placeholder={t("common.search")}
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={colors.textHint}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery("")} className="active:opacity-60">
-                <Ionicons name="close-circle" size={18} color="#94a3b8" />
+                <Ionicons name="close-circle" size={18} color={colors.searchIcon} />
               </Pressable>
             )}
           </View>
@@ -102,9 +104,9 @@ export default function ModelsScreen() {
 
       {sections.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="people-outline" size={48} color="#cbd5e1" />
+          <Ionicons name="people-outline" size={48} color={colors.chevron} />
           <Text className="mt-4 text-lg font-semibold text-text-main">{t("models.noModels")}</Text>
-          <Text className="mt-1 text-center text-sm text-slate-400">{t("models.configureHint")}</Text>
+          <Text className="mt-1 text-center text-sm text-text-muted">{t("models.configureHint")}</Text>
           <Pressable
             onPress={() => router.push("/(tabs)/settings/providers")}
             className="mt-6 rounded-lg bg-primary px-6 py-2.5 active:opacity-70"
@@ -120,7 +122,7 @@ export default function ModelsScreen() {
           contentContainerStyle={{ paddingBottom: groupMode ? 80 : 24 }}
           renderSectionHeader={({ section: { title } }) => (
             <View className="bg-bg-secondary px-5 py-1.5">
-              <Text className="text-[13px] font-semibold text-slate-500">
+              <Text className="text-[13px] font-semibold text-section-header">
                 {title}
               </Text>
             </View>
@@ -132,7 +134,7 @@ export default function ModelsScreen() {
               <Pressable
                 onPress={() => handleStartChat(item)}
                 android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-                className={`flex-row items-center gap-4 border-b border-divider bg-white px-4 py-3 active:bg-slate-50 ${isSelected ? "bg-blue-50/50" : ""}`}
+                className={`flex-row items-center gap-4 border-b border-divider bg-bg-light px-4 py-3 active:bg-bg-hover ${isSelected ? "bg-primary-light" : ""}`}
               >
                 <View className="h-10 w-10 overflow-hidden rounded-lg">
                   <ModelAvatar name={item.displayName} size="sm" />
@@ -149,10 +151,10 @@ export default function ModelsScreen() {
                   <Ionicons
                     name={isSelected ? "checkmark-circle" : "ellipse-outline"}
                     size={22}
-                    color={isSelected ? "#007AFF" : "#d1d5db"}
+                    color={isSelected ? colors.accent : colors.chevron}
                   />
                 ) : (
-                  <Ionicons name="chevron-forward" size={18} color="#cbd5e1" />
+                  <Ionicons name="chevron-forward" size={18} color={colors.chevron} />
                 )}
               </Pressable>
             );
@@ -169,7 +171,7 @@ export default function ModelsScreen() {
             }}
             className="h-12 w-12 items-center justify-center rounded-full bg-primary active:opacity-70"
           >
-            <Ionicons name="chatbubbles" size={22} color="#fff" />
+            <Ionicons name="chatbubbles" size={22} color={colors.textInverse} />
           </Pressable>
         </View>
       )}
@@ -191,9 +193,9 @@ export default function ModelsScreen() {
                 setGroupMode(false);
                 setSelectedForGroup([]);
               }}
-              className="items-center rounded-xl bg-slate-200 py-3.5 active:opacity-70"
+              className="items-center rounded-xl bg-bg-input py-3.5 active:opacity-70"
             >
-              <Text className="text-base font-medium text-slate-600">{t("common.cancel")}</Text>
+              <Text className="text-base font-medium text-text-muted">{t("common.cancel")}</Text>
             </Pressable>
           )}
         </View>

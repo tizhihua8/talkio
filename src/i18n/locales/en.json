@@ -158,7 +158,10 @@
     "languageSetting": "Language",
     "langSystem": "System",
     "langEn": "English",
-    "langZh": "中文"
+    "langZh": "中文",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "providerEdit": {
     "quickSelect": "Quick Select",

@@ -5,6 +5,7 @@ import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/typ
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useIdentityStore } from "../../stores/identity-store";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 interface IdentitySliderProps {
   visible: boolean;
@@ -23,6 +24,7 @@ export const IdentitySlider = React.memo(function IdentitySlider({
 }: IdentitySliderProps) {
   const { t } = useTranslation();
   const identities = useIdentityStore((s) => s.identities);
+  const colors = useThemeColors();
   const sheetRef = useRef<BottomSheetMethods>(null);
 
   useEffect(() => {
@@ -56,19 +58,19 @@ export const IdentitySlider = React.memo(function IdentitySlider({
       enablePanDownToClose
       backdropComponent={renderBackdrop}
       onClose={handleClose}
-      handleIndicatorStyle={{ backgroundColor: "#d1d5db", width: 36 }}
-      backgroundStyle={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+      handleIndicatorStyle={{ backgroundColor: colors.chevron, width: 36 }}
+      backgroundStyle={{ backgroundColor: colors.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
     >
       <BottomSheetView style={{ flex: 1 }}>
         {/* Header */}
-        <View className="flex-row items-center justify-between border-b border-slate-100 px-4 pb-3">
+        <View className="flex-row items-center justify-between border-b border-border-light px-4 pb-3">
           <View className="flex-1">
-            <Text className="text-base font-semibold text-slate-900">
+            <Text className="text-base font-semibold text-text-main">
               {label ?? t("personas.editIdentity")}
             </Text>
           </View>
           <Pressable onPress={handleClose} hitSlop={8} className="active:opacity-60">
-            <Ionicons name="close" size={20} color="#9ca3af" />
+            <Ionicons name="close" size={20} color={colors.searchIcon} />
           </Pressable>
         </View>
 
@@ -101,32 +103,32 @@ export const IdentitySlider = React.memo(function IdentitySlider({
                 key={identity.id}
                 onPress={() => handleSelect(identity.id)}
                 className={`mb-2 flex-row items-center gap-3 rounded-xl border px-4 py-3 active:opacity-80 ${
-                  isActive ? "border-primary/30 bg-primary/5" : "border-slate-100 bg-white"
+                  isActive ? "border-primary/30 bg-primary/5" : "border-border-light bg-bg-card"
                 }`}
               >
                 <View
                   className={`h-9 w-9 items-center justify-center rounded-lg ${
-                    isActive ? "bg-primary" : "bg-slate-100"
+                    isActive ? "bg-primary" : "bg-bg-input"
                   }`}
                 >
                   <Ionicons
                     name={getIconName(identity.icon)}
                     size={20}
-                    color={isActive ? "#fff" : "#64748b"}
+                    color={isActive ? colors.textInverse : colors.sectionHeader}
                   />
                 </View>
                 <View className="flex-1">
                   <Text
-                    className={`text-[14px] font-semibold ${isActive ? "text-primary" : "text-slate-900"}`}
+                    className={`text-[14px] font-semibold ${isActive ? "text-primary" : "text-text-main"}`}
                     numberOfLines={1}
                   >
                     {identity.name}
                   </Text>
-                  <Text className="text-[12px] leading-tight text-slate-400" numberOfLines={2}>
+                  <Text className="text-[12px] leading-tight text-text-hint" numberOfLines={2}>
                     {identity.systemPrompt.slice(0, 80)}
                   </Text>
                 </View>
-                {isActive && <Ionicons name="checkmark-circle" size={20} color="#007AFF" />}
+                {isActive && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
               </Pressable>
             );
           })}

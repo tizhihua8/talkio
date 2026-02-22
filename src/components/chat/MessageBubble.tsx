@@ -5,6 +5,7 @@ import { MotiView } from "moti";
 import { Ionicons } from "@expo/vector-icons";
 import { ModelAvatar } from "../common/ModelAvatar";
 import { MarkdownRenderer } from "../markdown/MarkdownRenderer";
+import { useThemeColors } from "../../hooks/useThemeColors";
 import type { Message, MessageBlock } from "../../types";
 import { MessageBlockType, MessageBlockStatus, MessageStatus } from "../../types";
 
@@ -22,10 +23,11 @@ interface MessageBubbleProps {
   onShare?: (content: string) => void;
 }
 
-function ActionButton({ icon, onPress, color = "#9ca3af" }: { icon: string; onPress: () => void; color?: string }) {
+function ActionButton({ icon, onPress, color }: { icon: string; onPress: () => void; color?: string }) {
+  const colors = useThemeColors();
   return (
     <Pressable onPress={onPress} className="rounded-md p-1.5 active:opacity-60" hitSlop={6}>
-      <Ionicons name={icon as any} size={15} color={color} />
+      <Ionicons name={icon as any} size={15} color={color ?? colors.searchIcon} />
     </Pressable>
   );
 }
@@ -45,6 +47,7 @@ export const MessageBubble = React.memo(function MessageBubble({
 }: MessageBubbleProps) {
   const [showReasoning, setShowReasoning] = useState(false);
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
+  const colors = useThemeColors();
   const isUser = message.role === "user";
 
   // Resolve content from blocks (preferred) or flat message fields (fallback)
@@ -89,10 +92,10 @@ export const MessageBubble = React.memo(function MessageBubble({
         </View>
         <View className="flex-1 flex-col items-end gap-1">
           <View className="mr-1 flex-row items-center gap-2">
-            <Text className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <Text className="text-[11px] font-semibold uppercase tracking-wider text-text-hint">
               {labelYou}
             </Text>
-            <Text className="text-[10px] text-slate-300">{formatTime(message.createdAt)}</Text>
+            <Text className="text-[10px] text-text-hint/60">{formatTime(message.createdAt)}</Text>
           </View>
           {message.images && message.images.length > 0 && (
             <View className="flex-row flex-wrap gap-1.5 max-w-[80%]">
@@ -124,7 +127,7 @@ export const MessageBubble = React.memo(function MessageBubble({
           {/* User action bar */}
           <View className="mr-1 flex-row items-center gap-0.5">
             {onCopy && <ActionButton icon="copy-outline" onPress={() => onCopy(rawContent)} />}
-            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color="#ef4444" />}
+            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color={colors.danger} />}
           </View>
         </View>
       </View>
@@ -138,24 +141,24 @@ export const MessageBubble = React.memo(function MessageBubble({
       </View>
       <View className="flex-1 flex-col gap-1">
         <View className="ml-1 flex-row items-center gap-2">
-          <Text className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          <Text className="text-[11px] font-semibold uppercase tracking-wider text-text-hint">
             {message.senderName}
           </Text>
-          <Text className="text-[10px] text-slate-300">{formatTime(message.createdAt)}</Text>
+          <Text className="text-[10px] text-text-hint/60">{formatTime(message.createdAt)}</Text>
         </View>
 
         {reasoningContent && (
           <Pressable
             onPress={() => setShowReasoning(!showReasoning)}
-            className="max-w-[90%] flex-row items-center justify-between rounded-xl bg-slate-200/50 px-3 py-2.5 active:opacity-70"
+            className="max-w-[90%] flex-row items-center justify-between rounded-xl bg-bg-input/50 px-3 py-2.5 active:opacity-70"
           >
             <View className="flex-row items-center gap-2">
-              <Ionicons name="bulb-outline" size={16} color="#6b7280" />
-              <Text className="text-[13px] font-medium text-slate-600">
+              <Ionicons name="bulb-outline" size={16} color={colors.textSecondary} />
+              <Text className="text-[13px] font-medium text-text-muted">
                 {labelThoughtProcess}
               </Text>
               {message.reasoningDuration && (
-                <View className="rounded bg-white/80 px-1.5 py-0.5">
+                <View className="rounded bg-bg-card/80 px-1.5 py-0.5">
                   <Text className="text-[11px] font-mono text-primary">
                     {message.reasoningDuration}s
                   </Text>
@@ -165,23 +168,23 @@ export const MessageBubble = React.memo(function MessageBubble({
             <Ionicons
               name={showReasoning ? "chevron-up" : "chevron-down"}
               size={16}
-              color="#9ca3af"
+              color={colors.searchIcon}
             />
           </Pressable>
         )}
 
         {showReasoning && reasoningContent && (
-          <View className="max-w-[90%] rounded-xl bg-slate-50 p-3">
+          <View className="max-w-[90%] rounded-xl bg-bg-hover p-3">
             {renderMarkdown
               ? <MarkdownRenderer content={reasoningContent} />
-              : <Text className="text-[13px] leading-relaxed text-slate-600" textBreakStrategy="simple">{reasoningContent}</Text>}
+              : <Text className="text-[13px] leading-relaxed text-text-muted" textBreakStrategy="simple">{reasoningContent}</Text>}
           </View>
         )}
 
         <Pressable
           onLongPress={handleLongPress}
           delayLongPress={400}
-          className="max-w-[90%] rounded-2xl border border-slate-100 bg-[#F2F2F7] px-4 py-3"
+          className="max-w-[90%] rounded-2xl border border-border-light bg-bubble-ai px-4 py-3"
           style={{ borderTopLeftRadius: 0 }}
         >
           {isStreaming && !rawContent && !message.generatedImages?.length ? (
@@ -206,7 +209,7 @@ export const MessageBubble = React.memo(function MessageBubble({
               {displayContent ? (
                 renderMarkdown
                   ? <MarkdownRenderer content={displayContent} />
-                  : <Text className="text-[15px] leading-relaxed text-gray-800" textBreakStrategy="simple">{displayContent}</Text>
+                  : <Text className="text-[15px] leading-relaxed text-text-main" textBreakStrategy="simple">{displayContent}</Text>
               ) : null}
               {message.generatedImages && message.generatedImages.length > 0 && (
                 <View className={`flex-row flex-wrap gap-2 ${markdownContent ? "mt-3" : ""}`}>
@@ -242,7 +245,7 @@ export const MessageBubble = React.memo(function MessageBubble({
                       return next;
                     });
                   }}
-                  className="rounded-xl border border-slate-200 bg-white overflow-hidden active:opacity-70"
+                  className="rounded-xl border border-border-light bg-bg-card overflow-hidden active:opacity-70"
                 >
                   <View className="flex-row items-center gap-2 px-3 py-2">
                     <View className={`h-5 w-5 items-center justify-center rounded-md ${result ? "bg-emerald-100" : "bg-amber-100"}`}>
@@ -252,20 +255,20 @@ export const MessageBubble = React.memo(function MessageBubble({
                         color={result ? "#059669" : "#d97706"}
                       />
                     </View>
-                    <Text className="flex-1 text-xs font-semibold text-slate-700" numberOfLines={1}>
+                    <Text className="flex-1 text-xs font-semibold text-text-main" numberOfLines={1}>
                       {tc.name}
                     </Text>
                     {result && (
                       <Ionicons
                         name={isExpanded ? "chevron-up" : "chevron-down"}
                         size={14}
-                        color="#9ca3af"
+                        color={colors.searchIcon}
                       />
                     )}
                   </View>
                   {isExpanded && result && (
-                    <View className="border-t border-slate-100 bg-slate-50 px-3 py-2">
-                      <Text className="text-[11px] leading-relaxed text-slate-600" numberOfLines={20}>
+                    <View className="border-t border-border-light bg-bg-hover px-3 py-2">
+                      <Text className="text-[11px] leading-relaxed text-text-muted" numberOfLines={20}>
                         {result.content.slice(0, 1000)}
                       </Text>
                     </View>
@@ -283,11 +286,11 @@ export const MessageBubble = React.memo(function MessageBubble({
             {onRegenerate && <ActionButton icon="refresh-outline" onPress={() => onRegenerate(message.id)} />}
             {onTTS && rawContent && <ActionButton icon="volume-medium-outline" onPress={() => onTTS(rawContent)} />}
             {onShare && rawContent && <ActionButton icon="share-outline" onPress={() => onShare(rawContent)} />}
-            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color="#ef4444" />}
+            {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color={colors.danger} />}
             {message.tokenUsage && (
-              <View className="ml-2 flex-row items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5">
-                <Ionicons name="analytics-outline" size={11} color="#94a3b8" />
-                <Text className="text-[10px] font-mono text-slate-400">
+              <View className="ml-2 flex-row items-center gap-1 rounded bg-bg-input px-1.5 py-0.5">
+                <Ionicons name="analytics-outline" size={11} color={colors.searchIcon} />
+                <Text className="text-[10px] font-mono text-text-hint">
                   {formatTokens(message.tokenUsage.inputTokens)}→{formatTokens(message.tokenUsage.outputTokens)}
                 </Text>
               </View>

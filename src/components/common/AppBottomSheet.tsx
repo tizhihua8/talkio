@@ -7,6 +7,7 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
 import { Ionicons } from "@expo/vector-icons";
+import { useThemeColors } from "../../hooks/useThemeColors";
 
 interface AppBottomSheetProps {
   title?: string;
@@ -19,6 +20,7 @@ interface AppBottomSheetProps {
 export const AppBottomSheet = forwardRef<BottomSheetMethods, AppBottomSheetProps>(
   ({ title, snapPoints: customSnapPoints, children, onClose, enableDynamicSizing = false }, ref) => {
     const snapPoints = useMemo(() => customSnapPoints ?? ["40%", "70%"], [customSnapPoints]);
+    const colors = useThemeColors();
 
     const renderBackdrop = useCallback(
       (props: BottomSheetBackdropProps) => (
@@ -41,16 +43,16 @@ export const AppBottomSheet = forwardRef<BottomSheetMethods, AppBottomSheetProps
         enablePanDownToClose
         backdropComponent={renderBackdrop}
         onClose={onClose}
-        handleIndicatorStyle={{ backgroundColor: "#d1d5db", width: 36 }}
-        backgroundStyle={{ backgroundColor: "#fff", borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
+        handleIndicatorStyle={{ backgroundColor: colors.chevron, width: 36 }}
+        backgroundStyle={{ backgroundColor: colors.bg, borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
       >
         <BottomSheetView style={{ flex: enableDynamicSizing ? 0 : 1 }}>
           {title && (
-            <View className="flex-row items-center justify-between border-b border-gray-100 px-4 pb-3">
-              <Text className="text-lg font-semibold text-gray-900">{title}</Text>
+            <View className="flex-row items-center justify-between border-b border-border-light px-4 pb-3">
+              <Text className="text-lg font-semibold text-text-main">{title}</Text>
               {onClose && (
                 <Pressable onPress={onClose} hitSlop={8} className="active:opacity-60">
-                  <Ionicons name="close" size={20} color="#9ca3af" />
+                  <Ionicons name="close" size={20} color={colors.searchIcon} />
                 </Pressable>
               )}
             </View>

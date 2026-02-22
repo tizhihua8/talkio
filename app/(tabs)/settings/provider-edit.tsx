@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useProviderStore } from "../../../src/stores/provider-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { PROVIDER_PRESETS, PROVIDER_TYPE_OPTIONS } from "../../../src/constants";
 import type { Model, ProviderType, CustomHeader } from "../../../src/types";
 
@@ -43,6 +44,7 @@ export default function ProviderEditScreen() {
   const [newModelId, setNewModelId] = useState("");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const colors = useThemeColors();
 
   const displayModels = savedProviderId
     ? allModels.filter((m) => m.providerId === savedProviderId)
@@ -211,7 +213,7 @@ export default function ProviderEditScreen() {
       {/* ── Step 1: Choose Provider ── */}
       {!isEditing && !selectedPreset && (
         <View className="px-4 pt-6">
-          <Text className="mb-4 px-1 text-[15px] font-semibold text-slate-900">
+          <Text className="mb-4 px-1 text-[15px] font-semibold text-text-main">
             {t("providerEdit.quickSelect")}
           </Text>
           {/* OpenAI Compatible — hero card */}
@@ -220,25 +222,25 @@ export default function ProviderEditScreen() {
             className="mb-3 flex-row items-center rounded-2xl border-2 border-primary/30 bg-primary/5 px-5 py-4 active:opacity-80"
           >
             <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-              <Ionicons name="link-outline" size={26} color="#007AFF" />
+              <Ionicons name="link-outline" size={26} color={colors.accent} />
             </View>
             <View className="flex-1">
-              <Text className="text-[16px] font-bold text-slate-900">{t("providerEdit.openaiCompatible")}</Text>
-              <Text className="mt-0.5 text-[13px] text-slate-500">{t("providerEdit.openaiCompatibleHint")}</Text>
+              <Text className="text-[16px] font-bold text-text-main">{t("providerEdit.openaiCompatible")}</Text>
+              <Text className="mt-0.5 text-[13px] text-text-muted">{t("providerEdit.openaiCompatibleHint")}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+            <Ionicons name="chevron-forward" size={20} color={colors.accent} />
           </Pressable>
 
-          <Text className="mb-2 mt-2 px-1 text-[13px] text-slate-400">{t("providerEdit.directApi")}</Text>
+          <Text className="mb-2 mt-2 px-1 text-[13px] text-text-hint">{t("providerEdit.directApi")}</Text>
           <View className="flex-row flex-wrap gap-3">
             {Object.entries(PROVIDER_PRESETS).map(([key, preset]) => (
               <Pressable
                 key={key}
                 onPress={() => applyPreset(key)}
-                className="w-[47%] items-center rounded-2xl border border-slate-200 bg-white px-3 py-4 active:opacity-80"
+                className="w-[47%] items-center rounded-2xl border border-border-light bg-bg-card px-3 py-4 active:opacity-80"
               >
-                <Ionicons name={(PRESET_ICONS[key] ?? "ellipse-outline") as any} size={24} color="#007AFF" />
-                <Text className="mt-1.5 text-[14px] font-semibold text-slate-800">{preset.name}</Text>
+                <Ionicons name={(PRESET_ICONS[key] ?? "ellipse-outline") as any} size={24} color={colors.accent} />
+                <Text className="mt-1.5 text-[14px] font-semibold text-text-main">{preset.name}</Text>
               </Pressable>
             ))}
           </View>
@@ -257,43 +259,43 @@ export default function ProviderEditScreen() {
               <Ionicons
                 name={(PRESET_ICONS[selectedPreset] ?? "ellipse-outline") as any}
                 size={24}
-                color="#007AFF"
+                color={colors.accent}
               />
               <View className="ml-3 flex-1">
-                <Text className="text-[16px] font-semibold text-slate-900">{name}</Text>
-                <Text className="text-[12px] text-slate-500">{baseUrl}</Text>
+                <Text className="text-[16px] font-semibold text-text-main">{name}</Text>
+                <Text className="text-[12px] text-text-muted">{baseUrl}</Text>
               </View>
-              <Ionicons name="chevron-down" size={18} color="#94a3b8" />
+              <Ionicons name="chevron-down" size={18} color={colors.searchIcon} />
             </Pressable>
           )}
 
           {/* Full form for Custom or Editing */}
           {(isCustom || isEditing) && (
-            <View className="overflow-hidden rounded-xl border border-slate-200 bg-white mb-4">
-              <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.name")}</Text>
+            <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card mb-4">
+              <View className="flex-row items-center border-b border-border-subtle px-4 py-3.5">
+                <Text className="w-24 text-[15px] text-text-main">{t("providerEdit.name")}</Text>
                 <TextInput
-                  className="flex-1 bg-transparent text-[16px] text-slate-600"
+                  className="flex-1 bg-transparent text-[16px] text-text-muted"
                   value={name}
                   onChangeText={setName}
                   placeholder="e.g. OpenRouter"
-                  placeholderTextColor="#cbd5e1"
+                  placeholderTextColor={colors.chevron}
                 />
               </View>
-              <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.baseUrl")}</Text>
+              <View className="flex-row items-center border-b border-border-subtle px-4 py-3.5">
+                <Text className="w-24 text-[15px] text-text-main">{t("providerEdit.baseUrl")}</Text>
                 <TextInput
-                  className="flex-1 bg-transparent text-[16px] text-slate-600"
+                  className="flex-1 bg-transparent text-[16px] text-text-muted"
                   value={baseUrl}
                   onChangeText={setBaseUrl}
                   placeholder="https://api.example.com/v1"
-                  placeholderTextColor="#cbd5e1"
+                  placeholderTextColor={colors.chevron}
                   autoCapitalize="none"
                   keyboardType="url"
                 />
               </View>
               <View className="flex-row items-center px-4 py-3.5">
-                <Text className="w-24 text-[15px] text-slate-900">{t("providerEdit.type")}</Text>
+                <Text className="w-24 text-[15px] text-text-main">{t("providerEdit.type")}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-1">
                   <View className="flex-row gap-2">
                     {PROVIDER_TYPE_OPTIONS.map((opt) => (
@@ -303,10 +305,10 @@ export default function ProviderEditScreen() {
                         className={`rounded-full border px-3 py-1.5 ${
                           providerType === opt.value
                             ? "border-primary bg-primary/10"
-                            : "border-slate-200 bg-white"
+                            : "border-border-light bg-bg-card"
                         }`}
                       >
-                        <Text className={`text-[13px] font-medium ${providerType === opt.value ? "text-primary" : "text-slate-500"}`}>
+                        <Text className={`text-[13px] font-medium ${providerType === opt.value ? "text-primary" : "text-text-muted"}`}>
                           {opt.label}
                         </Text>
                       </Pressable>
@@ -318,20 +320,20 @@ export default function ProviderEditScreen() {
           )}
 
           {/* API Key */}
-          <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card">
             <View className="flex-row items-center px-4 py-3.5">
-              <Ionicons name="key-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+              <Ionicons name="key-outline" size={18} color={colors.searchIcon} style={{ marginRight: 12 }} />
               <TextInput
-                className="flex-1 bg-transparent text-[16px] text-slate-600"
+                className="flex-1 bg-transparent text-[16px] text-text-muted"
                 value={apiKey}
                 onChangeText={setApiKey}
                 placeholder="API Key"
-                placeholderTextColor="#cbd5e1"
+                placeholderTextColor={colors.chevron}
                 secureTextEntry={!showApiKey}
                 autoCapitalize="none"
               />
               <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1 active:opacity-60">
-                <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
+                <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color={colors.searchIcon} />
               </Pressable>
             </View>
           </View>
@@ -341,64 +343,64 @@ export default function ProviderEditScreen() {
             onPress={() => setShowAdvanced(!showAdvanced)}
             className="mt-4 flex-row items-center justify-between px-1 py-2"
           >
-            <Text className="text-[13px] font-medium text-slate-500">{t("providerEdit.advancedSettings")}</Text>
-            <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color="#94a3b8" />
+            <Text className="text-[13px] font-medium text-text-muted">{t("providerEdit.advancedSettings")}</Text>
+            <Ionicons name={showAdvanced ? "chevron-up" : "chevron-down"} size={16} color={colors.searchIcon} />
           </Pressable>
 
           {showAdvanced && (
-            <View className="overflow-hidden rounded-xl border border-slate-200 bg-white mb-4">
+            <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card mb-4">
               {providerType === "azure-openai" && (
-                <View className="flex-row items-center border-b border-slate-100 px-4 py-3.5">
-                  <Text className="w-24 text-[15px] text-slate-900">API Ver.</Text>
+                <View className="flex-row items-center border-b border-border-subtle px-4 py-3.5">
+                  <Text className="w-24 text-[15px] text-text-main">API Ver.</Text>
                   <TextInput
-                    className="flex-1 bg-transparent text-[16px] text-slate-600"
+                    className="flex-1 bg-transparent text-[16px] text-text-muted"
                     value={apiVersion}
                     onChangeText={setApiVersion}
                     placeholder="2024-02-01"
-                    placeholderTextColor="#cbd5e1"
+                    placeholderTextColor={colors.chevron}
                     autoCapitalize="none"
                   />
                 </View>
               )}
-              <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3.5">
-                <Text className="text-[15px] text-slate-900">{t("providerEdit.enabled")}</Text>
+              <View className="flex-row items-center justify-between border-b border-border-subtle px-4 py-3.5">
+                <Text className="text-[15px] text-text-main">{t("providerEdit.enabled")}</Text>
                 <Switch
                   value={providerEnabled}
                   onValueChange={setProviderEnabled}
-                  trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+                  trackColor={{ false: colors.switchTrack, true: colors.accent }}
                   thumbColor="#fff"
-                  ios_backgroundColor="#e5e7eb"
+                  ios_backgroundColor={colors.switchTrack}
                 />
               </View>
               {/* Custom Headers */}
               <View className="px-4 py-3.5">
                 <View className="flex-row items-center justify-between mb-2">
-                  <Text className="text-[14px] text-slate-700">{t("providerEdit.customHeaders")}</Text>
+                  <Text className="text-[14px] text-text-main">{t("providerEdit.customHeaders")}</Text>
                   <Pressable onPress={addCustomHeader} className="flex-row items-center active:opacity-60">
-                    <Ionicons name="add-circle-outline" size={16} color="#007AFF" />
+                    <Ionicons name="add-circle-outline" size={16} color={colors.accent} />
                     <Text className="ml-1 text-[13px] font-medium text-primary">{t("common.add")}</Text>
                   </Pressable>
                 </View>
                 {customHeaders.map((h, idx) => (
                   <View key={idx} className="mb-2 flex-row items-center gap-2">
                     <TextInput
-                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px]"
+                      className="flex-1 rounded-lg border border-border-light bg-bg-hover px-3 py-2 text-[14px] text-text-main"
                       value={h.name}
                       onChangeText={(v) => updateCustomHeader(idx, "name", v)}
                       placeholder="Header"
-                      placeholderTextColor="#cbd5e1"
+                      placeholderTextColor={colors.chevron}
                       autoCapitalize="none"
                     />
                     <TextInput
-                      className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[14px]"
+                      className="flex-1 rounded-lg border border-border-light bg-bg-hover px-3 py-2 text-[14px] text-text-main"
                       value={h.value}
                       onChangeText={(v) => updateCustomHeader(idx, "value", v)}
                       placeholder="Value"
-                      placeholderTextColor="#cbd5e1"
+                      placeholderTextColor={colors.chevron}
                       autoCapitalize="none"
                     />
                     <Pressable onPress={() => removeCustomHeader(idx)} className="p-1 active:opacity-60">
-                      <Ionicons name="close-circle" size={20} color="#ef4444" />
+                      <Ionicons name="close-circle" size={20} color={colors.danger} />
                     </Pressable>
                   </View>
                 ))}
@@ -412,7 +414,7 @@ export default function ProviderEditScreen() {
               onPress={handleConnect}
               disabled={testing || !apiKey.trim()}
               className={`flex-1 flex-row items-center justify-center rounded-xl py-3.5 ${
-                testing ? "bg-slate-300" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
+                testing ? "bg-bg-input" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
               }`}
             >
               {testing ? (
@@ -448,7 +450,7 @@ export default function ProviderEditScreen() {
       {connected && (
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between px-1">
-            <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
+            <Text className="text-[13px] font-normal uppercase tracking-tight text-section-header">
               {t("providerEdit.pulledModels", { count: displayModels.length })}
             </Text>
             <View className="flex-row items-center gap-4">
@@ -464,10 +466,10 @@ export default function ProviderEditScreen() {
               )}
               <Pressable onPress={handleRefreshModels} disabled={pulling} className="flex-row items-center active:opacity-60">
                 {pulling ? (
-                  <ActivityIndicator size="small" color="#007AFF" />
+                  <ActivityIndicator size="small" color={colors.accent} />
                 ) : (
                   <>
-                    <Ionicons name="refresh" size={14} color="#007AFF" />
+                    <Ionicons name="refresh" size={14} color={colors.accent} />
                     <Text className="ml-1 text-[13px] font-medium text-primary">{t("providerEdit.refresh")}</Text>
                   </>
                 )}
@@ -476,19 +478,19 @@ export default function ProviderEditScreen() {
           </View>
 
           {/* Model Search */}
-          <View className="mt-3 flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
-            <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 8 }} />
+          <View className="mt-3 flex-row items-center rounded-xl border border-border-light bg-bg-card px-3 py-2">
+            <Ionicons name="search" size={16} color={colors.searchIcon} style={{ marginRight: 8 }} />
             <TextInput
-              className="flex-1 text-[14px] text-slate-700"
+              className="flex-1 text-[14px] text-text-main"
               value={modelSearch}
               onChangeText={setModelSearch}
               placeholder={t("providerEdit.searchModels")}
-              placeholderTextColor="#cbd5e1"
+              placeholderTextColor={colors.chevron}
               autoCapitalize="none"
             />
             {modelSearch ? (
               <Pressable onPress={() => setModelSearch("")} className="active:opacity-60">
-                <Ionicons name="close-circle" size={16} color="#94a3b8" />
+                <Ionicons name="close-circle" size={16} color={colors.searchIcon} />
               </Pressable>
             ) : null}
           </View>
@@ -497,19 +499,19 @@ export default function ProviderEditScreen() {
           {savedProviderId && (
             <View className="mt-2 flex-row items-center gap-2">
               <TextInput
-                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-[14px]"
+                className="flex-1 rounded-xl border border-border-light bg-bg-card px-3 py-2.5 text-[14px] text-text-main"
                 value={newModelId}
                 onChangeText={setNewModelId}
                 placeholder={t("providerEdit.addModelPlaceholder")}
-                placeholderTextColor="#cbd5e1"
+                placeholderTextColor={colors.chevron}
                 autoCapitalize="none"
               />
               <Pressable
                 onPress={handleAddModel}
                 disabled={!newModelId.trim()}
-                className={`rounded-xl px-4 py-2.5 ${newModelId.trim() ? "bg-primary" : "bg-slate-200"}`}
+                className={`rounded-xl px-4 py-2.5 ${newModelId.trim() ? "bg-primary" : "bg-bg-input"}`}
               >
-                <Text className={`text-[14px] font-medium ${newModelId.trim() ? "text-white" : "text-slate-400"}`}>
+                <Text className={`text-[14px] font-medium ${newModelId.trim() ? "text-white" : "text-text-hint"}`}>
                   {t("common.add")}
                 </Text>
               </Pressable>
@@ -519,20 +521,20 @@ export default function ProviderEditScreen() {
           {/* Model List */}
           <View className="mt-3 gap-2">
             {filteredModels.map((m) => (
-              <View key={m.id} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <View key={m.id} className="rounded-xl border border-border-light bg-bg-card px-4 py-3">
                 <View className="flex-row items-center justify-between">
                   <View className="flex-1 mr-3">
-                    <Text className={`text-[15px] font-semibold ${m.enabled ? "text-slate-900" : "text-slate-400"}`} numberOfLines={1}>
+                    <Text className={`text-[15px] font-semibold ${m.enabled ? "text-text-main" : "text-text-hint"}`} numberOfLines={1}>
                       {m.displayName}
                     </Text>
-                    <Text className="text-[12px] text-slate-400" numberOfLines={1}>{m.modelId}</Text>
+                    <Text className="text-[12px] text-text-hint" numberOfLines={1}>{m.modelId}</Text>
                   </View>
                   <Switch
                     value={m.enabled}
                     onValueChange={() => toggleModel(m.id)}
-                    trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+                    trackColor={{ false: colors.switchTrack, true: colors.accent }}
                     thumbColor="#fff"
-                    ios_backgroundColor="#e5e7eb"
+                    ios_backgroundColor={colors.switchTrack}
                   />
                 </View>
                 <View className="mt-2 flex-row flex-wrap items-center gap-1.5">
@@ -541,9 +543,9 @@ export default function ProviderEditScreen() {
                     { key: "tools", icon: "construct-outline", on: m.capabilities.toolCall },
                     { key: "reasoning", icon: "bulb-outline", on: m.capabilities.reasoning },
                   ].map((cap) => (
-                    <View key={cap.key} className={`flex-row items-center rounded-md bg-slate-50 px-2 py-0.5 ${!cap.on ? "opacity-30" : ""}`}>
-                      <Ionicons name={cap.icon as any} size={12} color={cap.on ? "#007AFF" : "#94a3b8"} style={{ marginRight: 3 }} />
-                      <Text className="text-[11px] text-slate-600">{t(`providerEdit.${cap.key}`)}</Text>
+                    <View key={cap.key} className={`flex-row items-center rounded-md bg-bg-hover px-2 py-0.5 ${!cap.on ? "opacity-30" : ""}`}>
+                      <Ionicons name={cap.icon as any} size={12} color={cap.on ? colors.accent : colors.searchIcon} style={{ marginRight: 3 }} />
+                      <Text className="text-[11px] text-text-muted">{t(`providerEdit.${cap.key}`)}</Text>
                     </View>
                   ))}
                   <Pressable
@@ -557,10 +559,10 @@ export default function ProviderEditScreen() {
                     className="flex-row items-center rounded-md bg-blue-50 px-2 py-0.5 active:opacity-60"
                   >
                     {probingModelId === m.id ? (
-                      <ActivityIndicator size="small" color="#007AFF" />
+                      <ActivityIndicator size="small" color={colors.accent} />
                     ) : (
                       <>
-                        <Ionicons name="pulse-outline" size={12} color="#007AFF" style={{ marginRight: 3 }} />
+                        <Ionicons name="pulse-outline" size={12} color={colors.accent} style={{ marginRight: 3 }} />
                         <Text className="text-[11px] font-medium text-primary">{t("providerEdit.probe")}</Text>
                       </>
                     )}
@@ -575,8 +577,8 @@ export default function ProviderEditScreen() {
       {/* Security note */}
       <View className="items-center px-6 pt-10 pb-8">
         <View className="flex-row items-center gap-1.5 mb-1">
-          <Ionicons name="lock-closed" size={12} color="#cbd5e1" />
-          <Text className="text-[11px] text-slate-300">{t("providerEdit.encryption")}</Text>
+          <Ionicons name="lock-closed" size={12} color={colors.chevron} />
+          <Text className="text-[11px] text-text-hint/40">{t("providerEdit.encryption")}</Text>
         </View>
       </View>
     </ScrollView>

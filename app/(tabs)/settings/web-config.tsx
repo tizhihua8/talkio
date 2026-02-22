@@ -56,7 +56,7 @@ export default function WebConfigScreen() {
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary">
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 rounded-xl bg-bg-card p-4">
         <View className="flex-row items-center">
           <Ionicons name="laptop-outline" size={24} color="#8b5cf6" />
           <Text className="ml-2 text-base font-semibold text-text-main">
@@ -68,7 +68,7 @@ export default function WebConfigScreen() {
         </Text>
       </View>
 
-      <View className="mx-4 mt-4 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 rounded-xl bg-bg-card p-4">
         <Pressable
           onPress={handleStart}
           className={`items-center rounded-lg py-3 active:opacity-70 ${serverUrl ? "bg-red-500" : "bg-primary"}`}
@@ -79,7 +79,7 @@ export default function WebConfigScreen() {
         </Pressable>
 
         {serverUrl && (
-          <View className="mt-4 rounded-lg bg-slate-50 p-4">
+          <View className="mt-4 rounded-lg bg-bg-hover p-4">
             <Text className="text-center text-sm text-text-muted">
               {t("webConfig.visitUrl")}
             </Text>
@@ -114,7 +114,7 @@ export default function WebConfigScreen() {
         )}
       </View>
 
-      <View className="mx-4 mt-4 mb-8 rounded-xl bg-white p-4">
+      <View className="mx-4 mt-4 mb-8 rounded-xl bg-bg-card p-4">
         <View className="flex-row items-center">
           <Ionicons name="shield-checkmark-outline" size={18} color="#3b82f6" />
           <Text className="ml-2 text-sm text-blue-600">

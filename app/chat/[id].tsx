@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useChatStore } from "../../src/stores/chat-store";
 import { useProviderStore } from "../../src/stores/provider-store";
 import { useIdentityStore } from "../../src/stores/identity-store";
+import { useThemeColors } from "../../src/hooks/useThemeColors";
 import { useMessages } from "../../src/hooks/useMessages";
 import { useConversations } from "../../src/hooks/useConversations";
 import { useConversationBlocks } from "../../src/hooks/useMessageBlocks";
@@ -55,6 +56,7 @@ export default function ChatDetailScreen() {
   const removeParticipant = useChatStore((s) => s.removeParticipant);
   const getModelById = useProviderStore((s) => s.getModelById);
   const getIdentityById = useIdentityStore((s) => s.getIdentityById);
+  const colors = useThemeColors();
   const isGroup = conv?.type === "group";
   const participants = conv?.participants;
   const prevParticipantsRef = useRef(participants);
@@ -131,19 +133,19 @@ export default function ChatDetailScreen() {
           <Text className="text-sm font-bold tracking-tight text-text-main">{title}</Text>
           {isGroup ? (
             <View className="mt-0.5 flex-row items-center gap-1">
-              <Ionicons name="people-outline" size={12} color="#007AFF" />
+              <Ionicons name="people-outline" size={12} color={colors.accent} />
               <Text className="text-[10px] font-bold uppercase tracking-widest text-primary">
                 {t("chat.modelCount", { count: participantCount })}
               </Text>
-              <Ionicons name={showParticipants ? "chevron-up" : "chevron-down"} size={12} color="#007AFF" />
+              <Ionicons name={showParticipants ? "chevron-up" : "chevron-down"} size={12} color={colors.accent} />
             </View>
           ) : (
             <View className="mt-0.5 flex-row items-center gap-1">
-              <Ionicons name="person-circle-outline" size={12} color="#007AFF" />
+              <Ionicons name="person-circle-outline" size={12} color={colors.accent} />
               <Text className="text-[10px] font-bold uppercase tracking-widest text-primary">
                 {identityName ?? t("chat.mountIdentity")}
               </Text>
-              <Ionicons name="chevron-down" size={12} color="#007AFF" />
+              <Ionicons name="chevron-down" size={12} color={colors.accent} />
             </View>
           )}
         </Pressable>
@@ -360,7 +362,7 @@ export default function ChatDetailScreen() {
             className="p-2 active:opacity-60"
             hitSlop={4}
           >
-            <Ionicons name="person-add-outline" size={19} color="#007AFF" />
+            <Ionicons name="person-add-outline" size={19} color={colors.accent} />
           </Pressable>
           <Pressable
             onPress={handleExport}
@@ -369,10 +371,10 @@ export default function ChatDetailScreen() {
             hitSlop={4}
             style={{ opacity: hasMessages ? 1 : 0 }}
           >
-            <Ionicons name="share-outline" size={20} color="#007AFF" />
+            <Ionicons name="share-outline" size={20} color={colors.accent} />
           </Pressable>
           <Pressable onPress={clearHistory} className="p-2 active:opacity-60" hitSlop={4}>
-            <Ionicons name="create-outline" size={20} color="#007AFF" />
+            <Ionicons name="create-outline" size={20} color={colors.accent} />
           </Pressable>
         </View>
       ),
@@ -382,10 +384,10 @@ export default function ChatDetailScreen() {
   if (!conv) {
     // Still loading from DB — show blank screen instead of error
     if (!hasLoadedRef.current) {
-      return <View className="flex-1 bg-white" />;
+      return <View className="flex-1 bg-bg-light" />;
     }
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center bg-bg-light">
         <Text className="text-text-muted">{t("chat.conversationNotFound")}</Text>
       </View>
     );
@@ -400,7 +402,7 @@ export default function ChatDetailScreen() {
     >
       {/* Group participant panel */}
       {isGroup && showParticipants && conv && (
-        <View className="border-b border-slate-100 bg-white px-4 py-2">
+        <View className="border-b border-border-light bg-bg-card px-4 py-2">
           {conv.participants.map((p) => {
             const pModel = getModelById(p.modelId);
             const pIdentity = p.identityId ? getIdentityById(p.identityId) : null;
@@ -419,7 +421,7 @@ export default function ChatDetailScreen() {
                       onPress={() => handleRemoveParticipant(p.id, displayName)}
                       style={{
                         width: 72,
-                        backgroundColor: "#ef4444",
+                        backgroundColor: colors.danger,
                         alignItems: "center",
                         justifyContent: "center",
                         borderRadius: 12,
@@ -438,7 +440,7 @@ export default function ChatDetailScreen() {
               >
                 <Pressable
                   onPress={() => handleParticipantPress(p.id)}
-                  className="flex-row items-center gap-3 py-2.5 active:bg-slate-50"
+                  className="flex-row items-center gap-3 py-2.5 active:bg-bg-hover"
                 >
                   <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                     <Text className="text-xs font-bold text-primary">
@@ -446,23 +448,23 @@ export default function ChatDetailScreen() {
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="text-[14px] font-medium text-slate-900" numberOfLines={1}>
+                    <Text className="text-[14px] font-medium text-text-main" numberOfLines={1}>
                       {displayName}
                     </Text>
-                    <Text className="text-[12px] text-slate-400" numberOfLines={1}>
+                    <Text className="text-[12px] text-text-hint" numberOfLines={1}>
                       {pIdentity ? pIdentity.name : t("chat.noIdentity")}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+                  <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
                 </Pressable>
               </Swipeable>
             );
           })}
           <Pressable
             onPress={() => setShowModelPicker(true)}
-            className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 py-2.5 mt-1 mb-1 active:opacity-60"
+            className="flex-row items-center justify-center gap-2 rounded-xl border border-dashed border-border-light py-2.5 mt-1 mb-1 active:opacity-60"
           >
-            <Ionicons name="add-circle-outline" size={18} color="#007AFF" />
+            <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
             <Text className="text-[13px] font-medium text-primary">{t("chat.addMember")}</Text>
           </Pressable>
         </View>
@@ -489,11 +491,11 @@ export default function ChatDetailScreen() {
         <View className="absolute right-4 z-10" style={{ top: "50%" }}>
           <Pressable
             onPress={scrollToBottom}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-60"
+            className="h-10 w-10 items-center justify-center rounded-full bg-bg-card active:opacity-60"
             style={{ shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 4 }}
             hitSlop={8}
           >
-            <Ionicons name="chevron-down" size={20} color="#007AFF" />
+            <Ionicons name="chevron-down" size={20} color={colors.accent} />
           </Pressable>
         </View>
       )}

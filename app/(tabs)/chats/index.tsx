@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useChatStore } from "../../../src/stores/chat-store";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useIdentityStore } from "../../../src/stores/identity-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { useConversations } from "../../../src/hooks/useConversations";
 import { ModelAvatar } from "../../../src/components/common/ModelAvatar";
 import { EmptyState } from "../../../src/components/common/EmptyState";
@@ -24,6 +25,7 @@ export default function ChatsScreen() {
   const [filter, setFilter] = useState<FilterType>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+  const colors = useThemeColors();
 
   useEffect(() => {
     navigation.setOptions({
@@ -33,18 +35,18 @@ export default function ChatsScreen() {
             onPress={() => setShowSearch((v) => !v)}
             className="p-2 active:opacity-60"
           >
-            <Ionicons name="search" size={22} color="#007AFF" />
+            <Ionicons name="search" size={22} color={colors.accent} />
           </Pressable>
           <Pressable
             onPress={() => router.push("/(tabs)/experts")}
             className="p-2 active:opacity-60"
           >
-            <Ionicons name="create-outline" size={22} color="#007AFF" />
+            <Ionicons name="create-outline" size={22} color={colors.accent} />
           </Pressable>
         </View>
       ),
     });
-  }, [navigation, router]);
+  }, [navigation, router, colors]);
 
   const filtered = useMemo(() => conversations.filter((c) => {
     if (filter === "single" && c.type !== "single") return false;
@@ -73,22 +75,22 @@ export default function ChatsScreen() {
   );
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-bg-light">
       {showSearch && (
         <View className="px-4 pb-2">
           <View className="flex-row items-center rounded-xl bg-ios-gray px-3 py-2">
-            <Ionicons name="search" size={18} color="#94a3b8" />
+            <Ionicons name="search" size={18} color={colors.searchIcon} />
             <TextInput
               className="ml-2 flex-1 text-[15px] text-text-main"
               placeholder={t("chats.searchChats")}
-              placeholderTextColor="#8E8E93"
+              placeholderTextColor={colors.textHint}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
             />
             {searchQuery.length > 0 && (
               <Pressable onPress={() => setSearchQuery("")} hitSlop={10} className="active:opacity-60">
-                <Ionicons name="close-circle" size={18} color="#94a3b8" />
+                <Ionicons name="close-circle" size={18} color={colors.searchIcon} />
               </Pressable>
             )}
           </View>
@@ -134,6 +136,7 @@ export default function ChatsScreen() {
 function OnboardingOrEmpty() {
   const { t } = useTranslation();
   const router = useRouter();
+  const colors = useThemeColors();
   const providers = useProviderStore((s) => s.providers);
   const enabledProviders = providers.filter((p) => p.status === "connected");
   const hasProviders = enabledProviders.length > 0;
@@ -142,7 +145,7 @@ function OnboardingOrEmpty() {
     return (
       <View className="flex-1 items-center justify-center px-8">
         <View className="mb-6 h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-          <Ionicons name="sparkles" size={40} color="#007AFF" />
+          <Ionicons name="sparkles" size={40} color={colors.accent} />
         </View>
         <Text className="text-center text-xl font-bold text-text-main">
           {t("onboarding.welcome", { defaultValue: "Welcome to Talkio" })}
@@ -164,7 +167,7 @@ function OnboardingOrEmpty() {
 
   return (
     <View className="flex-1 items-center justify-center px-8">
-      <Ionicons name="chatbubbles-outline" size={48} color="#9ca3af" />
+      <Ionicons name="chatbubbles-outline" size={48} color={colors.textSecondary} />
       <Text className="mt-4 text-center text-lg font-semibold text-text-main">
         {t("chats.noConversations")}
       </Text>
@@ -193,6 +196,7 @@ const ConversationItem = React.memo(function ConversationItem({
 }) {
   const { t } = useTranslation();
   const router = useRouter();
+  const colors = useThemeColors();
   const getModelById = useProviderStore((s) => s.getModelById);
   const getProviderById = useProviderStore((s) => s.getProviderById);
   const getIdentityById = useIdentityStore((s) => s.getIdentityById);
@@ -218,7 +222,7 @@ const ConversationItem = React.memo(function ConversationItem({
             onPress={() => onDelete(item.id)}
             style={{
               width: 80,
-              backgroundColor: "#ef4444",
+              backgroundColor: colors.danger,
               alignItems: "center",
               justifyContent: "center",
             }}
@@ -236,14 +240,14 @@ const ConversationItem = React.memo(function ConversationItem({
       <Pressable
         onPress={() => router.push(`/chat/${item.id}`)}
         android_ripple={{ color: "rgba(0,0,0,0.06)" }}
-        className="flex-row items-center gap-4 border-b border-divider bg-white px-4 py-3 active:bg-slate-50"
+        className="flex-row items-center gap-4 border-b border-divider bg-bg-light px-4 py-3 active:bg-bg-hover"
       >
         <View className="relative">
           <View className="h-12 w-12 overflow-hidden rounded-full">
             <ModelAvatar name={modelName} size="md" />
           </View>
           {firstModel && (
-            <View className={`absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white ${isConnected ? "bg-accent-green" : "bg-slate-300"}`} />
+            <View className={`absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full border-2 border-bg-light ${isConnected ? "bg-accent-green" : "bg-border-light"}`} />
           )}
         </View>
         <View className="flex-1">

@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useIdentityStore } from "../../../src/stores/identity-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import type { Identity, McpServer } from "../../../src/types";
 
 type Tab = "identities" | "tools";
@@ -40,6 +41,7 @@ export default function DiscoverScreen() {
   const updateMcpServer = useIdentityStore((s) => s.updateMcpServer);
   const removeMcpServer = useIdentityStore((s) => s.removeMcpServer);
   const [activeTab, setActiveTab] = useState<Tab>("identities");
+  const colors = useThemeColors();
 
   const builtInTools = mcpTools.filter((t) => t.builtIn);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -140,18 +142,18 @@ export default function DiscoverScreen() {
   return (
     <View className="flex-1 bg-bg-secondary">
       <View className="bg-bg-secondary px-5 pb-4 pt-2">
-        <View className="flex-row rounded-xl bg-slate-200/60 p-1">
+        <View className="flex-row rounded-xl bg-bg-input/60 p-1">
           {(["identities", "tools"] as Tab[]).map((tab) => (
             <Pressable
               key={tab}
               onPress={() => setActiveTab(tab)}
               className={`flex-1 items-center rounded-lg py-1.5 active:opacity-70 ${
-                activeTab === tab ? "bg-white" : ""
+                activeTab === tab ? "bg-bg-card" : ""
               }`}
             >
               <Text
                 className={`text-sm font-semibold ${
-                  activeTab === tab ? "text-primary" : "text-slate-500"
+                  activeTab === tab ? "text-primary" : "text-text-muted"
                 }`}
               >
                 {tab === "identities" ? t("personas.identityCards") : t("personas.mcpTools")}
@@ -184,30 +186,30 @@ export default function DiscoverScreen() {
             {/* Built-in Tools */}
             {builtInTools.length > 0 && (
               <View>
-                <Text className="mb-2 px-1 text-[13px] font-medium uppercase tracking-tight text-slate-400">
+                <Text className="mb-2 px-1 text-[13px] font-medium uppercase tracking-tight text-text-hint">
                   {t("personas.builtInTools")}
                 </Text>
-                <View className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+                <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card">
                   {builtInTools.map((tool, idx) => (
                     <View
                       key={tool.id}
-                      className={`flex-row items-center justify-between px-4 py-3 ${idx < builtInTools.length - 1 ? "border-b border-slate-50" : ""}`}
+                      className={`flex-row items-center justify-between px-4 py-3 ${idx < builtInTools.length - 1 ? "border-b border-border-subtle" : ""}`}
                     >
                       <View className="flex-row items-center flex-1 mr-3">
                         <View className="mr-3 h-9 w-9 items-center justify-center rounded-lg bg-emerald-50">
                           <Ionicons name="phone-portrait-outline" size={18} color="#059669" />
                         </View>
                         <View className="flex-1">
-                          <Text className="text-[14px] font-semibold text-slate-900">{tool.name}</Text>
-                          <Text className="text-[11px] text-slate-400" numberOfLines={1}>{tool.description}</Text>
+                          <Text className="text-[14px] font-semibold text-text-main">{tool.name}</Text>
+                          <Text className="text-[11px] text-text-hint" numberOfLines={1}>{tool.description}</Text>
                         </View>
                       </View>
                       <Switch
                         value={tool.enabled}
                         onValueChange={(v) => updateMcpTool(tool.id, { enabled: v })}
-                        trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+                        trackColor={{ false: colors.switchTrack, true: colors.accent }}
                         thumbColor="#fff"
-                        ios_backgroundColor="#e5e7eb"
+                        ios_backgroundColor={colors.switchTrack}
                       />
                     </View>
                   ))}
@@ -238,7 +240,7 @@ export default function DiscoverScreen() {
                   ))}
                 </View>
               ) : (
-                <Text className="px-1 text-[13px] text-slate-400">{t("personas.noCustomTools")}</Text>
+                <Text className="px-1 text-[13px] text-text-hint">{t("personas.noCustomTools")}</Text>
               )}
             </View>
           </View>
@@ -258,9 +260,9 @@ export default function DiscoverScreen() {
           <View className="flex-row gap-3">
             <Pressable
               onPress={() => setShowImportModal(true)}
-              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white py-3.5 active:opacity-70"
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-xl border-2 border-primary bg-bg-card py-3.5 active:opacity-70"
             >
-              <Ionicons name="code-slash-outline" size={18} color="#007AFF" />
+              <Ionicons name="code-slash-outline" size={18} color={colors.accent} />
               <Text className="text-[15px] font-semibold text-primary">{t("personas.importJson")}</Text>
             </Pressable>
             <Pressable
@@ -276,26 +278,26 @@ export default function DiscoverScreen() {
 
       {/* JSON Import Modal */}
       <Modal visible={showImportModal} animationType="slide" presentationStyle="pageSheet">
-        <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
-          <View className="flex-row items-center justify-between border-b border-slate-100 px-4 py-3">
+        <View className="flex-1 bg-bg-light" style={{ paddingTop: insets.top }}>
+          <View className="flex-row items-center justify-between border-b border-border-light px-4 py-3">
             <Pressable onPress={() => { if (!isImporting) { setShowImportModal(false); setImportJson(""); } }} className="active:opacity-60">
-              <Text className="text-[16px] text-slate-500">{t("common.cancel")}</Text>
+              <Text className="text-[16px] text-text-muted">{t("common.cancel")}</Text>
             </Pressable>
-            <Text className="text-[16px] font-bold text-slate-900">{t("personas.importJson")}</Text>
+            <Text className="text-[16px] font-bold text-text-main">{t("personas.importJson")}</Text>
             <Pressable onPress={handleImportJson} disabled={isImporting || !importJson.trim()} className="active:opacity-60">
-              <Text className={`text-[16px] font-semibold ${isImporting ? "text-slate-400" : "text-primary"}`}>
+              <Text className={`text-[16px] font-semibold ${isImporting ? "text-text-hint" : "text-primary"}`}>
                 {isImporting ? t("common.loading") : t("personas.import")}
               </Text>
             </Pressable>
           </View>
           <View className="flex-1 px-4 pt-4">
-            <Text className="mb-2 text-[13px] text-slate-400">{t("personas.importHint")}</Text>
+            <Text className="mb-2 text-[13px] text-text-hint">{t("personas.importHint")}</Text>
             <TextInput
-              className="flex-1 rounded-xl border border-slate-200 bg-slate-50 p-4 text-[14px] text-slate-800 font-mono"
+              className="flex-1 rounded-xl border border-border-light bg-bg-hover p-4 text-[14px] text-text-main font-mono"
               value={importJson}
               onChangeText={setImportJson}
               placeholder={'{\n  "mcpServers": {\n    "weather": {\n      "url": "https://..."\n    }\n  }\n}'}
-              placeholderTextColor="#cbd5e1"
+              placeholderTextColor={colors.chevron}
               multiline
               textAlignVertical="top"
               autoCapitalize="none"
@@ -320,13 +322,14 @@ function IdentityCard({
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   const colorSet = ICON_COLORS[colorIndex % ICON_COLORS.length];
   const iconName = IDENTITY_ICONS[colorIndex % IDENTITY_ICONS.length];
 
   return (
     <Pressable
       onPress={onEdit}
-      className="rounded-xl border border-slate-100 bg-white p-4 active:bg-slate-50"
+      className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
     >
       <View className="flex-row items-start gap-4">
         <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
@@ -339,24 +342,24 @@ function IdentityCard({
             </Text>
             <View className="flex-row items-center gap-2">
               <Pressable onPress={onDelete} hitSlop={8} className="active:opacity-60">
-                <Ionicons name="trash-outline" size={16} color="#ef4444" />
+                <Ionicons name="trash-outline" size={16} color={colors.danger} />
               </Pressable>
-              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+              <Ionicons name="chevron-forward" size={20} color={colors.searchIcon} />
             </View>
           </View>
           <View className="mb-3 flex-row gap-2">
-            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
-              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+            <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
                 {t("personas.temp", { value: identity.params.temperature })}
               </Text>
             </View>
-            <View className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5">
-              <Text className="text-[10px] font-bold uppercase tracking-wider text-slate-600">
+            <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
+              <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
                 {t("personas.tools", { count: identity.mcpToolIds.length + (identity.mcpServerIds?.length ?? 0) })}
               </Text>
             </View>
           </View>
-          <Text className="text-sm leading-relaxed text-slate-500" numberOfLines={2}>
+          <Text className="text-sm leading-relaxed text-text-muted" numberOfLines={2}>
             {identity.systemPrompt}
           </Text>
         </View>
@@ -376,29 +379,30 @@ function ServerCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onEdit}
-      className="rounded-xl border border-slate-100 bg-white p-4 active:bg-slate-50"
+      className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
     >
       <View className="flex-row items-center gap-3">
         <View className="h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
           <Ionicons name="cloud-outline" size={20} color="#2563eb" />
         </View>
         <View className="flex-1">
-          <Text className="text-[15px] font-semibold text-slate-900" numberOfLines={1}>
+          <Text className="text-[15px] font-semibold text-text-main" numberOfLines={1}>
             {server.name}
           </Text>
-          <Text className="mt-0.5 text-[11px] text-slate-400" numberOfLines={1}>
+          <Text className="mt-0.5 text-[11px] text-text-hint" numberOfLines={1}>
             {server.url}
           </Text>
         </View>
         <Switch
           value={server.enabled}
           onValueChange={onToggle}
-          trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+          trackColor={{ false: colors.switchTrack, true: colors.accent }}
           thumbColor="#fff"
-          ios_backgroundColor="#e5e7eb"
+          ios_backgroundColor={colors.switchTrack}
         />
       </View>
     </Pressable>

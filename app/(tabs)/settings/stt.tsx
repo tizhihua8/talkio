@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, ScrollView, Alert, ActivityIndicator 
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
 import { useSettingsStore } from "../../../src/stores/settings-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { ApiClient } from "../../../src/services/api-client";
 
 const STT_PRESETS = [
@@ -24,6 +25,7 @@ export default function SttSettingsScreen() {
   const [connected, setConnected] = useState<boolean | null>(settings.sttApiKey ? true : null);
   const [testing, setTesting] = useState(false);
   const [pulling, setPulling] = useState(false);
+  const colors = useThemeColors();
 
   const makeClient = () =>
     new ApiClient({
@@ -89,26 +91,26 @@ export default function SttSettingsScreen() {
               key={preset.label}
               onPress={() => { setBaseUrl(preset.baseUrl); setConnected(null); setFetchedModels([]); }}
               className={`flex-1 items-center rounded-xl border py-2.5 active:opacity-70 ${
-                baseUrl === preset.baseUrl ? "border-primary bg-primary/5" : "border-slate-200 bg-white"
+                baseUrl === preset.baseUrl ? "border-primary bg-primary/5" : "border-border-light bg-bg-card"
               }`}
             >
               <Text className={`text-[13px] font-semibold ${
-                baseUrl === preset.baseUrl ? "text-primary" : "text-slate-500"
+                baseUrl === preset.baseUrl ? "text-primary" : "text-text-muted"
               }`}>{preset.label}</Text>
             </Pressable>
           ))}
         </View>
 
         {/* Base URL */}
-        <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card">
           <View className="flex-row items-center px-4 py-3.5">
-            <Ionicons name="link-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+            <Ionicons name="link-outline" size={18} color={colors.searchIcon} style={{ marginRight: 12 }} />
             <TextInput
-              className="flex-1 bg-transparent text-[16px] text-slate-600"
+              className="flex-1 bg-transparent text-[16px] text-text-muted"
               value={baseUrl}
               onChangeText={(v) => { setBaseUrl(v); setConnected(null); setFetchedModels([]); }}
               placeholder="https://api.groq.com/openai/v1"
-              placeholderTextColor="#cbd5e1"
+              placeholderTextColor={colors.chevron}
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -116,20 +118,20 @@ export default function SttSettingsScreen() {
         </View>
 
         {/* API Key */}
-        <View className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card">
           <View className="flex-row items-center px-4 py-3.5">
-            <Ionicons name="key-outline" size={18} color="#94a3b8" style={{ marginRight: 12 }} />
+            <Ionicons name="key-outline" size={18} color={colors.searchIcon} style={{ marginRight: 12 }} />
             <TextInput
-              className="flex-1 bg-transparent text-[16px] text-slate-600"
+              className="flex-1 bg-transparent text-[16px] text-text-muted"
               value={apiKey}
               onChangeText={(v) => { setApiKey(v); setConnected(null); setFetchedModels([]); }}
               placeholder="API Key"
-              placeholderTextColor="#cbd5e1"
+              placeholderTextColor={colors.chevron}
               secureTextEntry={!showApiKey}
               autoCapitalize="none"
             />
             <Pressable onPress={() => setShowApiKey(!showApiKey)} className="ml-2 p-1 active:opacity-60">
-              <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color="#94a3b8" />
+              <Ionicons name={showApiKey ? "eye-off" : "eye"} size={20} color={colors.searchIcon} />
             </Pressable>
           </View>
         </View>
@@ -140,7 +142,7 @@ export default function SttSettingsScreen() {
           disabled={testing || pulling}
           className={`mt-1 flex-row items-center justify-center rounded-xl py-3.5 active:opacity-70 ${
             testing || pulling
-              ? "bg-slate-300"
+              ? "bg-bg-input"
               : connected === true
                 ? "bg-accent-green"
                 : connected === false
@@ -172,15 +174,15 @@ export default function SttSettingsScreen() {
       {(connected || displayModels.length > 0) && (
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between px-1 mb-3">
-            <Text className="text-[13px] font-normal uppercase tracking-tight text-slate-500">
+            <Text className="text-[13px] font-normal uppercase tracking-tight text-section-header">
               {t("settings.sttModelLabel")} ({displayModels.length})
             </Text>
             <Pressable onPress={doFetchModels} disabled={pulling} className="flex-row items-center active:opacity-60">
               {pulling ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color={colors.accent} />
               ) : (
                 <>
-                  <Ionicons name="refresh" size={14} color="#007AFF" />
+                  <Ionicons name="refresh" size={14} color={colors.accent} />
                   <Text className="ml-1 text-[13px] font-medium text-primary">{t("providerEdit.refresh")}</Text>
                 </>
               )}
@@ -189,19 +191,19 @@ export default function SttSettingsScreen() {
 
           {/* Search */}
           {fetchedModels.length > 0 && (
-            <View className="mb-3 flex-row items-center rounded-xl border border-slate-200 bg-white px-3 py-2">
-              <Ionicons name="search" size={16} color="#94a3b8" style={{ marginRight: 8 }} />
+            <View className="mb-3 flex-row items-center rounded-xl border border-border-light bg-bg-card px-3 py-2">
+              <Ionicons name="search" size={16} color={colors.searchIcon} style={{ marginRight: 8 }} />
               <TextInput
-                className="flex-1 text-[14px] text-slate-700"
+                className="flex-1 text-[14px] text-text-main"
                 value={modelSearch}
                 onChangeText={setModelSearch}
                 placeholder={t("providerEdit.searchModels")}
-                placeholderTextColor="#cbd5e1"
+                placeholderTextColor={colors.chevron}
                 autoCapitalize="none"
               />
               {modelSearch ? (
                 <Pressable onPress={() => setModelSearch("")} className="active:opacity-60">
-                  <Ionicons name="close-circle" size={16} color="#94a3b8" />
+                  <Ionicons name="close-circle" size={16} color={colors.searchIcon} />
                 </Pressable>
               ) : null}
             </View>
@@ -215,10 +217,10 @@ export default function SttSettingsScreen() {
                   setModel(id);
                   updateSettings({ sttBaseUrl: baseUrl.trim(), sttApiKey: apiKey.trim(), sttModel: id });
                 }}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex-row items-center justify-between active:bg-slate-50"
+                className="rounded-xl border border-border-light bg-bg-card px-4 py-3 flex-row items-center justify-between active:bg-bg-hover"
               >
-                <Text className="flex-1 text-[15px] text-slate-900" numberOfLines={1}>{id}</Text>
-                {model === id && <Ionicons name="checkmark-circle" size={20} color="#007AFF" />}
+                <Text className="flex-1 text-[15px] text-text-main" numberOfLines={1}>{id}</Text>
+                {model === id && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
               </Pressable>
             ))}
           </View>

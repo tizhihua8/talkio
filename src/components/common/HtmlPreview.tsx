@@ -67,7 +67,7 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
   // During streaming: show compact placeholder (skip if user manually switched tab)
   if (!codeStable && !userSwitched) {
     return (
-      <View className="mt-1 overflow-hidden rounded-xl border border-border-light bg-white">
+      <View className="mt-1 overflow-hidden rounded-xl border border-border-light bg-bg-card">
         <View className="flex-row items-center gap-3 px-4 py-4">
           <MotiView
             from={{ rotate: "0deg" }}
@@ -90,7 +90,7 @@ export const HtmlPreview = React.memo(function HtmlPreview({ code, language = "h
   }
 
   return (
-    <View className="mt-1 overflow-hidden rounded-xl border border-border-light bg-white">
+    <View className="mt-1 overflow-hidden rounded-xl border border-border-light bg-bg-card">
       {/* Tab bar */}
       <View className="flex-row border-b border-border-light">
         <Pressable

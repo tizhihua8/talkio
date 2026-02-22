@@ -1,18 +1,26 @@
 import { Stack } from "expo-router";
 import { useTranslation } from "react-i18next";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 
 export default function SettingsLayout() {
   const { t } = useTranslation();
+  const colors = useThemeColors();
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.bgSecondary },
+        headerTintColor: colors.accent,
+        headerTitleStyle: { color: colors.textPrimary },
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{
           title: t("settings.title"),
           headerLargeTitle: true,
-          headerLargeStyle: { backgroundColor: "#F2F2F7" },
-          headerStyle: { backgroundColor: "#F2F2F7" },
-          headerShadowVisible: false,
+          headerLargeStyle: { backgroundColor: colors.bgSecondary },
+          headerLargeTitleStyle: { color: colors.textPrimary },
         }}
       />
       <Stack.Screen name="providers" options={{ title: t("layout.providers") }} />

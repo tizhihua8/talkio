@@ -6,6 +6,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useIdentityStore } from "../../../src/stores/identity-store";
 import { useSettingsStore } from "../../../src/stores/settings-store";
+import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { shareBackup, restoreBackup } from "../../../src/services/backup-service";
 
 
@@ -15,15 +16,16 @@ export default function SettingsScreen() {
   const providers = useProviderStore((s) => s.providers);
   const settings = useSettingsStore((s) => s.settings);
   const updateSettings = useSettingsStore((s) => s.updateSettings);
+  const colors = useThemeColors();
 
   return (
     <ScrollView className="flex-1 bg-bg-secondary">
       <View className="px-5 mb-8 pt-2">
-        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-section-header">
           {t("settings.configuration")}
         </Text>
         <View
-          className="overflow-hidden rounded-xl border border-slate-100 bg-white"
+          className="overflow-hidden rounded-xl border border-border-light bg-bg-card"
         >
           <SettingsRow
             icon="git-network-outline"
@@ -65,31 +67,63 @@ export default function SettingsScreen() {
                 updateSettings({ language: settings.language === "en" ? "zh" : settings.language === "zh" ? "system" : "en" });
               }
             }}
+          />
+          <SettingsRow
+            icon="moon-outline"
+            iconBg="bg-slate-500/10"
+            iconColor="#64748b"
+            label={t("settings.theme", { defaultValue: "Theme" })}
+            detail={
+              settings.theme === "system"
+                ? t("settings.themeSystem", { defaultValue: "System" })
+                : settings.theme === "dark"
+                  ? t("settings.themeDark", { defaultValue: "Dark" })
+                  : t("settings.themeLight", { defaultValue: "Light" })
+            }
+            onPress={() => {
+              const options = [
+                t("common.cancel"),
+                t("settings.themeSystem", { defaultValue: "System" }),
+                t("settings.themeLight", { defaultValue: "Light" }),
+                t("settings.themeDark", { defaultValue: "Dark" }),
+              ];
+              const values: Array<"system" | "light" | "dark"> = ["system", "system", "light", "dark"];
+              if (Platform.OS === "ios") {
+                ActionSheetIOS.showActionSheetWithOptions(
+                  { options, cancelButtonIndex: 0 },
+                  (idx) => { if (idx > 0) updateSettings({ theme: values[idx] }); },
+                );
+              } else {
+                updateSettings({
+                  theme: settings.theme === "light" ? "dark" : settings.theme === "dark" ? "system" : "light",
+                });
+              }
+            }}
             isLast
           />
         </View>
       </View>
 
       <View className="px-5 mb-8">
-        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-section-header">
           {t("settings.interactions")}
         </Text>
         <View
-          className="overflow-hidden rounded-xl border border-slate-100 bg-white"
+          className="overflow-hidden rounded-xl border border-border-light bg-bg-card"
         >
-          <View className="flex-row items-center justify-between p-4 border-b border-slate-50">
+          <View className="flex-row items-center justify-between p-4 border-b border-border-subtle">
             <View className="flex-row items-center">
-              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-gray-500/10">
-                <Ionicons name="hand-left-outline" size={16} color="#6b7280" />
+              <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-text-muted/10">
+                <Ionicons name="hand-left-outline" size={16} color={colors.textSecondary} />
               </View>
               <Text className="text-[15px] font-medium text-text-main">{t("settings.hapticFeedback")}</Text>
             </View>
             <Switch
               value={settings.hapticFeedback}
               onValueChange={(v) => updateSettings({ hapticFeedback: v })}
-              trackColor={{ false: "#e5e7eb", true: "#007AFF" }}
+              trackColor={{ false: colors.switchTrack, true: colors.accent }}
               thumbColor="#fff"
-              ios_backgroundColor="#e5e7eb"
+              ios_backgroundColor={colors.switchTrack}
             />
           </View>
           <SettingsRow
@@ -104,10 +138,10 @@ export default function SettingsScreen() {
       </View>
 
       <View className="px-5 mb-8">
-        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <Text className="mb-2 ml-2 text-xs font-semibold uppercase tracking-wider text-section-header">
           {t("settings.dataManagement")}
         </Text>
-        <View className="overflow-hidden rounded-xl border border-slate-100 bg-white">
+        <View className="overflow-hidden rounded-xl border border-border-light bg-bg-card">
           <Pressable
             onPress={async () => {
               try {
@@ -116,7 +150,7 @@ export default function SettingsScreen() {
                 Alert.alert(t("common.error"), err instanceof Error ? err.message : "Export failed");
               }
             }}
-            className="flex-row items-center justify-between p-4 border-b border-slate-50 active:bg-slate-50"
+            className="flex-row items-center justify-between p-4 border-b border-border-subtle active:bg-bg-hover"
           >
             <View className="flex-row items-center">
               <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-teal-500/10">
@@ -124,7 +158,7 @@ export default function SettingsScreen() {
               </View>
               <Text className="text-[15px] font-medium text-text-main">{t("settings.exportBackup")}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
           </Pressable>
           <Pressable
             onPress={async () => {
@@ -148,7 +182,7 @@ export default function SettingsScreen() {
                 Alert.alert(t("common.error"), err instanceof Error ? err.message : "Import failed");
               }
             }}
-            className="flex-row items-center justify-between p-4 active:bg-slate-50"
+            className="flex-row items-center justify-between p-4 active:bg-bg-hover"
           >
             <View className="flex-row items-center">
               <View className="mr-3 h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
@@ -156,22 +190,22 @@ export default function SettingsScreen() {
               </View>
               <Text className="text-[15px] font-medium text-text-main">{t("settings.importBackup")}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+            <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
           </Pressable>
         </View>
       </View>
 
       <View className="px-8 mt-4">
-        <View className="rounded-xl border border-blue-100/50 bg-blue-50/50 p-4 mb-6">
-          <Text className="text-center text-xs leading-relaxed text-slate-500">
-            <Ionicons name="shield-checkmark" size={10} color="#6b7280" /> {t("settings.securityTip")}
+        <View className="rounded-xl border border-primary/10 bg-primary/5 p-4 mb-6">
+          <Text className="text-center text-xs leading-relaxed text-text-muted">
+            <Ionicons name="shield-checkmark" size={10} color={colors.textSecondary} /> {t("settings.securityTip")}
           </Text>
         </View>
         <View className="items-center pb-6">
-          <Text className="text-[10px] font-medium uppercase tracking-widest text-slate-400">
+          <Text className="text-[10px] font-medium uppercase tracking-widest text-text-hint">
             {t("settings.appName")}
           </Text>
-          <Text className="mt-1 text-xs text-slate-400">v0.1.0</Text>
+          <Text className="mt-1 text-xs text-text-hint">v0.1.0</Text>
         </View>
       </View>
     </ScrollView>
@@ -195,10 +229,11 @@ function SettingsRow({
   onPress: () => void;
   isLast?: boolean;
 }) {
+  const colors = useThemeColors();
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center justify-between p-4 active:bg-slate-50 ${!isLast ? "border-b border-slate-50" : ""}`}
+      className={`flex-row items-center justify-between p-4 active:bg-bg-hover ${!isLast ? "border-b border-border-subtle" : ""}`}
     >
       <View className="flex-row items-center">
         <View className={`mr-3 h-8 w-8 items-center justify-center rounded-lg ${iconBg}`}>
@@ -207,8 +242,8 @@ function SettingsRow({
         <Text className="text-[15px] font-medium text-text-main">{label}</Text>
       </View>
       <View className="flex-row items-center">
-        {detail && <Text className="mr-2 text-sm text-slate-400">{detail}</Text>}
-        <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+        {detail && <Text className="mr-2 text-sm text-text-hint">{detail}</Text>}
+        <Ionicons name="chevron-forward" size={16} color={colors.chevron} />
       </View>
     </Pressable>
   );
