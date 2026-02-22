@@ -59,14 +59,21 @@ export async function buildApiMessages(
     const content = await resolveContent(msg);
     const apiMsg: ChatApiMessage = { role: msg.role, content };
 
-    // Assistant messages: self stays "assistant", others become "user" with prefix
-    if (msg.role === "assistant" && msg.senderName) {
-      const isSelf = msg.participantId != null && msg.participantId === targetParticipantId;
-      if (!isSelf) {
-        apiMsg.role = "user";
-        const prefix = `[${msg.senderName} said]: `;
-        if (typeof apiMsg.content === "string") {
-          apiMsg.content = prefix + apiMsg.content;
+    if (isGroup) {
+      // User messages: add prefix so AI can distinguish human from other AI participants
+      if (msg.role === "user" && typeof apiMsg.content === "string") {
+        apiMsg.content = `[User said]: ${apiMsg.content}`;
+      }
+
+      // Assistant messages: self stays "assistant", others become "user" with prefix
+      if (msg.role === "assistant" && msg.senderName) {
+        const isSelf = msg.participantId != null && msg.participantId === targetParticipantId;
+        if (!isSelf) {
+          apiMsg.role = "user";
+          const prefix = `[${msg.senderName} said]: `;
+          if (typeof apiMsg.content === "string") {
+            apiMsg.content = prefix + apiMsg.content;
+          }
         }
       }
     }
@@ -94,11 +101,14 @@ function buildGroupRoster(conv: Conversation, selfParticipantId: string | null):
   });
 
   return [
-    "You are in a group chat with multiple AI participants.",
+    "You are in a group chat with multiple AI participants and one human user.",
     "Participants:",
     ...lines,
     "",
-    "Other participants' messages appear as: [Name said]: content",
+    "The human user's messages appear as: [User said]: content",
+    "Other AI participants' messages appear as: [Name said]: content",
+    "Your own previous messages appear as role=assistant (no prefix).",
+    "Always distinguish between the human user and other AI participants.",
     "Respond naturally as yourself. Do not repeat or summarize what others said unless asked.",
   ].join("\n");
 }
