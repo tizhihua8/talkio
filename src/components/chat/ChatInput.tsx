@@ -4,6 +4,7 @@ import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
+import { MotiView } from "moti";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { useAudioRecorder, RecordingPresets, AudioModule } from "expo-audio";
@@ -195,7 +196,8 @@ export const ChatInput = React.memo(function ChatInput({
   }, [isRecording]);
 
   const quickPromptEnabled = useSettingsStore((s) => s.settings.quickPromptEnabled);
-  const showQuickPrompts = quickPromptEnabled && hasMessages && !text.trim() && attachedImages.length === 0 && !isGenerating && !isRecording;
+  const showQuickPrompts = !text.trim() && attachedImages.length === 0 && !isGenerating && !isRecording
+    && (isGroup || (quickPromptEnabled && hasMessages));
 
   const quickPrompts = [
     { label: t("quickPrompt.continue"), prompt: t("quickPrompt.continuePrompt") },
@@ -253,31 +255,10 @@ export const ChatInput = React.memo(function ChatInput({
         </ScrollView>
       )}
 
-      {/* Auto-discuss status bar */}
-      {isAutoDiscussing && (
-        <View className="flex-row items-center justify-between border-b border-border-light bg-blue-50 px-4 py-2.5">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="chatbubbles" size={16} color="#2563eb" />
-            <Text className="text-[13px] font-medium text-blue-700">
-              {t("chat.autoDiscussRunning")} {t("chat.autoDiscussRemaining", { count: autoDiscussRemaining })}
-            </Text>
-          </View>
-          <Pressable
-            onPress={onStopAutoDiscuss}
-            className="rounded-full bg-red-500 px-3 py-1 active:opacity-70"
-          >
-            <Text className="text-[12px] font-bold text-white">{t("chat.autoDiscussStop")}</Text>
-          </Pressable>
-        </View>
-      )}
-
       {/* Auto-discuss round picker */}
       {showRoundPicker && !isAutoDiscussing && (
-        <View className="border-b border-border-light bg-bg-hover px-4 py-3">
-          <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-text-hint">
-            {t("chat.autoDiscuss")}
-          </Text>
-          <Text className="mb-3 text-[12px] text-text-muted">{t("chat.autoDiscussHint")}</Text>
+        <View className="border-b border-blue-100 bg-blue-50/50 px-4 py-3">
+          <Text className="mb-2.5 text-[12px] text-text-muted">{t("chat.autoDiscussHint")}</Text>
           <View className="flex-row gap-2">
             {[3, 5, 10].map((n) => (
               <Pressable
@@ -296,9 +277,9 @@ export const ChatInput = React.memo(function ChatInput({
                     onStartAutoDiscuss?.(n);
                   }
                 }}
-                className="flex-1 items-center rounded-xl border border-border-light bg-bg-card py-2.5 active:bg-bg-hover"
+                className="flex-1 items-center rounded-xl border border-blue-200 bg-white py-2.5 active:bg-blue-50"
               >
-                <Text className="text-[15px] font-bold text-primary">{n}</Text>
+                <Text className="text-[15px] font-bold text-blue-600">{n}</Text>
                 <Text className="text-[10px] text-text-muted">{t("chat.autoDiscussRounds", { count: n })}</Text>
               </Pressable>
             ))}
@@ -313,7 +294,20 @@ export const ChatInput = React.memo(function ChatInput({
           className="border-b border-border-light bg-bg-hover px-3 py-2"
           contentContainerStyle={{ gap: 8 }}
         >
-          {quickPrompts.map((qp) => (
+          {isGroup && (
+            <Pressable
+              onPress={() => setShowRoundPicker((v) => !v)}
+              className={`flex-row items-center gap-1.5 rounded-full border px-3.5 py-1.5 active:opacity-70 ${
+                showRoundPicker ? "border-blue-300 bg-blue-50" : "border-border-light bg-bg-card"
+              }`}
+            >
+              <Ionicons name="chatbubbles" size={13} color={showRoundPicker ? "#2563eb" : "#6b7280"} />
+              <Text className={`text-[13px] font-medium ${showRoundPicker ? "text-blue-600" : "text-text-muted"}`}>
+                {t("chat.autoDiscuss")}
+              </Text>
+            </Pressable>
+          )}
+          {quickPromptEnabled && hasMessages && quickPrompts.map((qp) => (
             <Pressable
               key={qp.label}
               onPress={() => onSend(qp.prompt)}
@@ -351,18 +345,33 @@ export const ChatInput = React.memo(function ChatInput({
         </View>
       )}
 
+      {/* During auto-discuss: replace input bar with discussion mode */}
+      {isAutoDiscussing ? (
+        <View className="flex-row items-center gap-3 px-4 py-2.5">
+          <View className="flex-1 flex-row items-center justify-center rounded-3xl border border-blue-200 bg-blue-50 px-4 py-2.5 min-h-[44px] gap-2">
+            <MotiView
+              from={{ opacity: 0.4 }}
+              animate={{ opacity: 1 }}
+              transition={{ type: "timing", duration: 800, loop: true }}
+            >
+              <Ionicons name="chatbubbles" size={16} color="#2563eb" />
+            </MotiView>
+            <Text className="text-[14px] font-medium text-blue-700">
+              {t("chat.autoDiscussRemaining", { count: autoDiscussRemaining })}
+            </Text>
+          </View>
+          <Pressable
+            onPress={onStopAutoDiscuss}
+            className="h-10 w-10 items-center justify-center rounded-full bg-red-500 active:opacity-70"
+          >
+            <Ionicons name="stop" size={16} color="#fff" />
+          </Pressable>
+        </View>
+      ) : (
       <View className="flex-row items-center gap-3 px-4 py-2.5">
         {supportsVision && (
           <Pressable onPress={handleAttach} className="text-primary p-2 active:opacity-60">
             <Ionicons name="image-outline" size={22} color={colors.accent} />
-          </Pressable>
-        )}
-        {isGroup && !isAutoDiscussing && (
-          <Pressable
-            onPress={() => setShowRoundPicker((v) => !v)}
-            className="p-2 active:opacity-60"
-          >
-            <Ionicons name="chatbubbles-outline" size={20} color={showRoundPicker ? colors.accent : colors.textHint} />
           </Pressable>
         )}
 
@@ -422,6 +431,7 @@ export const ChatInput = React.memo(function ChatInput({
           </Pressable>
         )}
       </View>
+      )}
     </View>
   );
 });
