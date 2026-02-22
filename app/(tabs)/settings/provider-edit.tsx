@@ -434,7 +434,7 @@ export default function ProviderEditScreen() {
             {connected && (
               <Pressable
                 onPress={handleSave}
-                className="flex-row items-center justify-center rounded-xl bg-accent-green px-6 py-3.5"
+                className="flex-row items-center justify-center rounded-xl bg-primary px-6 py-3.5"
               >
                 <Ionicons name="checkmark" size={20} color="#fff" style={{ marginRight: 4 }} />
                 <Text className="text-[15px] font-semibold text-white">{t("providerEdit.save")}</Text>
