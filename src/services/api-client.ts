@@ -1,26 +1,9 @@
-import { fetch as expoFetch } from "expo/fetch";
 import type {
   ChatApiRequest,
   ChatApiResponse,
-  StreamDelta,
   Provider,
   ProviderType,
 } from "../types";
-
-const STREAM_READ_TIMEOUT_MS = 30_000;
-
-function readWithTimeout<T>(
-  reader: ReadableStreamDefaultReader<T>,
-  timeoutMs: number,
-): Promise<ReadableStreamReadResult<T>> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("Stream read timed out")), timeoutMs);
-    reader.read().then(
-      (result) => { clearTimeout(timer); resolve(result); },
-      (err) => { clearTimeout(timer); reject(err); },
-    );
-  });
-}
 
 export class ApiClient {
   private baseUrl: string;
@@ -77,112 +60,6 @@ export class ApiClient {
     return response.json();
   }
 
-  async *streamChat(
-    request: ChatApiRequest,
-    signal?: AbortSignal,
-  ): AsyncGenerator<StreamDelta, void, unknown> {
-    try {
-    if (this.providerType === "anthropic") {
-      yield* this.streamChatAnthropic(request, signal);
-      return;
-    }
-    if (this.providerType === "gemini") {
-      yield* this.streamChatGemini(request, signal);
-      return;
-    }
-    // OpenAI / Azure OpenAI
-    const url = this.getUrl("/chat/completions");
-    let response: Response;
-    try {
-      response = await expoFetch(url, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify({ ...request, stream: true }),
-        signal,
-      });
-    } catch (fetchErr: any) {
-      const detail = fetchErr?.message || fetchErr?.name || fetchErr?.code
-        || (typeof fetchErr === "object" ? JSON.stringify(fetchErr) : String(fetchErr));
-      throw new Error(`Fetch failed (${url}): ${detail}`);
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(`Stream API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    if (!response.body) {
-      throw new Error("Stream response has no body");
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-
-    const processLine = function* (line: string): Generator<StreamDelta> {
-      const trimmed = line.trim();
-      if (!trimmed || !trimmed.startsWith("data: ")) return;
-      const data = trimmed.slice(6);
-      if (data === "[DONE]") return;
-      try {
-        const parsed = JSON.parse(data);
-        const choice = parsed.choices?.[0];
-        const delta = choice?.delta as StreamDelta | undefined;
-        if (delta) {
-          // Normalize reasoning content from various proxy formats
-          if (!delta.reasoning_content) {
-            // Check choice level
-            const rc = choice?.reasoning_content ?? (choice as any)?.reasoning
-              ?? (choice as any)?.thinking ?? (choice as any)?.thinking_content;
-            if (rc) delta.reasoning_content = rc;
-          }
-          // Check delta level alternate field names
-          if (!delta.reasoning_content) {
-            const dr = (delta as any).reasoning ?? (delta as any).thinking
-              ?? (delta as any).thinking_content;
-            if (dr) delta.reasoning_content = dr;
-          }
-          yield delta;
-        }
-      } catch {
-        // skip malformed JSON lines
-      }
-    };
-
-    try {
-      while (true) {
-        const { done, value } = await readWithTimeout(reader, STREAM_READ_TIMEOUT_MS);
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        for (const line of lines) {
-          yield* processLine(line);
-        }
-      }
-      // Process remaining buffer after stream ends
-      if (buffer.trim()) {
-        yield* processLine(buffer);
-      }
-    } finally {
-      reader.releaseLock();
-    }
-    } catch (streamErr: any) {
-      // Ensure error has a meaningful message before propagating
-      const msg = streamErr?.message || streamErr?.name || streamErr?.code || "";
-      if (!msg) {
-        const keys = streamErr ? Object.keys(streamErr) : [];
-        const detail = keys.length > 0
-          ? JSON.stringify(streamErr, null, 0)
-          : `${typeof streamErr}: ${String(streamErr)}`;
-        throw new Error(`[${this.providerType}] Stream error (no message): ${detail}`);
-      }
-      throw new Error(`[${this.providerType}] ${msg}`);
-    }
-  }
-
   // ── Anthropic Implementation ──
 
   private async chatAnthropic(request: ChatApiRequest): Promise<ChatApiResponse> {
@@ -199,53 +76,6 @@ export class ApiClient {
     }
     const data = await response.json();
     return this.fromAnthropicResponse(data);
-  }
-
-  private async *streamChatAnthropic(
-    request: ChatApiRequest,
-    signal?: AbortSignal,
-  ): AsyncGenerator<StreamDelta, void, unknown> {
-    const body = this.toAnthropicBody(request);
-    body.stream = true;
-    let response: Response;
-    try {
-      response = await expoFetch(`${this.baseUrl}/messages`, {
-        method: "POST",
-        headers: this.getHeaders(),
-        body: JSON.stringify(body),
-        signal,
-      });
-    } catch (fetchErr: any) {
-      const detail = fetchErr?.message || fetchErr?.name || fetchErr?.code
-        || (typeof fetchErr === "object" ? JSON.stringify(fetchErr) : String(fetchErr));
-      throw new Error(`Fetch failed: ${detail}`);
-    }
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(`Stream API error: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-    if (!response.body) throw new Error("Stream response has no body");
-    yield* this.readSSE(response.body, (parsed) => {
-      if (parsed.type === "content_block_delta") {
-        const d = parsed.delta;
-        if (d?.type === "text_delta") return { content: d.text };
-        if (d?.type === "thinking_delta") return { reasoning_content: d.thinking };
-        if (d?.type === "input_json_delta") {
-          return { tool_calls: [{ index: parsed.index ?? 0, function: { arguments: d.partial_json } }] } as StreamDelta;
-        }
-      }
-      if (parsed.type === "content_block_start" && parsed.content_block?.type === "tool_use") {
-        return {
-          tool_calls: [{
-            index: parsed.index ?? 0,
-            id: parsed.content_block.id,
-            type: "function" as const,
-            function: { name: parsed.content_block.name },
-          }],
-        } as StreamDelta;
-      }
-      return null;
-    });
   }
 
   private toAnthropicBody(request: ChatApiRequest): Record<string, unknown> {
@@ -350,43 +180,6 @@ export class ApiClient {
     return this.fromGeminiResponse(data);
   }
 
-  private async *streamChatGemini(
-    request: ChatApiRequest,
-    signal?: AbortSignal,
-  ): AsyncGenerator<StreamDelta, void, unknown> {
-    const body = this.toGeminiBody(request);
-    const url = `${this.baseUrl}/models/${request.model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
-    const response = await expoFetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...this.customHeaders, "x-goog-api-key": this.apiKey },
-      body: JSON.stringify(body),
-      signal,
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Stream API error: ${response.status} - ${errorText}`);
-    }
-    if (!response.body) throw new Error("Stream response has no body");
-    yield* this.readSSE(response.body, (parsed) => {
-      const candidate = parsed.candidates?.[0];
-      if (!candidate?.content?.parts) return null;
-      for (const part of candidate.content.parts) {
-        // Gemini thinking models return { text: "...", thought: true } for thinking parts.
-        // Check thought flag BEFORE text to avoid treating thinking as regular content.
-        if (part.thought === true && part.text !== undefined) {
-          return { reasoning_content: part.text };
-        }
-        if (part.text !== undefined) return { content: part.text };
-        if (part.functionCall) {
-          return {
-            tool_calls: [{ index: 0, id: part.functionCall.name, type: "function" as const, function: { name: part.functionCall.name, arguments: JSON.stringify(part.functionCall.args ?? {}) } }],
-          } as StreamDelta;
-        }
-      }
-      return null;
-    });
-  }
-
   private toGeminiBody(request: ChatApiRequest): Record<string, unknown> {
     const contents: Array<{ role: string; parts: unknown[] }> = [];
     let systemInstruction: { parts: Array<{ text: string }> } | undefined;
@@ -455,52 +248,6 @@ export class ApiClient {
       model: data.modelVersion ?? "gemini",
       usage: data.usageMetadata ? { prompt_tokens: data.usageMetadata.promptTokenCount ?? 0, completion_tokens: data.usageMetadata.candidatesTokenCount ?? 0, total_tokens: data.usageMetadata.totalTokenCount ?? 0 } : undefined,
     };
-  }
-
-  // ── Shared SSE reader ──
-
-  private async *readSSE(
-    body: ReadableStream<Uint8Array>,
-    parseLine: (parsed: any) => StreamDelta | null,
-  ): AsyncGenerator<StreamDelta, void, unknown> {
-    const reader = body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    try {
-      while (true) {
-        const { done, value } = await readWithTimeout(reader, STREAM_READ_TIMEOUT_MS);
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith("data: ")) continue;
-          const data = trimmed.slice(6);
-          if (data === "[DONE]") continue;
-          try {
-            const parsed = JSON.parse(data);
-            const delta = parseLine(parsed);
-            if (delta) yield delta;
-          } catch { /* skip malformed JSON */ }
-        }
-      }
-      if (buffer.trim()) {
-        const trimmed = buffer.trim();
-        if (trimmed.startsWith("data: ")) {
-          const data = trimmed.slice(6);
-          if (data !== "[DONE]") {
-            try {
-              const parsed = JSON.parse(data);
-              const delta = parseLine(parsed);
-              if (delta) yield delta;
-            } catch { /* skip */ }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
   }
 
   // ── Speech-to-Text ──

@@ -262,24 +262,6 @@ export interface ChatApiResponse {
   usage?: { prompt_tokens: number; completion_tokens: number; total_tokens: number };
 }
 
-export interface StreamContentPart {
-  type: "text" | "image_url";
-  text?: string;
-  image_url?: { url: string };
-}
-
-export interface StreamDelta {
-  role?: string;
-  content?: string | StreamContentPart[];
-  reasoning_content?: string;
-  tool_calls?: Array<{
-    index: number;
-    id?: string;
-    type?: "function";
-    function?: { name?: string; arguments?: string };
-  }>;
-}
-
 export interface ConversationFilter {
   type: "all" | "experts" | "work" | "creatives";
 }
