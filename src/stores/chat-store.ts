@@ -33,6 +33,10 @@ interface ChatState {
   activeBranchId: string | null;
   /** @internal */
   _abortController: AbortController | null;
+  /** Auto-discuss: remaining rounds (0 = off) */
+  autoDiscussRemaining: number;
+  /** Auto-discuss: total rounds requested */
+  autoDiscussTotalRounds: number;
 
   createConversation: (
     type: "single" | "group",
@@ -50,6 +54,8 @@ interface ChatState {
   removeParticipant: (conversationId: string, participantId: string) => Promise<void>;
   sendMessage: (text: string, mentionedModelIds?: string[], images?: string[]) => Promise<void>;
   stopGeneration: () => void;
+  startAutoDiscuss: (rounds: number) => Promise<void>;
+  stopAutoDiscuss: () => void;
   regenerateMessage: (messageId: string) => Promise<void>;
   branchFromMessage: (messageId: string, messages: Message[]) => Promise<string>;
   switchBranch: (branchId: string | null) => void;
@@ -63,6 +69,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isGenerating: false,
   activeBranchId: null,
   _abortController: null,
+  autoDiscussRemaining: 0,
+  autoDiscussTotalRounds: 0,
 
   createConversation: async (type, participants, title) => {
     const providerStore = useProviderStore.getState();
@@ -207,8 +215,45 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const ctrl = get()._abortController;
     if (ctrl) {
       ctrl.abort();
-      set({ _abortController: null });
+      set({ _abortController: null, autoDiscussRemaining: 0 });
     }
+  },
+
+  startAutoDiscuss: async (rounds: number) => {
+    const convId = get().currentConversationId;
+    if (!convId || get().isGenerating) return;
+
+    const conv = await dbGetConversation(convId);
+    if (!conv || conv.type !== "group" || conv.participants.length < 2) return;
+
+    set({ autoDiscussRemaining: rounds, autoDiscussTotalRounds: rounds, isGenerating: true });
+
+    const abortController = new AbortController();
+    set({ _abortController: abortController });
+
+    try {
+      for (let round = 0; round < rounds; round++) {
+        if (abortController.signal.aborted) break;
+
+        // Re-read conversation for latest state
+        const freshConv = await dbGetConversation(convId);
+        if (!freshConv) break;
+
+        for (const participant of freshConv.participants) {
+          if (abortController.signal.aborted) break;
+          await generateResponseV2(convId, participant.modelId, freshConv, abortController.signal, participant.id);
+        }
+
+        set({ autoDiscussRemaining: rounds - round - 1 });
+      }
+    } finally {
+      set({ _abortController: null, isGenerating: false, autoDiscussRemaining: 0 });
+    }
+  },
+
+  stopAutoDiscuss: () => {
+    set({ autoDiscussRemaining: 0 });
+    get().stopGeneration();
   },
 
   regenerateMessage: async (messageId) => {

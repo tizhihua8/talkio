@@ -23,6 +23,9 @@ interface ChatInputProps {
   isGroup?: boolean;
   participants?: ConversationParticipant[];
   hasMessages?: boolean;
+  onStartAutoDiscuss?: (rounds: number) => void;
+  onStopAutoDiscuss?: () => void;
+  autoDiscussRemaining?: number;
 }
 
 export const ChatInput = React.memo(function ChatInput({
@@ -31,6 +34,9 @@ export const ChatInput = React.memo(function ChatInput({
   isGroup = false,
   participants = [],
   hasMessages = false,
+  onStartAutoDiscuss,
+  onStopAutoDiscuss,
+  autoDiscussRemaining = 0,
 }: ChatInputProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -46,6 +52,8 @@ export const ChatInput = React.memo(function ChatInput({
   const [recordingDuration, setRecordingDuration] = useState(0);
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const handleMicPressRef = useRef<(() => void) | null>(null);
+  const [showRoundPicker, setShowRoundPicker] = useState(false);
+  const isAutoDiscussing = autoDiscussRemaining > 0;
 
   // Check if any participant model supports vision
   const supportsVision = participants.length > 0
@@ -248,6 +256,53 @@ export const ChatInput = React.memo(function ChatInput({
         </ScrollView>
       )}
 
+      {/* Auto-discuss status bar */}
+      {isAutoDiscussing && (
+        <View className="flex-row items-center justify-between border-b border-border-light bg-blue-50 px-4 py-2.5">
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="chatbubbles" size={16} color="#2563eb" />
+            <Text className="text-[13px] font-medium text-blue-700">
+              {t("chat.autoDiscussRunning")} {t("chat.autoDiscussRemaining", { count: autoDiscussRemaining })}
+            </Text>
+          </View>
+          <Pressable
+            onPress={onStopAutoDiscuss}
+            className="rounded-full bg-red-500 px-3 py-1 active:opacity-70"
+          >
+            <Text className="text-[12px] font-bold text-white">{t("chat.autoDiscussStop")}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Auto-discuss round picker */}
+      {showRoundPicker && !isAutoDiscussing && (
+        <View className="border-b border-border-light bg-bg-hover px-4 py-3">
+          <Text className="mb-2 text-[11px] font-bold uppercase tracking-widest text-text-hint">
+            {t("chat.autoDiscuss")}
+          </Text>
+          <Text className="mb-3 text-[12px] text-text-muted">{t("chat.autoDiscussHint")}</Text>
+          <View className="flex-row gap-2">
+            {[3, 5, 10].map((n) => (
+              <Pressable
+                key={n}
+                onPress={() => {
+                  setShowRoundPicker(false);
+                  if (!hasMessages) {
+                    Alert.alert(t("common.error"), t("chat.autoDiscussNeedMessage"));
+                    return;
+                  }
+                  onStartAutoDiscuss?.(n);
+                }}
+                className="flex-1 items-center rounded-xl border border-border-light bg-bg-card py-2.5 active:bg-bg-hover"
+              >
+                <Text className="text-[15px] font-bold text-primary">{n}</Text>
+                <Text className="text-[10px] text-text-muted">{t("chat.autoDiscussRounds", { count: n })}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
+
       {showQuickPrompts && (
         <ScrollView
           horizontal
@@ -302,6 +357,14 @@ export const ChatInput = React.memo(function ChatInput({
         {isGroup && (
           <Pressable onPress={toggleMentionPicker} className="p-2 active:opacity-60">
             <Ionicons name="at" size={22} color={showMentionPicker ? colors.accent : colors.textHint} />
+          </Pressable>
+        )}
+        {isGroup && !isAutoDiscussing && (
+          <Pressable
+            onPress={() => setShowRoundPicker((v) => !v)}
+            className="p-2 active:opacity-60"
+          >
+            <Ionicons name="chatbubbles-outline" size={20} color={showRoundPicker ? colors.accent : colors.textHint} />
           </Pressable>
         )}
 

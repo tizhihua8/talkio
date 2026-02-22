@@ -46,6 +46,9 @@ export default function ChatDetailScreen() {
   const messages = useMessages(id ?? null, activeBranchId);
   const blocksByMessage = useConversationBlocks(id ?? null);
   const isGenerating = useChatStore((s) => s.isGenerating);
+  const autoDiscussRemaining = useChatStore((s) => s.autoDiscussRemaining);
+  const startAutoDiscuss = useChatStore((s) => s.startAutoDiscuss);
+  const stopAutoDiscuss = useChatStore((s) => s.stopAutoDiscuss);
 
   const hasMessages = messages.length > 0;
   const messageCount = messages.length;
@@ -506,6 +509,9 @@ export default function ChatDetailScreen() {
         isGroup={isGroup}
         participants={stableParticipants}
         hasMessages={hasMessages}
+        onStartAutoDiscuss={startAutoDiscuss}
+        onStopAutoDiscuss={stopAutoDiscuss}
+        autoDiscussRemaining={autoDiscussRemaining}
       />
     </KeyboardAvoidingView>
 

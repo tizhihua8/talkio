@@ -82,7 +82,14 @@
     "removeMember": "Remove",
     "removeMemberConfirm": "Remove this model from the group?",
     "noAvailableModels": "No available models to add",
-    "cannotRemoveLast": "Cannot remove the last member"
+    "cannotRemoveLast": "Cannot remove the last member",
+    "autoDiscuss": "Auto Discuss",
+    "autoDiscussHint": "AIs will take turns speaking automatically",
+    "autoDiscussRounds": "{{count}} rounds",
+    "autoDiscussRemaining": "{{count}} rounds left",
+    "autoDiscussRunning": "Discussing...",
+    "autoDiscussStop": "Stop Discussion",
+    "autoDiscussNeedMessage": "Send a message first to set the discussion topic"
   },
   "models": {
     "title": "Models",

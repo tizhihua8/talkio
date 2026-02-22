@@ -82,7 +82,14 @@
     "removeMember": "移除",
     "removeMemberConfirm": "确定将此模型移出群聊？",
     "noAvailableModels": "没有可添加的模型",
-    "cannotRemoveLast": "无法移除最后一个成员"
+    "cannotRemoveLast": "无法移除最后一个成员",
+    "autoDiscuss": "自动讨论",
+    "autoDiscussHint": "AI 们将自动轮流发言",
+    "autoDiscussRounds": "{{count}} 轮",
+    "autoDiscussRemaining": "剩余 {{count}} 轮",
+    "autoDiscussRunning": "讨论中...",
+    "autoDiscussStop": "停止讨论",
+    "autoDiscussNeedMessage": "请先发送一条消息作为讨论话题"
   },
   "models": {
     "title": "模型",
