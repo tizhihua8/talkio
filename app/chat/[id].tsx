@@ -476,27 +476,6 @@ export default function ChatDetailScreen() {
         onClose={() => setShowModelPicker(false)}
       />
 
-      {/* Identity slider */}
-      <IdentitySlider
-        visible={showIdentitySlider}
-        activeIdentityId={
-          editingParticipantId
-            ? conv?.participants.find((p) => p.id === editingParticipantId)?.identityId ?? null
-            : currentParticipant?.identityId ?? null
-        }
-        onSelect={handleIdentitySelect}
-        onClose={handleIdentitySliderClose}
-        label={
-          isGroup && editingParticipantId
-            ? (() => {
-                const ep = conv?.participants.find((p) => p.id === editingParticipantId);
-                const em = ep ? getModelById(ep.modelId) : null;
-                return t("chat.setRoleFor", { name: em?.displayName ?? ep?.modelId ?? "" });
-              })()
-            : undefined
-        }
-      />
-
       <LegendList
         ref={listRef}
         data={messages}
@@ -527,6 +506,27 @@ export default function ChatDetailScreen() {
         hasMessages={hasMessages}
       />
     </KeyboardAvoidingView>
+
+      {/* Identity BottomSheet — outside KAV so it renders on top */}
+      <IdentitySlider
+        visible={showIdentitySlider}
+        activeIdentityId={
+          editingParticipantId
+            ? conv?.participants.find((p) => p.id === editingParticipantId)?.identityId ?? null
+            : currentParticipant?.identityId ?? null
+        }
+        onSelect={handleIdentitySelect}
+        onClose={handleIdentitySliderClose}
+        label={
+          isGroup && editingParticipantId
+            ? (() => {
+                const ep = conv?.participants.find((p) => p.id === editingParticipantId);
+                const em = ep ? getModelById(ep.modelId) : null;
+                return t("chat.setRoleFor", { name: em?.displayName ?? ep?.modelId ?? "" });
+              })()
+            : undefined
+        }
+      />
     </View>
   );
 }
