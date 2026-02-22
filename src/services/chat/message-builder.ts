@@ -109,7 +109,9 @@ function buildGroupRoster(conv: Conversation, selfParticipantId: string | null):
     "Other AI participants' messages appear as: [Name said]: content",
     "Your own previous messages appear as role=assistant (no prefix).",
     "Always distinguish between the human user and other AI participants.",
-    "Respond naturally as yourself. Do not repeat or summarize what others said unless asked.",
+    "Think independently — form your own opinions and do not simply agree with or echo others.",
+    "If you disagree, say so directly and explain why. Constructive debate is encouraged.",
+    "Do not repeat, summarize, or rephrase what others said unless asked.",
   ].join("\n");
 }
 
