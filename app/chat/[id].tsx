@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from "react";
-import { View, Text, Pressable, Alert, Share, ToastAndroid, Platform } from "react-native";
+import { View, Text, Pressable, Alert, Share, ToastAndroid, Platform, Animated } from "react-native";
+import { Swipeable } from "react-native-gesture-handler";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
@@ -200,22 +201,17 @@ export default function ChatDetailScreen() {
     if (id) addParticipant(id, modelId);
   }, [id, addParticipant]);
 
-  const handleParticipantPress = useCallback((participantId: string, displayName: string) => {
+  const handleParticipantPress = useCallback((participantId: string) => {
     if (!id) return;
-    Alert.alert(displayName, undefined, [
-      {
-        text: t("personas.editIdentity"),
-        onPress: () => {
-          setEditingParticipantId(participantId);
-          setShowIdentitySlider(true);
-        },
-      },
-      {
-        text: t("chat.removeMember"),
-        style: "destructive",
-        onPress: () => removeParticipant(id, participantId),
-      },
+    setEditingParticipantId(participantId);
+    setShowIdentitySlider(true);
+  }, [id]);
+
+  const handleRemoveParticipant = useCallback((participantId: string, displayName: string) => {
+    if (!id) return;
+    Alert.alert(t("chat.removeMember"), displayName, [
       { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => removeParticipant(id, participantId) },
     ]);
   }, [id, removeParticipant, t]);
 
@@ -403,27 +399,58 @@ export default function ChatDetailScreen() {
           {conv.participants.map((p) => {
             const pModel = getModelById(p.modelId);
             const pIdentity = p.identityId ? getIdentityById(p.identityId) : null;
+            const displayName = pModel?.displayName ?? p.modelId;
             return (
-              <Pressable
+              <Swipeable
                 key={p.id}
-                onPress={() => handleParticipantPress(p.id, pModel?.displayName ?? p.modelId)}
-                className="flex-row items-center gap-3 py-2.5 active:bg-slate-50"
+                renderRightActions={(_progress, dragX) => {
+                  const scale = dragX.interpolate({
+                    inputRange: [-80, 0],
+                    outputRange: [1, 0.5],
+                    extrapolate: "clamp",
+                  });
+                  return (
+                    <Pressable
+                      onPress={() => handleRemoveParticipant(p.id, displayName)}
+                      style={{
+                        width: 72,
+                        backgroundColor: "#ef4444",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 12,
+                        marginLeft: 8,
+                      }}
+                    >
+                      <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
+                        <Ionicons name="trash-outline" size={18} color="#fff" />
+                        <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
+                      </Animated.View>
+                    </Pressable>
+                  );
+                }}
+                overshootRight={false}
+                friction={2}
               >
-                <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                  <Text className="text-xs font-bold text-primary">
-                    {(pModel?.displayName ?? "?").slice(0, 2).toUpperCase()}
-                  </Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-[14px] font-medium text-slate-900" numberOfLines={1}>
-                    {pModel?.displayName ?? p.modelId}
-                  </Text>
-                  <Text className="text-[12px] text-slate-400" numberOfLines={1}>
-                    {pIdentity ? pIdentity.name : t("chat.noIdentity")}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
-              </Pressable>
+                <Pressable
+                  onPress={() => handleParticipantPress(p.id)}
+                  className="flex-row items-center gap-3 py-2.5 active:bg-slate-50"
+                >
+                  <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                    <Text className="text-xs font-bold text-primary">
+                      {(displayName).slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-[14px] font-medium text-slate-900" numberOfLines={1}>
+                      {displayName}
+                    </Text>
+                    <Text className="text-[12px] text-slate-400" numberOfLines={1}>
+                      {pIdentity ? pIdentity.name : t("chat.noIdentity")}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#cbd5e1" />
+                </Pressable>
+              </Swipeable>
             );
           })}
           <Pressable
