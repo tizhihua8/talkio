@@ -204,7 +204,7 @@ export default function ChatDetailScreen() {
     if (!id) return;
     Alert.alert(displayName, undefined, [
       {
-        text: t("chat.editIdentity"),
+        text: t("personas.editIdentity"),
         onPress: () => {
           setEditingParticipantId(participantId);
           setShowIdentitySlider(true);

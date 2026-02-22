@@ -69,16 +69,25 @@ export async function generateResponseV2(
     ? identityStore.getIdentityById(participant.identityId)
     : undefined;
 
-  // Compute display name: identity name > model name (with suffix if duplicated)
+  // Compute display name for group chat disambiguation
   let senderName = model.displayName;
-  if (identity?.name) {
-    senderName = identity.name;
-  } else if (conv.type === "group") {
-    const sameModelCount = conv.participants.filter((p) => p.modelId === modelId).length;
-    if (sameModelCount > 1 && participant) {
-      const idx = conv.participants.filter((p) => p.modelId === modelId).findIndex((p) => p.id === participant.id);
-      senderName = `${model.displayName} #${idx + 1}`;
+  if (conv.type === "group" && participant) {
+    if (identity?.name) {
+      // Check if another participant shares the same identity
+      const sameIdentityCount = conv.participants.filter((p) => p.identityId === participant.identityId).length;
+      senderName = sameIdentityCount > 1
+        ? `${identity.name} (${model.displayName})`
+        : identity.name;
+    } else {
+      // No identity: add index suffix if same model appears multiple times
+      const sameModelParticipants = conv.participants.filter((p) => p.modelId === modelId);
+      if (sameModelParticipants.length > 1) {
+        const idx = sameModelParticipants.findIndex((p) => p.id === participant.id);
+        senderName = `${model.displayName} #${idx + 1}`;
+      }
     }
+  } else if (identity?.name) {
+    senderName = identity.name;
   }
 
   // Read messages from DB (single source of truth)
