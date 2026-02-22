@@ -154,41 +154,45 @@ export default function ChatDetailScreen() {
     });
   }, [convTitle, modelDisplayName, identityName, participantCount, isGroup, showParticipants]);
 
-  // Scroll management: all content is data items, maintainScrollAtEnd handles auto-scrolling.
-  // useLiveQuery loads all messages, no pagination needed.
+  // ── Scroll management ──
+  // We fully own scrolling: LegendList's maintainScrollAtEnd is disabled.
+  // onContentSizeChange fires when streaming content grows; we scroll if
+  // the user hasn't deliberately scrolled away.
+  const layoutHeightRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const userScrolledAwayRef = useRef(false);
+
   const handleScroll = useCallback((e: any) => {
     const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+    layoutHeightRef.current = layoutMeasurement.height;
+    contentHeightRef.current = contentSize.height;
     const distanceFromBottom = contentSize.height - contentOffset.y - layoutMeasurement.height;
-    const isAway = distanceFromBottom > 100;
+    const isAway = distanceFromBottom > 150;
+    userScrolledAwayRef.current = isAway;
     showScrollToBottomRef.current = isAway;
     setShowScrollToBottom(isAway);
   }, []);
 
-  // Streaming auto-scroll: smoothly follow output, stop if user scrolls up
-  useEffect(() => {
-    if (!isGenerating) return;
-    const timer = setInterval(() => {
-      if (!showScrollToBottomRef.current) {
-        listRef.current?.scrollToEnd({ animated: true });
-      }
-    }, 350);
-    return () => clearInterval(timer);
-  }, [isGenerating]);
+  const handleContentSizeChange = useCallback((_w: number, h: number) => {
+    contentHeightRef.current = h;
+    // Auto-scroll only when user is near bottom
+    if (!userScrolledAwayRef.current && layoutHeightRef.current > 0) {
+      listRef.current?.scrollToEnd({ animated: false });
+    }
+  }, []);
 
   const handleSend = useCallback(
     (text: string, mentionedModelIds?: string[], images?: string[]) => {
+      userScrolledAwayRef.current = false;
       showScrollToBottomRef.current = false;
       setShowScrollToBottom(false);
       sendMessage(text, mentionedModelIds, images);
-      // DB write → useLiveQuery has a micro-delay; nudge scroll after data arrives
-      setTimeout(() => {
-        listRef.current?.scrollToEnd({ animated: true });
-      }, 150);
     },
     [sendMessage],
   );
 
   const scrollToBottom = useCallback(() => {
+    userScrolledAwayRef.current = false;
     showScrollToBottomRef.current = false;
     setShowScrollToBottom(false);
     listRef.current?.scrollToEnd({ animated: true });
@@ -287,8 +291,7 @@ export default function ChatDetailScreen() {
     contentContainerStyle: { paddingTop: 12, paddingBottom: 8 },
     recycleItems: false,
     alignItemsAtEnd: false,
-    maintainScrollAtEnd: { onLayout: false, onItemLayout: false, onDataChange: true },
-    maintainScrollAtEndThreshold: 0.05,
+    maintainScrollAtEnd: false,
     estimatedItemSize: 120,
     drawDistance: 200,
     waitForInitialLayout: true,
@@ -501,6 +504,7 @@ export default function ChatDetailScreen() {
         keyExtractor={messageKeyExtractor}
         {...legendListProps}
         onScroll={handleScroll}
+        onContentSizeChange={handleContentSizeChange}
       />
 
       {showScrollToBottom && (
