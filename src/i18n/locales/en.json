@@ -166,6 +166,7 @@
     "allFieldsRequired": "All fields are required",
     "testConnection": "Test Connection",
     "connectionSuccessful": "Connection Successful",
+    "connected": "Connected",
     "connectionFailed": "Connection Failed — Retry",
     "connectionFailedHint": "Check your API key and base URL.",
     "verifiedAt": "Verified at {{time}} Today",

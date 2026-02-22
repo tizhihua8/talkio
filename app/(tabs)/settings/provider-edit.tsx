@@ -406,30 +406,41 @@ export default function ProviderEditScreen() {
             </View>
           )}
 
-          {/* ── Connect Button ── */}
-          <Pressable
-            onPress={handleConnect}
-            disabled={testing || !apiKey.trim()}
-            className={`mt-2 flex-row items-center justify-center rounded-xl py-3.5 ${
-              testing ? "bg-slate-300" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
-            }`}
-          >
-            {testing ? (
-              <>
-                <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
-                <Text className="text-base font-semibold text-white">{pulling ? t("providerEdit.fetchingModels") : t("providerEdit.connecting")}</Text>
-              </>
-            ) : connected === true ? (
-              <>
-                <Ionicons name="checkmark-circle" size={22} color="#fff" style={{ marginRight: 8 }} />
-                <Text className="text-base font-semibold text-white">{t("providerEdit.connectionSuccessful")}</Text>
-              </>
-            ) : connected === false ? (
-              <Text className="text-base font-semibold text-white">{t("providerEdit.retryConnection")}</Text>
-            ) : (
-              <Text className="text-base font-semibold text-white">{t("providerEdit.connectAndFetch")}</Text>
+          {/* ── Action Buttons Row ── */}
+          <View className="mt-4 flex-row gap-3">
+            <Pressable
+              onPress={handleConnect}
+              disabled={testing || !apiKey.trim()}
+              className={`flex-1 flex-row items-center justify-center rounded-xl py-3.5 ${
+                testing ? "bg-slate-300" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
+              }`}
+            >
+              {testing ? (
+                <>
+                  <ActivityIndicator color="#fff" style={{ marginRight: 8 }} />
+                  <Text className="text-[15px] font-semibold text-white">{pulling ? t("providerEdit.fetchingModels") : t("providerEdit.connecting")}</Text>
+                </>
+              ) : connected === true ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={20} color="#fff" style={{ marginRight: 6 }} />
+                  <Text className="text-[15px] font-semibold text-white">{t("providerEdit.connected")}</Text>
+                </>
+              ) : connected === false ? (
+                <Text className="text-[15px] font-semibold text-white">{t("providerEdit.retryConnection")}</Text>
+              ) : (
+                <Text className="text-[15px] font-semibold text-white">{t("providerEdit.connectAndFetch")}</Text>
+              )}
+            </Pressable>
+            {connected && (
+              <Pressable
+                onPress={handleSave}
+                className="flex-row items-center justify-center rounded-xl bg-accent-green px-6 py-3.5"
+              >
+                <Ionicons name="checkmark" size={20} color="#fff" style={{ marginRight: 4 }} />
+                <Text className="text-[15px] font-semibold text-white">{t("providerEdit.save")}</Text>
+              </Pressable>
             )}
-          </Pressable>
+          </View>
         </View>
       )}
 
@@ -558,15 +569,6 @@ export default function ProviderEditScreen() {
               </View>
             ))}
           </View>
-        </View>
-      )}
-
-      {/* ── Save Button ── */}
-      {connected && (
-        <View className="px-4 pb-8 pt-6">
-          <Pressable onPress={handleSave} className="items-center rounded-xl bg-primary py-3.5">
-            <Text className="text-[17px] font-semibold text-white">{t("providerEdit.save")}</Text>
-          </Pressable>
         </View>
       )}
 

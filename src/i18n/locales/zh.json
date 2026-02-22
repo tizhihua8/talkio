@@ -166,6 +166,7 @@
     "allFieldsRequired": "所有字段均为必填",
     "testConnection": "测试连接",
     "connectionSuccessful": "连接成功",
+    "connected": "已连接",
     "connectionFailed": "连接失败 — 重试",
     "connectionFailedHint": "请检查 API 密钥和接口地址。",
     "verifiedAt": "今天 {{time}} 验证通过",
