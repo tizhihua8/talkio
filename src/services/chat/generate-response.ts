@@ -79,6 +79,7 @@ export async function generateResponse(
     isStreaming: true,
     status: MessageStatus.STREAMING,
     errorMessage: null,
+    tokenUsage: null,
     createdAt: new Date().toISOString(),
   };
 

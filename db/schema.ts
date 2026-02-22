@@ -37,6 +37,7 @@ export const messages = sqliteTable(
     isStreaming: integer("isStreaming").notNull().default(0),
     status: text("status").notNull().default("success"),
     errorMessage: text("errorMessage"),
+    tokenUsage: text("tokenUsage"),
     createdAt: text("createdAt").notNull(),
   },
   (table) => [

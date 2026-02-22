@@ -129,6 +129,11 @@ export interface ToolResult {
   content: string;
 }
 
+export interface TokenUsage {
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export enum MessageStatus {
   PENDING = "pending",
   STREAMING = "streaming",
@@ -184,6 +189,7 @@ export interface Message {
   isStreaming: boolean;
   status: MessageStatus;
   errorMessage: string | null;
+  tokenUsage: TokenUsage | null;
   createdAt: string;
 }
 

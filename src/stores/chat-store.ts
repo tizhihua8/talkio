@@ -174,6 +174,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       isStreaming: false,
       status: MessageStatus.SUCCESS,
       errorMessage: null,
+      tokenUsage: null,
       createdAt: new Date().toISOString(),
     };
 

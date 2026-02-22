@@ -284,6 +284,14 @@ export const MessageBubble = React.memo(function MessageBubble({
             {onTTS && rawContent && <ActionButton icon="volume-medium-outline" onPress={() => onTTS(rawContent)} />}
             {onShare && rawContent && <ActionButton icon="share-outline" onPress={() => onShare(rawContent)} />}
             {onDelete && <ActionButton icon="trash-outline" onPress={() => onDelete(message.id)} color="#ef4444" />}
+            {message.tokenUsage && (
+              <View className="ml-2 flex-row items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5">
+                <Ionicons name="analytics-outline" size={11} color="#94a3b8" />
+                <Text className="text-[10px] font-mono text-slate-400">
+                  {formatTokens(message.tokenUsage.inputTokens)}→{formatTokens(message.tokenUsage.outputTokens)}
+                </Text>
+              </View>
+            )}
           </View>
         )}
       </View>
@@ -297,6 +305,7 @@ export const MessageBubble = React.memo(function MessageBubble({
   if (prev.message.reasoningContent !== next.message.reasoningContent) return false;
   if (prev.message.toolCalls.length !== next.message.toolCalls.length) return false;
   if (prev.message.generatedImages?.length !== next.message.generatedImages?.length) return false;
+  if (prev.message.tokenUsage !== next.message.tokenUsage) return false;
   if (prev.blocks !== next.blocks) return false;
   if (prev.isGroup !== next.isGroup) return false;
   if (prev.renderMarkdown !== next.renderMarkdown) return false;
@@ -304,6 +313,12 @@ export const MessageBubble = React.memo(function MessageBubble({
   if (prev.labelThoughtProcess !== next.labelThoughtProcess) return false;
   return true;
 });
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
 const timeCache = new Map<string, string>();
 function formatTime(iso: string): string {

@@ -34,6 +34,10 @@ const MIGRATIONS: Migration[] = [
     version: 5,
     sql: `ALTER TABLE messages ADD COLUMN errorMessage TEXT`,
   },
+  {
+    version: 6,
+    sql: `ALTER TABLE messages ADD COLUMN tokenUsage TEXT`,
+  },
 ];
 
 function getAppliedVersions(): Set<number> {
@@ -181,6 +185,7 @@ export function rowToMessage(row: typeof messages.$inferSelect): Message {
     isStreaming: row.isStreaming === 1,
     status: (row.status as MessageStatus) || (row.isStreaming === 1 ? MessageStatus.STREAMING : MessageStatus.SUCCESS),
     errorMessage: row.errorMessage ?? null,
+    tokenUsage: safeJsonParse(row.tokenUsage, null),
     createdAt: row.createdAt,
   };
 }
@@ -253,6 +258,7 @@ export async function insertMessage(msg: Message): Promise<void> {
     isStreaming: msg.isStreaming ? 1 : 0,
     status: msg.status ?? MessageStatus.SUCCESS,
     errorMessage: msg.errorMessage ?? null,
+    tokenUsage: msg.tokenUsage ? JSON.stringify(msg.tokenUsage) : null,
     createdAt: msg.createdAt,
   });
 }
@@ -269,6 +275,7 @@ export async function updateMessage(id: string, updates: Partial<Message>): Prom
   if (updates.isStreaming !== undefined) values.isStreaming = updates.isStreaming ? 1 : 0;
   if (updates.status !== undefined) values.status = updates.status;
   if (updates.errorMessage !== undefined) values.errorMessage = updates.errorMessage;
+  if (updates.tokenUsage !== undefined) values.tokenUsage = updates.tokenUsage ? JSON.stringify(updates.tokenUsage) : null;
 
   if (Object.keys(values).length > 0) {
     await db.update(messages).set(values).where(eq(messages.id, id));

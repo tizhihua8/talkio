@@ -90,6 +90,7 @@ export async function generateResponseV2(
     isStreaming: true,
     status: MessageStatus.STREAMING,
     errorMessage: null,
+    tokenUsage: null,
     createdAt: new Date().toISOString(),
   };
 
@@ -379,12 +380,19 @@ export async function generateResponseV2(
     if (thinkingBlockId) blockIdsToFlush.push(thinkingBlockId);
     await flushBlockBatchUpdates(blockIdsToFlush);
 
+    // Capture token usage from AI SDK
+    const usage = await result.usage;
+    const tokenUsage = usage?.inputTokens || usage?.outputTokens
+      ? { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 }
+      : null;
+
     // Final DB commit — use our collected tool data (already in correct format)
     await dbUpdateMessage(assistantMsg.id, {
       content,
       reasoningContent,
       toolCalls: pendingToolCalls,
       toolResults: pendingToolResults,
+      tokenUsage,
       isStreaming: false,
       status: MessageStatus.SUCCESS,
     });
