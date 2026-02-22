@@ -226,61 +226,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const conv = await dbGetConversation(convId);
     if (!conv || conv.type !== "group" || conv.participants.length < 2) return;
 
-    set({ autoDiscussRemaining: rounds, autoDiscussTotalRounds: rounds, isGenerating: true });
+    set({ autoDiscussRemaining: rounds, autoDiscussTotalRounds: rounds });
 
-    const abortController = new AbortController();
-    set({ _abortController: abortController });
+    // First round: send topicText (or "继续") as user message
+    const firstMsg = topicText?.trim() || "继续";
+    await get().sendMessage(firstMsg);
 
-    try {
-      // If a topic text is provided, send it as a user message first
-      if (topicText) {
-        const userMsg: Message = {
-          id: generateId(),
-          conversationId: convId,
-          role: "user",
-          senderModelId: null,
-          senderName: "You",
-          identityId: null,
-          participantId: null,
-          content: topicText,
-          images: [],
-          generatedImages: [],
-          reasoningContent: null,
-          reasoningDuration: null,
-          toolCalls: [],
-          toolResults: [],
-          branchId: get().activeBranchId,
-          parentMessageId: null,
-          isStreaming: false,
-          status: MessageStatus.SUCCESS,
-          errorMessage: null,
-          tokenUsage: null,
-          createdAt: new Date().toISOString(),
-        };
-        await insertMessage(userMsg);
-        dbUpdateConversation(convId, {
-          lastMessage: topicText,
-          lastMessageAt: userMsg.createdAt,
-        }).catch(() => {});
-      }
-
-      for (let round = 0; round < rounds; round++) {
-        if (abortController.signal.aborted) break;
-
-        // Re-read conversation for latest state
-        const freshConv = await dbGetConversation(convId);
-        if (!freshConv) break;
-
-        for (const participant of freshConv.participants) {
-          if (abortController.signal.aborted) break;
-          await generateResponseV2(convId, participant.modelId, freshConv, abortController.signal, participant.id);
-        }
-
-        set({ autoDiscussRemaining: rounds - round - 1 });
-      }
-    } finally {
-      set({ _abortController: null, isGenerating: false, autoDiscussRemaining: 0 });
+    // Subsequent rounds: auto-send "继续" as user message
+    for (let round = 1; round < rounds; round++) {
+      // Check if user stopped auto-discuss (stopAutoDiscuss sets remaining to 0)
+      if (get().autoDiscussRemaining <= 0) break;
+      set({ autoDiscussRemaining: rounds - round });
+      await get().sendMessage("继续");
     }
+
+    set({ autoDiscussRemaining: 0, autoDiscussTotalRounds: 0 });
   },
 
   stopAutoDiscuss: () => {

@@ -84,11 +84,12 @@
     "noAvailableModels": "没有可添加的模型",
     "cannotRemoveLast": "无法移除最后一个成员",
     "autoDiscuss": "自动讨论",
-    "autoDiscussHint": "AI 们将自动轮流发言",
+    "autoDiscussHint": "系统将自动代替你发送“继续”来驱动讨论",
     "autoDiscussRounds": "{{count}} 轮",
     "autoDiscussRemaining": "剩余 {{count}} 轮",
-    "autoDiscussRunning": "讨论中...",
-    "autoDiscussStop": "停止讨论",
+    "autoDiscussProgress": "第 {{current}}/{{total}} 轮",
+    "autoDiscussRunning": "托管中",
+    "autoDiscussStop": "取消托管",
     "autoDiscussNeedMessage": "请先发送一条消息作为讨论话题"
   },
   "models": {

@@ -27,6 +27,7 @@ interface ChatInputProps {
   onStartAutoDiscuss?: (rounds: number, topicText?: string) => void;
   onStopAutoDiscuss?: () => void;
   autoDiscussRemaining?: number;
+  autoDiscussTotalRounds?: number;
 }
 
 export const ChatInput = React.memo(function ChatInput({
@@ -38,6 +39,7 @@ export const ChatInput = React.memo(function ChatInput({
   onStartAutoDiscuss,
   onStopAutoDiscuss,
   autoDiscussRemaining = 0,
+  autoDiscussTotalRounds = 0,
 }: ChatInputProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -347,25 +349,35 @@ export const ChatInput = React.memo(function ChatInput({
 
       {/* During auto-discuss: replace input bar with discussion mode */}
       {isAutoDiscussing ? (
-        <View className="flex-row items-center gap-3 px-4 py-2.5">
-          <View className="flex-1 flex-row items-center justify-center rounded-3xl border border-blue-200 bg-blue-50 px-4 py-2.5 min-h-[44px] gap-2">
-            <MotiView
-              from={{ opacity: 0.4 }}
-              animate={{ opacity: 1 }}
-              transition={{ type: "timing", duration: 800, loop: true }}
+        <View className="px-4 py-3">
+          <View className="flex-row items-center justify-between rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3">
+            <View className="flex-row items-center gap-3 flex-1">
+              <MotiView
+                from={{ scale: 0.8, opacity: 0.5 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "timing", duration: 800, loop: true }}
+              >
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-blue-500">
+                  <Ionicons name="chatbubbles" size={16} color="#fff" />
+                </View>
+              </MotiView>
+              <View>
+                <Text className="text-[14px] font-semibold text-blue-800">
+                  {t("chat.autoDiscussRunning")}
+                </Text>
+                <Text className="text-[12px] text-blue-600">
+                  {t("chat.autoDiscussProgress", { current: autoDiscussTotalRounds - autoDiscussRemaining + 1, total: autoDiscussTotalRounds })}
+                </Text>
+              </View>
+            </View>
+            <Pressable
+              onPress={onStopAutoDiscuss}
+              className="flex-row items-center gap-1.5 rounded-full bg-red-500 px-3.5 py-2 active:opacity-70"
             >
-              <Ionicons name="chatbubbles" size={16} color="#2563eb" />
-            </MotiView>
-            <Text className="text-[14px] font-medium text-blue-700">
-              {t("chat.autoDiscussRemaining", { count: autoDiscussRemaining })}
-            </Text>
+              <Ionicons name="stop" size={12} color="#fff" />
+              <Text className="text-[12px] font-bold text-white">{t("chat.autoDiscussStop")}</Text>
+            </Pressable>
           </View>
-          <Pressable
-            onPress={onStopAutoDiscuss}
-            className="h-10 w-10 items-center justify-center rounded-full bg-red-500 active:opacity-70"
-          >
-            <Ionicons name="stop" size={16} color="#fff" />
-          </Pressable>
         </View>
       ) : (
       <View className="flex-row items-center gap-3 px-4 py-2.5">

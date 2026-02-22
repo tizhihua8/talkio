@@ -47,6 +47,7 @@ export default function ChatDetailScreen() {
   const blocksByMessage = useConversationBlocks(id ?? null);
   const isGenerating = useChatStore((s) => s.isGenerating);
   const autoDiscussRemaining = useChatStore((s) => s.autoDiscussRemaining);
+  const autoDiscussTotalRounds = useChatStore((s) => s.autoDiscussTotalRounds);
   const startAutoDiscuss = useChatStore((s) => s.startAutoDiscuss);
   const stopAutoDiscuss = useChatStore((s) => s.stopAutoDiscuss);
 
@@ -512,6 +513,7 @@ export default function ChatDetailScreen() {
         onStartAutoDiscuss={startAutoDiscuss}
         onStopAutoDiscuss={stopAutoDiscuss}
         autoDiscussRemaining={autoDiscussRemaining}
+        autoDiscussTotalRounds={autoDiscussTotalRounds}
       />
     </KeyboardAvoidingView>
 

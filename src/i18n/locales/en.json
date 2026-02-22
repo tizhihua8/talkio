@@ -84,11 +84,12 @@
     "noAvailableModels": "No available models to add",
     "cannotRemoveLast": "Cannot remove the last member",
     "autoDiscuss": "Auto Discuss",
-    "autoDiscussHint": "AIs will take turns speaking automatically",
+    "autoDiscussHint": "System will auto-send \"Continue\" on your behalf to drive the discussion",
     "autoDiscussRounds": "{{count}} rounds",
     "autoDiscussRemaining": "{{count}} rounds left",
-    "autoDiscussRunning": "Discussing...",
-    "autoDiscussStop": "Stop Discussion",
+    "autoDiscussProgress": "Round {{current}}/{{total}}",
+    "autoDiscussRunning": "Auto-pilot",
+    "autoDiscussStop": "Stop",
     "autoDiscussNeedMessage": "Send a message first to set the discussion topic"
   },
   "models": {
