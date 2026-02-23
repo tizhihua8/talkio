@@ -205,7 +205,7 @@ export default function SettingsScreen() {
           <Text className="text-[10px] font-medium uppercase tracking-widest text-text-hint">
             {t("settings.appName")}
           </Text>
-          <Text className="mt-1 text-xs text-text-hint">v0.1.0</Text>
+          <Text className="mt-1 text-xs text-text-hint">v0.3.0</Text>
         </View>
       </View>
     </ScrollView>
