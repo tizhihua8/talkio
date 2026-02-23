@@ -179,6 +179,7 @@
     "apiKey": "API Key",
     "apiKeyPlaceholder": "API Key (optional)",
     "allFieldsRequired": "Name and Base URL are required",
+    "duplicateName": "A provider with this name already exists",
     "testConnection": "Test Connection",
     "connectionSuccessful": "Connection Successful",
     "connected": "Connected",

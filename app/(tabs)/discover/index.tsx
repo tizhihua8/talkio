@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, Modal } from "react-native";
+import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, Modal, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "expo-router";
+import { Swipeable } from "react-native-gesture-handler";
 import { Ionicons } from "@expo/vector-icons";
 import { useIdentityStore } from "../../../src/stores/identity-store";
 import { useThemeColors } from "../../../src/hooks/useThemeColors";
@@ -327,44 +328,67 @@ function IdentityCard({
   const iconName = IDENTITY_ICONS[colorIndex % IDENTITY_ICONS.length];
 
   return (
-    <Pressable
-      onPress={onEdit}
-      className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
+    <Swipeable
+      renderRightActions={(_progress, dragX) => {
+        const scale = dragX.interpolate({
+          inputRange: [-80, 0],
+          outputRange: [1, 0.5],
+          extrapolate: "clamp",
+        });
+        return (
+          <Pressable
+            onPress={onDelete}
+            style={{
+              width: 80,
+              backgroundColor: colors.danger,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
+            </Animated.View>
+          </Pressable>
+        );
+      }}
+      overshootRight={false}
+      friction={2}
     >
-      <View className="flex-row items-start gap-4">
-        <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
-          <Ionicons name={iconName} size={24} color={colorSet.color} />
-        </View>
-        <View className="flex-1">
-          <View className="mb-1 flex-row items-center justify-between">
-            <Text className="text-lg font-bold text-text-main" numberOfLines={1}>
-              {identity.name}
-            </Text>
-            <View className="flex-row items-center gap-2">
-              <Pressable onPress={onDelete} hitSlop={8} className="active:opacity-60">
-                <Ionicons name="trash-outline" size={16} color={colors.danger} />
-              </Pressable>
+      <Pressable
+        onPress={onEdit}
+        className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
+      >
+        <View className="flex-row items-start gap-4">
+          <View className={`h-12 w-12 items-center justify-center rounded-xl ${colorSet.bg}`}>
+            <Ionicons name={iconName} size={24} color={colorSet.color} />
+          </View>
+          <View className="flex-1">
+            <View className="mb-1 flex-row items-center justify-between">
+              <Text className="text-lg font-bold text-text-main" numberOfLines={1}>
+                {identity.name}
+              </Text>
               <Ionicons name="chevron-forward" size={20} color={colors.searchIcon} />
             </View>
-          </View>
-          <View className="mb-3 flex-row gap-2">
-            <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
-              <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                {t("personas.temp", { value: identity.params.temperature })}
-              </Text>
+            <View className="mb-3 flex-row gap-2">
+              <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  {t("personas.temp", { value: identity.params.temperature })}
+                </Text>
+              </View>
+              <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
+                <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                  {t("personas.tools", { count: identity.mcpToolIds.length + (identity.mcpServerIds?.length ?? 0) })}
+                </Text>
+              </View>
             </View>
-            <View className="rounded border border-border-light bg-bg-input px-2 py-0.5">
-              <Text className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                {t("personas.tools", { count: identity.mcpToolIds.length + (identity.mcpServerIds?.length ?? 0) })}
-              </Text>
-            </View>
+            <Text className="text-sm leading-relaxed text-text-muted" numberOfLines={2}>
+              {identity.systemPrompt}
+            </Text>
           </View>
-          <Text className="text-sm leading-relaxed text-text-muted" numberOfLines={2}>
-            {identity.systemPrompt}
-          </Text>
         </View>
-      </View>
-    </Pressable>
+      </Pressable>
+    </Swipeable>
   );
 }
 
@@ -379,32 +403,61 @@ function ServerCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useTranslation();
   const colors = useThemeColors();
   return (
-    <Pressable
-      onPress={onEdit}
-      className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
+    <Swipeable
+      renderRightActions={(_progress, dragX) => {
+        const scale = dragX.interpolate({
+          inputRange: [-80, 0],
+          outputRange: [1, 0.5],
+          extrapolate: "clamp",
+        });
+        return (
+          <Pressable
+            onPress={onDelete}
+            style={{
+              width: 80,
+              backgroundColor: colors.danger,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Animated.View style={{ transform: [{ scale }], alignItems: "center" }}>
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text className="mt-0.5 text-[10px] font-medium text-white">{t("common.delete")}</Text>
+            </Animated.View>
+          </Pressable>
+        );
+      }}
+      overshootRight={false}
+      friction={2}
     >
-      <View className="flex-row items-center gap-3">
-        <View className="h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
-          <Ionicons name="cloud-outline" size={20} color="#2563eb" />
+      <Pressable
+        onPress={onEdit}
+        className="rounded-xl border border-border-light bg-bg-card p-4 active:bg-bg-hover"
+      >
+        <View className="flex-row items-center gap-3">
+          <View className="h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+            <Ionicons name="cloud-outline" size={20} color="#2563eb" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-[15px] font-semibold text-text-main" numberOfLines={1}>
+              {server.name}
+            </Text>
+            <Text className="mt-0.5 text-[11px] text-text-hint" numberOfLines={1}>
+              {server.url}
+            </Text>
+          </View>
+          <Switch
+            value={server.enabled}
+            onValueChange={onToggle}
+            trackColor={{ false: colors.switchTrack, true: colors.accent }}
+            thumbColor="#fff"
+            ios_backgroundColor={colors.switchTrack}
+          />
         </View>
-        <View className="flex-1">
-          <Text className="text-[15px] font-semibold text-text-main" numberOfLines={1}>
-            {server.name}
-          </Text>
-          <Text className="mt-0.5 text-[11px] text-text-hint" numberOfLines={1}>
-            {server.url}
-          </Text>
-        </View>
-        <Switch
-          value={server.enabled}
-          onValueChange={onToggle}
-          trackColor={{ false: colors.switchTrack, true: colors.accent }}
-          thumbColor="#fff"
-          ios_backgroundColor={colors.switchTrack}
-        />
-      </View>
-    </Pressable>
+      </Pressable>
+    </Swipeable>
   );
 }

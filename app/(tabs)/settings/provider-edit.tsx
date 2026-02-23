@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useProviderStore } from "../../../src/stores/provider-store";
 import { useThemeColors } from "../../../src/hooks/useThemeColors";
 import { PROVIDER_PRESETS, PROVIDER_TYPE_OPTIONS } from "../../../src/constants";
+import { ApiClient } from "../../../src/services/api-client";
 import type { Model, ProviderType, CustomHeader } from "../../../src/types";
 
 export default function ProviderEditScreen() {
@@ -14,10 +15,11 @@ export default function ProviderEditScreen() {
   const { id: editId } = useLocalSearchParams<{ id?: string }>();
   const isEditing = !!editId;
 
-  const addProviderWithTest = useProviderStore((s) => s.addProviderWithTest);
+  const addProvider = useProviderStore((s) => s.addProvider);
   const updateProvider = useProviderStore((s) => s.updateProvider);
   const getProviderById = useProviderStore((s) => s.getProviderById);
   const getModelsByProvider = useProviderStore((s) => s.getModelsByProvider);
+  const providers = useProviderStore((s) => s.providers);
   const testConnection = useProviderStore((s) => s.testConnection);
   const fetchModels = useProviderStore((s) => s.fetchModels);
   const toggleModel = useProviderStore((s) => s.toggleModel);
@@ -39,6 +41,7 @@ export default function ProviderEditScreen() {
   const [pulledModels, setPulledModels] = useState<Model[]>([]);
   const [pulling, setPulling] = useState(false);
   const [savedProviderId, setSavedProviderId] = useState<string | null>(null);
+  const [testPulledModels, setTestPulledModels] = useState<Array<{ id: string; object: string }>>([]);
   const [showApiKey, setShowApiKey] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
   const [newModelId, setNewModelId] = useState("");
@@ -93,6 +96,17 @@ export default function ProviderEditScreen() {
       return;
     }
 
+    // Check duplicate name for new providers
+    if (!isEditing && !savedProviderId) {
+      const duplicate = providers.find(
+        (p) => p.name.toLowerCase() === name.trim().toLowerCase(),
+      );
+      if (duplicate) {
+        Alert.alert(t("common.error"), t("providerEdit.duplicateName"));
+        return;
+      }
+    }
+
     setTesting(true);
     setConnected(null);
 
@@ -106,34 +120,43 @@ export default function ProviderEditScreen() {
       enabled: providerEnabled,
     };
 
-    let providerId = savedProviderId;
     let ok = false;
 
-    if (isEditing && providerId) {
+    if (isEditing && savedProviderId) {
       // For editing, update then test
-      updateProvider(providerId, providerData);
-      ok = await testConnection(providerId);
+      updateProvider(savedProviderId, providerData);
+      ok = await testConnection(savedProviderId);
+      if (ok) {
+        setPulling(true);
+        try {
+          const models = await fetchModels(savedProviderId);
+          setPulledModels(models);
+        } catch { /* ignore */ }
+        setPulling(false);
+      }
     } else {
-      // For new provider, test before saving
-      const result = await addProviderWithTest(providerData);
-      ok = result.success;
-      if (result.provider) {
-        providerId = result.provider.id;
-        setSavedProviderId(providerId);
+      // For new provider: test connection WITHOUT saving
+      const tempProvider = {
+        ...providerData,
+        id: "__temp__",
+        status: "pending" as const,
+        createdAt: new Date().toISOString(),
+      };
+      const client = new ApiClient(tempProvider);
+      ok = await client.testConnection();
+      if (ok) {
+        // Fetch model list (without saving)
+        setPulling(true);
+        try {
+          const modelList = await client.listModels();
+          setTestPulledModels(modelList);
+        } catch { /* ignore */ }
+        setPulling(false);
       }
     }
 
     setConnected(ok);
-
-    if (ok && providerId) {
-      // Auto-fetch models after successful connection
-      setPulling(true);
-      try {
-        const models = await fetchModels(providerId);
-        setPulledModels(models);
-      } catch { /* ignore fetch errors */ }
-      setPulling(false);
-    } else {
+    if (!ok) {
       Alert.alert(t("providerEdit.connectionFailed"), t("providerEdit.connectionFailedHint"));
     }
     setTesting(false);
@@ -152,17 +175,35 @@ export default function ProviderEditScreen() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const providerData = {
+      name: name.trim(),
+      baseUrl: baseUrl.trim(),
+      apiKey: apiKey.trim(),
+      type: providerType,
+      apiVersion: apiVersion.trim() || undefined,
+      customHeaders,
+      enabled: providerEnabled,
+    };
+
     if (savedProviderId) {
-      updateProvider(savedProviderId, {
-        name: name.trim(),
-        baseUrl: baseUrl.trim(),
-        apiKey: apiKey.trim(),
-        type: providerType,
-        apiVersion: apiVersion.trim() || undefined,
-        customHeaders,
-        enabled: providerEnabled,
-      });
+      // Editing existing provider
+      updateProvider(savedProviderId, providerData);
+    } else {
+      // New provider: save now
+      const provider = addProvider(providerData);
+      updateProvider(provider.id, { status: "connected" });
+      setSavedProviderId(provider.id);
+      // Persist the pulled models
+      if (testPulledModels.length > 0) {
+        const addModel = useProviderStore.getState().addModel;
+        for (const m of testPulledModels) {
+          addModel(provider.id, m.id);
+        }
+        // Refresh displayed models
+        setPulledModels(getModelsByProvider(provider.id));
+        setTestPulledModels([]);
+      }
     }
     router.back();
   };
@@ -414,7 +455,7 @@ export default function ProviderEditScreen() {
               onPress={handleConnect}
               disabled={testing || !baseUrl.trim() || !name.trim()}
               className={`flex-1 flex-row items-center justify-center rounded-xl py-3.5 ${
-                testing ? "bg-bg-input" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
+                testing ? "bg-primary/70" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
               }`}
             >
               {testing ? (
@@ -446,15 +487,15 @@ export default function ProviderEditScreen() {
         </View>
       )}
 
-      {/* ── Step 3: Models ── */}
-      {connected && (
+      {/* ── Step 3: Models (saved provider) ── */}
+      {connected && savedProviderId && (
         <View className="px-4 pt-6">
           <View className="flex-row items-center justify-between px-1">
             <Text className="text-[13px] font-normal uppercase tracking-tight text-section-header">
               {t("providerEdit.pulledModels", { count: displayModels.length })}
             </Text>
             <View className="flex-row items-center gap-4">
-              {savedProviderId && displayModels.length > 0 && (
+              {displayModels.length > 0 && (
                 <Pressable onPress={() => {
                   const allEnabled = displayModels.every((m) => m.enabled);
                   setProviderModelsEnabled(savedProviderId, !allEnabled);
@@ -496,27 +537,25 @@ export default function ProviderEditScreen() {
           </View>
 
           {/* Manual Add Model */}
-          {savedProviderId && (
-            <View className="mt-2 flex-row items-center gap-2">
-              <TextInput
-                className="flex-1 rounded-xl border border-border-light bg-bg-card px-3 py-2.5 text-[14px] text-text-main"
-                value={newModelId}
-                onChangeText={setNewModelId}
-                placeholder={t("providerEdit.addModelPlaceholder")}
-                placeholderTextColor={colors.chevron}
-                autoCapitalize="none"
-              />
-              <Pressable
-                onPress={handleAddModel}
-                disabled={!newModelId.trim()}
-                className={`rounded-xl px-4 py-2.5 ${newModelId.trim() ? "bg-primary" : "bg-bg-input"}`}
-              >
-                <Text className={`text-[14px] font-medium ${newModelId.trim() ? "text-white" : "text-text-hint"}`}>
-                  {t("common.add")}
-                </Text>
-              </Pressable>
-            </View>
-          )}
+          <View className="mt-2 flex-row items-center gap-2">
+            <TextInput
+              className="flex-1 rounded-xl border border-border-light bg-bg-card px-3 py-2.5 text-[14px] text-text-main"
+              value={newModelId}
+              onChangeText={setNewModelId}
+              placeholder={t("providerEdit.addModelPlaceholder")}
+              placeholderTextColor={colors.chevron}
+              autoCapitalize="none"
+            />
+            <Pressable
+              onPress={handleAddModel}
+              disabled={!newModelId.trim()}
+              className={`rounded-xl px-4 py-2.5 ${newModelId.trim() ? "bg-primary" : "bg-bg-input"}`}
+            >
+              <Text className={`text-[14px] font-medium ${newModelId.trim() ? "text-white" : "text-text-hint"}`}>
+                {t("common.add")}
+              </Text>
+            </Pressable>
+          </View>
 
           {/* Model List */}
           <View className="mt-3 gap-2">
@@ -556,7 +595,7 @@ export default function ProviderEditScreen() {
                       finally { setProbingModelId(null); }
                     }}
                     disabled={probingModelId === m.id}
-                    className="flex-row items-center rounded-md bg-blue-50 px-2 py-0.5 active:opacity-60"
+                    className="flex-row items-center rounded-md bg-bg-hover px-2 py-0.5 active:opacity-60"
                   >
                     {probingModelId === m.id ? (
                       <ActivityIndicator size="small" color={colors.accent} />
@@ -568,6 +607,23 @@ export default function ProviderEditScreen() {
                     )}
                   </Pressable>
                 </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* ── Step 3: Models (new provider, not yet saved) ── */}
+      {connected && !savedProviderId && testPulledModels.length > 0 && (
+        <View className="px-4 pt-6">
+          <Text className="px-1 text-[13px] font-normal uppercase tracking-tight text-section-header">
+            {t("providerEdit.pulledModels", { count: testPulledModels.length })}
+          </Text>
+          <View className="mt-3 gap-1.5">
+            {testPulledModels.map((m) => (
+              <View key={m.id} className="flex-row items-center rounded-xl border border-border-light bg-bg-card px-4 py-3">
+                <Ionicons name="cube-outline" size={16} color={colors.accent} style={{ marginRight: 10 }} />
+                <Text className="flex-1 text-[14px] text-text-main" numberOfLines={1}>{m.id}</Text>
               </View>
             ))}
           </View>
