@@ -109,7 +109,7 @@ export default function DiscoverScreen() {
           name: server.name,
           url: server.url,
           customHeaders: server.headers,
-          enabled: true,
+          enabled: false,
         });
         addedNames.push(server.name);
       }

@@ -123,7 +123,7 @@
     "importHint": "Paste MCP server config JSON. Supports {mcpServers: {...}}, array, or single object format.",
     "importNoTools": "No valid tools found in JSON",
     "importInvalidJson": "Invalid JSON format",
-    "importSuccess": "Successfully imported {{count}} tool(s)",
+    "importSuccess": "Successfully imported {{count}} server(s). Enable them to verify connection.",
     "importCommandNotSupported": "This is a desktop MCP config (npx/uvx commands). Mobile only supports URL-based remote MCP servers. Please use a config with \"url\" fields.",
     "importDiscoveryFailed": "Failed to discover tools from server"
   },
