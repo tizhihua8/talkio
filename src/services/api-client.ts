@@ -411,7 +411,7 @@ export class ApiClient {
         // Gemini uses key as query param, no auth header needed
         break;
       default:
-        base["Authorization"] = `Bearer ${this.apiKey}`;
+        if (this.apiKey) base["Authorization"] = `Bearer ${this.apiKey}`;
         break;
     }
     return { ...base, ...this.customHeaders };

@@ -123,7 +123,7 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
     <input type="url" id="baseUrl" placeholder="https://api.example.com/v1" />
 
     <label data-i18n="apiKey">API Key</label>
-    <input type="password" id="apiKey" placeholder="sk-..." />
+    <input type="password" id="apiKey" data-ph="apiKeyPh" placeholder="sk-... (optional)" />
 
     <div class="btn-row">
       <button class="submit-btn" id="submitBtn" onclick="submitConfig()" data-i18n="sendBtn">Send to App</button>
@@ -144,21 +144,21 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
       en: {
         subtitle: 'Configure your AI provider from the comfort of your keyboard.',
         quickSelect: 'Quick Select', providerName: 'Provider Name', baseUrl: 'Base URL', apiKey: 'API Key',
-        sendBtn: 'Send to App', testBtn: 'Test', namePh: 'e.g. OpenRouter',
+        sendBtn: 'Send to App', testBtn: 'Test', namePh: 'e.g. OpenRouter', apiKeyPh: 'sk-... (optional)',
         security: '🔒 Your API key is sent directly to your phone over the local network. It never leaves your devices.',
         sending: 'Sending...', testing: 'Testing...', added: '✅ added!',
         testOk: '✅ Connection successful!', testFail: '❌ Connection failed: ',
-        allRequired: 'All fields are required.', connFail: 'Connection to app failed. Same network?',
+        allRequired: 'Name and Base URL are required.', connFail: 'Connection to app failed. Same network?',
         langToggle: '中文',
       },
       zh: {
         subtitle: '在电脑上舒适地配置你的 AI 供应商。',
         quickSelect: '快速选择', providerName: '供应商名称', baseUrl: '接口地址', apiKey: 'API 密钥',
-        sendBtn: '发送到 App', testBtn: '测试', namePh: '例如 OpenRouter',
+        sendBtn: '发送到 App', testBtn: '测试', namePh: '例如 OpenRouter', apiKeyPh: 'sk-...（可选）',
         security: '🔒 API 密钥通过局域网直接发送到手机，不会离开你的设备。',
         sending: '发送中...', testing: '测试中...', added: '✅ 已添加！',
         testOk: '✅ 连接成功！', testFail: '❌ 连接失败：',
-        allRequired: '所有字段都必须填写。', connFail: '无法连接到 App，请确认在同一网络。',
+        allRequired: '名称和接口地址为必填项。', connFail: '无法连接到 App，请确认在同一网络。',
         langToggle: 'EN',
       }
     };
@@ -215,7 +215,7 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
 
     async function submitConfig() {
       const { name, baseUrl, apiKey } = getFields();
-      if (!name || !baseUrl || !apiKey) { showToast(t('allRequired'), 'error'); return; }
+      if (!name || !baseUrl) { showToast(t('allRequired'), 'error'); return; }
 
       const btn = document.getElementById('submitBtn');
       btn.disabled = true; btn.textContent = t('sending');
@@ -242,7 +242,7 @@ const CONFIG_PAGE_HTML = `<!DOCTYPE html>
 
     async function testConnection() {
       const { baseUrl, apiKey } = getFields();
-      if (!baseUrl || !apiKey) { showToast(t('allRequired'), 'error'); return; }
+      if (!baseUrl) { showToast(t('allRequired'), 'error'); return; }
 
       const btn = document.getElementById('testBtn');
       btn.disabled = true; btn.textContent = t('testing');

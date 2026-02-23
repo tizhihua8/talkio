@@ -77,7 +77,7 @@ export function createLanguageModel(
       // all OpenAI-compatible providers support.
       const openai = createOpenAI({
         baseURL: baseUrl,
-        apiKey: provider.apiKey,
+        apiKey: provider.apiKey || "sk-no-key",
         headers: customHeaders,
         fetch: expoFetch as unknown as typeof globalThis.fetch,
       });

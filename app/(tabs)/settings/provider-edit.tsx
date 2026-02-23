@@ -88,7 +88,7 @@ export default function ProviderEditScreen() {
   };
 
   const handleConnect = async () => {
-    if (!name.trim() || !baseUrl.trim() || !apiKey.trim()) {
+    if (!name.trim() || !baseUrl.trim()) {
       Alert.alert(t("common.error"), t("providerEdit.allFieldsRequired"));
       return;
     }
@@ -327,7 +327,7 @@ export default function ProviderEditScreen() {
                 className="flex-1 bg-transparent text-[16px] text-text-muted"
                 value={apiKey}
                 onChangeText={setApiKey}
-                placeholder="API Key"
+                placeholder={t("providerEdit.apiKeyPlaceholder")}
                 placeholderTextColor={colors.chevron}
                 secureTextEntry={!showApiKey}
                 autoCapitalize="none"
@@ -412,7 +412,7 @@ export default function ProviderEditScreen() {
           <View className="mt-4 flex-row gap-3">
             <Pressable
               onPress={handleConnect}
-              disabled={testing || !apiKey.trim()}
+              disabled={testing || !baseUrl.trim() || !name.trim()}
               className={`flex-1 flex-row items-center justify-center rounded-xl py-3.5 ${
                 testing ? "bg-bg-input" : connected === true ? "bg-accent-green" : connected === false ? "bg-error" : "bg-primary"
               }`}
