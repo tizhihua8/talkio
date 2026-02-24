@@ -38,6 +38,7 @@ export default function IdentityEditScreen() {
   const selectedAiModel = models.find((m) => m.id === aiModelId);
 
   const [name, setName] = useState(existing?.name ?? "");
+  const [category, setCategory] = useState(existing?.category ?? "");
   const [icon, setIcon] = useState(existing?.icon ?? "general");
   const [systemPrompt, setSystemPrompt] = useState(existing?.systemPrompt ?? "");
   const [temperature, setTemperature] = useState(
@@ -63,6 +64,7 @@ export default function IdentityEditScreen() {
 
     const data = {
       name: name.trim(),
+      category: category.trim() || undefined,
       icon,
       systemPrompt: systemPrompt.trim(),
       params: { temperature, topP },
@@ -167,9 +169,8 @@ export default function IdentityEditScreen() {
             <Pressable
               onPress={handleAiGenerate}
               disabled={aiLoading || !aiDesc.trim()}
-              className={`flex-row items-center gap-1.5 rounded-lg px-4 py-2.5 ${
-                aiLoading || !aiDesc.trim() ? "bg-purple-300" : "bg-purple-600"
-              }`}
+              className={`flex-row items-center gap-1.5 rounded-lg px-4 py-2.5 ${aiLoading || !aiDesc.trim() ? "bg-purple-300" : "bg-purple-600"
+                }`}
             >
               {aiLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -221,15 +222,25 @@ export default function IdentityEditScreen() {
       </View>
 
       <View className="px-4 pt-4">
+        <Text className="mb-1 text-sm font-medium text-text-muted">{t("identityEdit.category", { defaultValue: "分组标签 / Category" })}</Text>
+        <TextInput
+          className="rounded-xl bg-bg-secondary px-4 py-3 text-base text-text-main"
+          value={category}
+          onChangeText={setCategory}
+          placeholder={t("identityEdit.categoryPlaceholder", { defaultValue: "例如：狼人杀、工作、开发..." })}
+          placeholderTextColor={colors.searchIcon}
+        />
+      </View>
+
+      <View className="px-4 pt-4">
         <Text className="mb-2 text-sm font-medium text-text-muted">{t("identityEdit.icon")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {IDENTITY_ICONS.map((ic) => (
             <Pressable
               key={ic}
               onPress={() => setIcon(ic)}
-              className={`mr-2 rounded-lg border px-3 py-2 ${
-                icon === ic ? "border-primary bg-primary-light" : "border-border-light"
-              }`}
+              className={`mr-2 rounded-lg border px-3 py-2 ${icon === ic ? "border-primary bg-primary-light" : "border-border-light"
+                }`}
             >
               <Text className={`text-xs ${icon === ic ? "text-primary" : "text-text-muted"}`}>
                 {ic}

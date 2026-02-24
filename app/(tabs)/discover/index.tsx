@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { View, Text, TextInput, Pressable, ScrollView, Alert, Switch, Modal, Animated, ActivityIndicator } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTranslation } from "react-i18next";
@@ -44,6 +44,20 @@ export default function DiscoverScreen() {
   const removeMcpServer = useIdentityStore((s) => s.removeMcpServer);
   const [activeTab, setActiveTab] = useState<Tab>("identities");
   const colors = useThemeColors();
+
+  const groupedIdentities = useMemo(() => {
+    const map = new Map<string, Identity[]>();
+    identities.forEach((id) => {
+      const cat = id.category?.trim() || t("identityEdit.uncategorized", { defaultValue: "未分组 / Uncategorized" });
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(id);
+    });
+    const groups: { category: string; data: Identity[] }[] = [];
+    Array.from(map.keys()).sort().forEach((k) => {
+      groups.push({ category: k, data: map.get(k)! });
+    });
+    return groups;
+  }, [identities, t]);
 
   const builtInTools = mcpTools.filter((t) => t.builtIn);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -149,14 +163,12 @@ export default function DiscoverScreen() {
             <Pressable
               key={tab}
               onPress={() => setActiveTab(tab)}
-              className={`flex-1 items-center rounded-lg py-1.5 active:opacity-70 ${
-                activeTab === tab ? "bg-bg-card" : ""
-              }`}
+              className={`flex-1 items-center rounded-lg py-1.5 active:opacity-70 ${activeTab === tab ? "bg-bg-card" : ""
+                }`}
             >
               <Text
-                className={`text-sm font-semibold ${
-                  activeTab === tab ? "text-primary" : "text-text-muted"
-                }`}
+                className={`text-sm font-semibold ${activeTab === tab ? "text-primary" : "text-text-muted"
+                  }`}
               >
                 {tab === "identities" ? t("personas.identityCards") : t("personas.mcpTools")}
               </Text>
@@ -167,20 +179,29 @@ export default function DiscoverScreen() {
 
       <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 160 }}>
         {activeTab === "identities" ? (
-          <View className="gap-4">
-            {identities.map((identity, idx) => (
-              <IdentityCard
-                key={identity.id}
-                identity={identity}
-                colorIndex={idx}
-                onEdit={() =>
-                  router.push({
-                    pathname: "/(tabs)/discover/identity-edit",
-                    params: { id: identity.id },
-                  })
-                }
-                onDelete={() => handleDeleteIdentity(identity.id)}
-              />
+          <View className="gap-6">
+            {groupedIdentities.map((group) => (
+              <View key={group.category} className="gap-3">
+                <Text className="px-1 text-[13px] font-medium uppercase tracking-tight text-text-hint">
+                  {group.category}
+                </Text>
+                <View className="gap-3">
+                  {group.data.map((identity, idx) => (
+                    <IdentityCard
+                      key={identity.id}
+                      identity={identity}
+                      colorIndex={idx}
+                      onEdit={() =>
+                        router.push({
+                          pathname: "/(tabs)/discover/identity-edit",
+                          params: { id: identity.id },
+                        })
+                      }
+                      onDelete={() => handleDeleteIdentity(identity.id)}
+                    />
+                  ))}
+                </View>
+              </View>
             ))}
           </View>
         ) : (

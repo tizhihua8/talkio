@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useMemo } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView, type BottomSheetBackdropProps } from "@gorhom/bottom-sheet";
 import type { BottomSheetMethods } from "@gorhom/bottom-sheet/lib/typescript/types";
@@ -26,6 +26,20 @@ export const IdentitySlider = React.memo(function IdentitySlider({
   const identities = useIdentityStore((s) => s.identities);
   const colors = useThemeColors();
   const sheetRef = useRef<BottomSheetMethods>(null);
+
+  const groupedIdentities = useMemo(() => {
+    const map = new Map<string, typeof identities[0][]>();
+    identities.forEach((id) => {
+      const cat = id.category?.trim() || t("identityEdit.uncategorized", { defaultValue: "未分组 / Uncategorized" });
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(id);
+    });
+    const groups: { category: string; data: typeof identities[0][] }[] = [];
+    Array.from(map.keys()).sort().forEach((k) => {
+      groups.push({ category: k, data: map.get(k)! });
+    });
+    return groups;
+  }, [identities, t]);
 
   useEffect(() => {
     if (visible) {
@@ -96,42 +110,47 @@ export const IdentitySlider = React.memo(function IdentitySlider({
             </Pressable>
           )}
 
-          {identities.map((identity) => {
-            const isActive = identity.id === activeIdentityId;
-            return (
-              <Pressable
-                key={identity.id}
-                onPress={() => handleSelect(identity.id)}
-                className={`mb-2 flex-row items-center gap-3 rounded-xl border px-4 py-3 active:opacity-80 ${
-                  isActive ? "border-primary/30 bg-primary/5" : "border-border-light bg-bg-card"
-                }`}
-              >
-                <View
-                  className={`h-9 w-9 items-center justify-center rounded-lg ${
-                    isActive ? "bg-primary" : "bg-bg-input"
-                  }`}
-                >
-                  <Ionicons
-                    name={getIconName(identity.icon)}
-                    size={20}
-                    color={isActive ? colors.textInverse : colors.sectionHeader}
-                  />
-                </View>
-                <View className="flex-1">
-                  <Text
-                    className={`text-[14px] font-semibold ${isActive ? "text-primary" : "text-text-main"}`}
-                    numberOfLines={1}
+          {groupedIdentities.map((group) => (
+            <View key={group.category} className="mb-2">
+              <Text className="mb-2 px-1 text-[12px] font-semibold tracking-wider text-text-hint uppercase">
+                {group.category}
+              </Text>
+              {group.data.map((identity) => {
+                const isActive = identity.id === activeIdentityId;
+                return (
+                  <Pressable
+                    key={identity.id}
+                    onPress={() => handleSelect(identity.id)}
+                    className={`mb-2 flex-row items-center gap-3 rounded-xl border px-4 py-3 active:opacity-80 ${isActive ? "border-primary/30 bg-primary/5" : "border-border-light bg-bg-card"
+                      }`}
                   >
-                    {identity.name}
-                  </Text>
-                  <Text className="text-[12px] leading-tight text-text-hint" numberOfLines={2}>
-                    {identity.systemPrompt.slice(0, 80)}
-                  </Text>
-                </View>
-                {isActive && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
-              </Pressable>
-            );
-          })}
+                    <View
+                      className={`h-9 w-9 items-center justify-center rounded-lg ${isActive ? "bg-primary" : "bg-bg-input"
+                        }`}
+                    >
+                      <Ionicons
+                        name={getIconName(identity.icon)}
+                        size={20}
+                        color={isActive ? colors.textInverse : colors.sectionHeader}
+                      />
+                    </View>
+                    <View className="flex-1">
+                      <Text
+                        className={`text-[14px] font-semibold ${isActive ? "text-primary" : "text-text-main"}`}
+                        numberOfLines={1}
+                      >
+                        {identity.name}
+                      </Text>
+                      <Text className="text-[12px] leading-tight text-text-hint" numberOfLines={2}>
+                        {identity.systemPrompt.slice(0, 80)}
+                      </Text>
+                    </View>
+                    {isActive && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
         </ScrollView>
       </BottomSheetView>
     </BottomSheet>

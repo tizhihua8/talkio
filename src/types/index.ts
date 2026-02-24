@@ -55,6 +55,7 @@ export interface Identity {
   name: string;
   icon: string;
   systemPrompt: string;
+  category?: string;
   params: IdentityParams;
   mcpToolIds: string[];
   mcpServerIds: string[];
