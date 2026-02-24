@@ -1,4 +1,4 @@
- {
+{
   "expo": {
     "name": "Talkio",
     "slug": "avatar",
@@ -67,10 +67,7 @@
     ],
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "74bb5aa8-128f-44cd-abae-be1cef3f946b"
-      }
-    },
-    "owner": "lilongtaoexpo"
+      "eas": {}
+    }
   }
 }
